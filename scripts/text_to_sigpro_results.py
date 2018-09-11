@@ -1,18 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep  7 11:04:39 2018
+Created on Sat Sep  8 14:45:09 2018
 
 @author: mishugeb
 """
 
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Mon Aug 27 13:39:29 2018
 
-@author: mishugeb
-"""
 
 def extract_arrays(data, field, index=True):
     accumulator = list()
@@ -558,8 +552,8 @@ def analysis_signatures(genomes=[0], startprocesses =2, endprocesses=4, totalIte
         
        
         
-        #meanGenomeErrors = np.mean(genomeErrors, axis=2)
-        #meanGenomeReconstructed = np.mean(genomesReconstructed)    
+        meanGenomeErrors = np.mean(genomeErrors, axis=2)
+        meanGenomeReconstructed = np.mean(genomesReconstructed)    
         
         # computing the avg and std of the processes and exposures:
         
@@ -631,13 +625,10 @@ def cluster_similarity(mat1=([0]), mat2=([0])):  # the matrices (mat1 and mat2) 
 def main():        
     parser = argparse.ArgumentParser(description='Extraction of mutational signatures from Cancer genomes')
     
-    parser.add_argument('project', type =str,
-                        help= 'Name of the project file')
+    parser.add_argument('datafile', type =str,
+                        help= 'Name of the file containing the mutational calague')
     
-    parser.add_argument('refgen', type =str,
-                        help= 'Name of the reference genome')
-    
-    parser.add_argument('minprocesses', type=int, 
+    parser.add_argument('minprocesses',  type=int, 
                         help= 'The minimum number of processes to be extracted')
     
     parser.add_argument('maxprocesses', type=int, 
@@ -651,120 +642,72 @@ def main():
                         help= 'The number of cores to be used in the excecution.')
     
     
-  
     
-    parser.add_argument("--exome", help="Optional parameter instructs script to create the catalogues using only the exome regions. Whole genome context by default", action='store_true')
-    parser.add_argument("--indel", help="Optional parameter instructs script to create the catalogue for limited INDELs", action='store_true')
-    parser.add_argument("--extended_indel", help="Optional parameter instructs script to create the catalogue for extended INDELs", action='store_true')
     
-    parser.add_argument('--mtypes', type =str,
-                        help= 'The types of mutation. User should pass the inteded mutation types among to be analyzed\
-                        separeted by coma "," with no space. The sigporfiler engine will analyze the specific mutation\
-                        types those are passed to this argument. The valid mutation type are  96, 1536, 192, 3072 and  DINUC.\
-                        For example, if the user wants analyze mutation type 96, 192 and DINUC, that person should pass\
-                        "--mtypes 96,192,DINUC" as in the argument. If the argument is not used, all the mutations will\
-                        be analyzed')
     
-    args=parser.parse_args()
+    args = parser.parse_args()
+
     
-     
+    
+    print(os.getcwd())
+    
+    data = pd.read_csv("../input/"+args.datafile, sep="\t").iloc[:,:-1]
     
 
-   
+    genomes = data.iloc[:,1:]
     
     if args.n_cpu:
         n_cpu = args.n_cpu
     else:
         n_cpu = -1
-    
-    if args.exome:
-        exome = True
-    else:
-        exome = False
-
-    if args.extended_indel:
-        indel = True
-    else: 
-        indel = False
-
-    if args.indel:
-        indel = True
-        limited_indel = True
-    else:
-        limited_indel = False
         
     
-    data = datadump.sigProfilerMatrixGeneratorFunc (args.project, args.refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
-    mlist = []
-    for m in data:
-        mlist.append(m)
     
-    if args.mtypes:
-        mtypes = args.mtypes.split(",")
-        if any(x not in mlist for x in mtypes):
-            print ("Please pass valid mutation types seperated by comma with no space. Also please use the uppercase characters")
-            return None
-    else:
-        mtypes = mlist
-   
+    
+    results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
+    
+    
     #change working directory 
     os.chdir("../")
     print(os.getcwd())
     
-    for m in mtypes:
-        genomes = data[m]
-        print ("\n\n\nCalculating mutation type " + m)
-        
-        if genomes is not None:
-            results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
+    # Save the results as a python object using pickle
+    f = open('output/results_'+args.datafile, 'wb')
+    pickle.dump(results, f)
+    f.close()
     
-        
-            f = open('output/results_'+m, 'wb')
-            pickle.dump(results, f)
-            f.close()
-            
-            signatures = list()
-            norm = list()
-            stb = list()
-            
-            #save the processes and exposers as excel file 
-            sig = pd.ExcelWriter('output/signatures_of_'+args.project+" mutation type "+m+'.xlsx')
-            exp = pd.ExcelWriter('output/exposures_of_'+args.project+" mutation type "+m+'.xlsx')
-            
-            for i in results:
-                genome= i[0]
-                processAvg= (i[1])
-                exposureAvg= (i[2])
-                processStabityAvg= (i[5])
-                
-                norm.append(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro'))
-                stb.append(processStabityAvg)
-                signatures.append(i[-1])
-                
-                
-                processAvg= pd.DataFrame(processAvg)
-                processes = processAvg.set_index(genomes.index.values)
-                processes.columns = np.arange(i[-1])
-                processes.to_excel(sig, "sheet"+str(i[-1]))
-                
-                exposureAvg = pd.DataFrame(exposureAvg)
-                exposures = exposureAvg.set_index(np.arange(i[-1]))
-                exposures.columns = genome.columns.values
-                exposures.to_excel(exp, "sheet"+str(i[-1]))
-             
-                
-            sig.save()
-            exp.save()
-            print ("n")
-            fh = open("output/results_stat for "+args.project+" mutation type "+ m+".csv", "w")   
-            fh.write("Number of signature, Reconstruction Error, Process stability\n") 
-            for i, j, k in zip(signatures, norm, stb):
-                print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
-                fh.write('{}, {}, {}\n'.format(i, j, k))
+    signatures = list()
+    norm = list()
+    stb = list()
     
-        else:
-            print("Data for mutation type " + m + " not found")
-
+    #save the processes and exposers as excel file 
+    sig = pd.ExcelWriter('output/signatures_of_'+args.datafile+'.xlsx')
+    exp = pd.ExcelWriter('output/exposures_of_'+args.datafile+'.xlsx')
+    
+    for i in results:
+        genome= i[0]
+        processAvg= (i[1])
+        exposureAvg= (i[2])
+        processStabityAvg= (i[5])
+        
+        norm.append(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro'))
+        stb.append(processStabityAvg)
+        signatures.append(i[-1])
+        
+        processAvg= pd.DataFrame(processAvg)
+        processes = processAvg.set_index(genomes.index.values)
+        processes.columns = np.arange(i[-1])
+        processes.to_excel(sig, "sheet"+str(i[-1]))
+        
+        exposureAvg = pd.DataFrame(exposureAvg)
+        exposures = exposureAvg.set_index(np.arange(i[-1]))
+        exposures.columns = genome.columns.values
+        exposures.to_excel(exp, "sheet"+str(i[-1]))
+     
+        
+    sig.save()
+    exp.save()
+    
 
 
 if __name__ == "__main__":
@@ -781,7 +724,6 @@ if __name__ == "__main__":
     import pickle
     import multiprocessing
     from functools import partial
-    import sigProfilerMatrixGeneratorFunc as datadump 
     from numpy import linalg as LA
     
     main()

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import sigProfilerMatrixGenerator_withBED as matGen
+import sigProfilerMatrixGenerator as matGen
 import os
 import re
 
