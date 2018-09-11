@@ -755,7 +755,7 @@ def main():
                 
             sig.save()
             exp.save()
-            print ("n")
+            print ("\n")
             fh = open("output/results_stat for "+args.project+" mutation type "+ m+".csv", "w")   
             fh.write("Number of signature, Reconstruction Error, Process stability\n") 
             for i, j, k in zip(signatures, norm, stb):

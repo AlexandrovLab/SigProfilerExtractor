@@ -649,17 +649,22 @@ def main():
     
     
     
-<<<<<<< HEAD:scripts/SigPro.py
-    mat = scipy.io.loadmat('../input/'+ args.datafile)
+
+    mat = scipy.io.loadmat('../input/'+ "BRCA_v7_genome_subs_96_mutations")
     mat = extract_input(mat)
     genomes = mat[1]
-=======
-    data = pd.read_csv("../input/"+args.datafile, sep="\t").iloc[:,:-1]
-    col_names=data.columns.get_values()[1:]
-    row_names = data.iloc[:,0].copy()
-
-    genomes = data.iloc[:,1:]
->>>>>>> c824e27dabc47329fc1a9e01b802da2ffd687edc:scripts/SigPro.py
+    
+    #setting index and columns names of processAvg and exposureAvg
+    index1 = mat[3]
+    index2 = mat[4]
+    index = []
+    for i, j in zip(index1, index2):
+        index.append(i+"["+j+"]")
+    colnames = pd.Series(mat[2])
+    index = pd.Series(index)
+        
+    
+   
     
     if args.n_cpu:
         n_cpu = args.n_cpu
@@ -672,11 +677,9 @@ def main():
     results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
     
     
-<<<<<<< HEAD:scripts/SigPro.py
-    f = open('output/results_'+args.datafile, 'wb')
-=======
-    f = open('../output/results', 'wb')
->>>>>>> c824e27dabc47329fc1a9e01b802da2ffd687edc:scripts/SigPro.py
+
+    f = open('../output/results_'+args.datafile, 'wb')
+
     pickle.dump(results, f)
     f.close()
     
@@ -690,7 +693,7 @@ def main():
     exp = pd.ExcelWriter('../output/exposures_of_'+args.datafile+'.xlsx')
     
     for i in results:
-        genome= i[0]
+        genome= (i[0])
         processAvg= (i[1])
         exposureAvg= (i[2])
         processStabityAvg= (i[5])
@@ -700,19 +703,26 @@ def main():
         signatures.append(i[-1])
         
         processAvg= pd.DataFrame(pd.DataFrame(processAvg))
-        processes = processAvg.set_index(genomes.index.values)
+        processes = processAvg.set_index(index)
         processes.columns = np.arange(i[-1])
         processes.to_excel(sig, "sheet"+str(i[-1]))
         
         exposureAvg = pd.DataFrame(pd.DataFrame(exposureAvg))
         exposures = exposureAvg.set_index(np.arange(i[-1]))
-        exposures.columns = genome.columns.values
+        exposures.columns = colnames
         exposures.to_excel(exp, "sheet"+str(i[-1]))
      
         
     sig.save()
     exp.save()
 
+
+    print ("\n")
+    fh = open("../output/results_stat for "+args.datafile+".csv", "w")   
+    fh.write("Number of signature, Reconstruction Error, Process stability\n") 
+    for i, j, k in zip(signatures, norm, stb):
+        print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
+        fh.write('{}, {}, {}\n'.format(i, j, k))
 
 if __name__ == "__main__":
     
