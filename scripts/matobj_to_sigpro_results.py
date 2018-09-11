@@ -677,8 +677,9 @@ def main():
     results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
     
     
-
-    f = open('../output/results_'+args.datafile, 'wb')
+    resultname = args.datafile.split(".")
+    
+    f = open('../output/results_'+resultname[0], 'wb')
 
     pickle.dump(results, f)
     f.close()
@@ -716,9 +717,9 @@ def main():
     sig.save()
     exp.save()
 
-    resultname = args.datafile.split(".")
+    
     print ("\n")
-    fh = open("../output/results_stat for "+resultname[0]+".csv", "w")   
+    fh = open("../output/results_stat for "+args.datafile+".csv", "w")   
     fh.write("Number of signature, Reconstruction Error, Process stability\n") 
     for i, j, k in zip(signatures, norm, stb):
         print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
