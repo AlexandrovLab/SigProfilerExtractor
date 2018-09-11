@@ -716,9 +716,9 @@ def main():
     sig.save()
     exp.save()
 
-
+    resultname = args.datafile.split(".")
     print ("\n")
-    fh = open("../output/results_stat for "+args.datafile+".csv", "w")   
+    fh = open("../output/results_stat for "+resultname[0]+".csv", "w")   
     fh.write("Number of signature, Reconstruction Error, Process stability\n") 
     for i, j, k in zip(signatures, norm, stb):
         print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
