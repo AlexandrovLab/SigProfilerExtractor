@@ -709,7 +709,7 @@ def main():
    
     #change working directory 
     os.chdir("../../")
-    print(os.getcwd())
+    #print(os.getcwd())
     
     for m in mtypes:
         genomes = data[m]
