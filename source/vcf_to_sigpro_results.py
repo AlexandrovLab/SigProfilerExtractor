@@ -631,6 +631,13 @@ def cluster_similarity(mat1=([0]), mat2=([0])):  # the matrices (mat1 and mat2) 
 def main():        
     parser = argparse.ArgumentParser(description='Extraction of mutational signatures from Cancer genomes')
     
+    parser.add_argument('input_type', type=str, 
+                        help= 'The input type. There are three available input types: "vcf", "text", "matobj". The "vcf" type input will load the mutational catalogue from\
+                        a varriant caller data. As a reminder the user has to create a project folder and place that to correct location (please see the readme file for the details\
+                        about creating and location). The "text" input will load the matutational catalogue from a plain text file delimited by tab. The user has to place the text\
+                        file in the input folder beforehand. Finally, the "matobj" type input will load the mutational catalogue from the matlab object file and the user has to\
+                        place the matlab object file in the input folder beforehand as well')
+    
     parser.add_argument('project', type =str,
                         help= 'Name of the project file')
     
@@ -645,10 +652,13 @@ def main():
     
     parser.add_argument('iterations', type=int, 
                         help= 'The number of iterations to be executed')
+     
     
     
     parser.add_argument('--n_cpu', type=int, 
                         help= 'The number of cores to be used in the excecution.')
+    
+    
     
     
   
@@ -658,9 +668,9 @@ def main():
     parser.add_argument("--extended_indel", help="Optional parameter instructs script to create the catalogue for extended INDELs", action='store_true')
     
     parser.add_argument('--mtypes', type =str,
-                        help= 'The types of mutation. User should pass the inteded mutation types among to be analyzed\
+                        help= 'The context of mutations and  is only functional when the input type is "vcf". User should pass the inteded mutation types among to be analyzed\
                         separeted by coma "," with no space. The sigporfiler engine will analyze the specific mutation\
-                        types those are passed to this argument. The valid mutation type are  96, 1536, 192, 3072 and  DINUC.\
+                        types those are passed to this argument. The valid mutation type are  6, 12, 96, 1536, 192, 3072 and  DINUC.\
                         For example, if the user wants analyze mutation type 96, 192 and DINUC, that person should pass\
                         "--mtypes 96,192,DINUC" as in the argument. If the argument is not used, all the mutations will\
                         be analyzed')
@@ -692,80 +702,169 @@ def main():
         limited_indel = True
     else:
         limited_indel = False
+##############################################################################################################################################################################################################        
+    if args.input_type == "vcf":
         
-    os.chdir("../sigProfilerMatrixGenerator/scripts")
-    data = datadump.sigProfilerMatrixGeneratorFunc (args.project, args.refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
-    mlist = []
-    for m in data:
-        mlist.append(m)
-    
-    if args.mtypes:
-        mtypes = args.mtypes.split(",")
-        if any(x not in mlist for x in mtypes):
-            print ("Please pass valid mutation types seperated by comma with no space. Also please use the uppercase characters")
-            return None
-    else:
-        mtypes = mlist
-   
-    #change working directory 
-    os.chdir("../../")
-    #print(os.getcwd())
-    
-    for m in mtypes:
-        genomes = data[m]
-        print ("\n\n\nCalculating mutation type " + m)
         
-        if genomes is not None:
-            results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
-    
+        os.chdir("../sigProfilerMatrixGenerator/scripts")
+        data = datadump.sigProfilerMatrixGeneratorFunc (args.project, args.refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
+        mlist = []
+        for m in data:
+            mlist.append(m)
         
-            f = open('output/results_'+m, 'wb')
-            pickle.dump(results, f)
-            f.close()
-            
-            signatures = list()
-            norm = list()
-            stb = list()
-            
-            #save the processes and exposers as excel file 
-            sig = pd.ExcelWriter('output/signatures_of_'+args.project+" mutation type "+m+'.xlsx')
-            exp = pd.ExcelWriter('output/exposures_of_'+args.project+" mutation type "+m+'.xlsx')
-            
-            for i in results:
-                genome= i[0]
-                processAvg= (i[1])
-                exposureAvg= (i[2])
-                processStabityAvg= (i[5])
-                
-                norm.append(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro'))
-                stb.append(processStabityAvg)
-                signatures.append(i[-1])
-                
-                
-                processAvg= pd.DataFrame(processAvg)
-                processes = processAvg.set_index(genomes.index.values)
-                processes.columns = np.arange(i[-1])
-                processes.to_excel(sig, "sheet"+str(i[-1]))
-                
-                exposureAvg = pd.DataFrame(exposureAvg)
-                exposures = exposureAvg.set_index(np.arange(i[-1]))
-                exposures.columns = genome.columns.values
-                exposures.to_excel(exp, "sheet"+str(i[-1]))
-             
-                
-            sig.save()
-            exp.save()
-            print ("\n")
-            fh = open("output/results_stat for "+args.project+" mutation type "+ m+".csv", "w")   
-            fh.write("Number of signature, Reconstruction Error, Process stability\n") 
-            for i, j, k in zip(signatures, norm, stb):
-                print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
-                fh.write('{}, {}, {}\n'.format(i, j, k))
-    
+        if args.mtypes:
+            mtypes = args.mtypes.split(",")
+            if any(x not in mlist for x in mtypes):
+                print ("Please pass valid mutation types seperated by comma with no space. Also please use the uppercase characters")
+                return None
         else:
-            print("Data for mutation type " + m + " not found")
+            mtypes = mlist
+       
+        #change working directory 
+        os.chdir("../../")
+        #print(os.getcwd())
+        
+        for m in mtypes:
+            genomes = data[m]
+            print ("\n\n\nCalculating mutation type " + m)
+            
+            if genomes is not None:
+                results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
+        
+            
+                f = open('output/results_'+m, 'wb')
+                pickle.dump(results, f)
+                f.close()
+                
+                signatures = list()
+                norm = list()
+                stb = list()
+                
+                #save the processes and exposers as excel file 
+                sig = pd.ExcelWriter('output/signatures_of_'+args.project+" mutation type "+m+'.xlsx')
+                exp = pd.ExcelWriter('output/exposures_of_'+args.project+" mutation type "+m+'.xlsx')
+                
+                for i in results:
+                    genome= i[0]
+                    processAvg= (i[1])
+                    exposureAvg= (i[2])
+                    processStabityAvg= (i[5])
+                    
+                    norm.append(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro'))
+                    stb.append(processStabityAvg)
+                    signatures.append(i[-1])
+                    
+                    
+                    processAvg= pd.DataFrame(processAvg)
+                    processes = processAvg.set_index(genomes.index.values)
+                    processes.columns = np.arange(i[-1])
+                    processes.to_excel(sig, "sheet"+str(i[-1]))
+                    
+                    exposureAvg = pd.DataFrame(exposureAvg)
+                    exposures = exposureAvg.set_index(np.arange(i[-1]))
+                    exposures.columns = genome.columns.values
+                    exposures.to_excel(exp, "sheet"+str(i[-1]))
+                 
+                    
+                sig.save()
+                exp.save()
+                print ("\n")
+                fh = open("output/results_stat for "+args.project+" mutation type "+ m+".csv", "w")   
+                fh.write("Number of signature, Reconstruction Error, Process stability\n") 
+                for i, j, k in zip(signatures, norm, stb):
+                    print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
+                    fh.write('{}, {}, {}\n'.format(i, j, k))
+        
+            else:
+                print("Data for mutation type " + m + " not found")
 
+###########################################################################################################################################################################################
+# If getting the input comes from a tab delimited text file:                 
+    else: 
+    
+        if args.input_type == "text":
 
+            data = pd.read_csv("../input/"+args.datafile, sep="\t").iloc[:,:-1]
+            
+        
+            genomes = data.iloc[:,1:]
+            
+###########################################################################################################################################################################################                  
+# If the input comes from a matlab object file:
+    
+        elif args.input_type == "matobj":
+            mat = scipy.io.loadmat('../input/'+ "BRCA_v7_genome_subs_96_mutations")
+            mat = extract_input(mat)
+            genomes = mat[1]
+            
+            #setting index and columns names of processAvg and exposureAvg
+            index1 = mat[3]
+            index2 = mat[4]
+            index = []
+            for i, j in zip(index1, index2):
+                index.append(i+"["+j+"]")
+            colnames = pd.Series(mat[2])
+            index = pd.Series(index)
+                        
+        
+        
+        
+        
+          
+        results = analysis_signatures(genomes=genomes, startprocesses = args.minprocesses, endprocesses=args.maxprocesses, totalIterations= args.iterations, n_cpu = n_cpu, verbose=True )
+        
+        
+        resultname = args.datafile.split(".")
+        
+        f = open('../output/results_'+resultname[0], 'wb')
+    
+        pickle.dump(results, f)
+        f.close()
+        
+        
+        signatures = list()
+        norm = list()
+        stb = list()
+        
+        #save the processes and exposers as excel file 
+        sig = pd.ExcelWriter('../output/signatures_of_'+args.datafile+'.xlsx')
+        exp = pd.ExcelWriter('../output/exposures_of_'+args.datafile+'.xlsx')
+        
+        for i in results:
+            genome= (i[0])
+            processAvg= (i[1])
+            exposureAvg= (i[2])
+            processStabityAvg= (i[5])
+            
+            norm.append(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro'))
+            stb.append(processStabityAvg)
+            signatures.append(i[-1])
+            
+            processAvg= pd.DataFrame(pd.DataFrame(processAvg))
+            processes = processAvg.set_index(index)
+            processes.columns = np.arange(i[-1])
+            processes.to_excel(sig, "sheet"+str(i[-1]))
+            
+            exposureAvg = pd.DataFrame(pd.DataFrame(exposureAvg))
+            exposures = exposureAvg.set_index(np.arange(i[-1]))
+            exposures.columns = colnames
+            exposures.to_excel(exp, "sheet"+str(i[-1]))
+         
+            
+        sig.save()
+        exp.save()
+    
+        
+        print ("\n")
+        fh = open("../output/results_stat for "+args.datafile+".csv", "w")   
+        fh.write("Number of signature, Reconstruction Error, Process stability\n") 
+        for i, j, k in zip(signatures, norm, stb):
+            print ('The reconstruction error is {} and the process stability is {} for {} signatures'.format(j, k, i))
+            fh.write('{}, {}, {}\n'.format(i, j, k))
+        
+            
+            
+        
 
 if __name__ == "__main__":
     

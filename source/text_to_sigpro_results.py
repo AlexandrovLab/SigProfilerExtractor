@@ -649,7 +649,7 @@ def main():
 
     
     
-    print(os.getcwd())
+    
     
     data = pd.read_csv("../input/"+args.datafile, sep="\t").iloc[:,:-1]
     
