@@ -365,7 +365,7 @@ for m in mtypes:
         #print ("processStabityAvg is ok", processStabityAvg)
         
         # Calculating and listing the reconstruction error, process stability and signares to make a csv file at the end
-        reconstruction_error = LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro')
+        reconstruction_error = LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genome, 'fro')
         norm.append(reconstruction_error) 
         stb.append(processStabityAvg)
         signatures.append(loopResults[-1])
