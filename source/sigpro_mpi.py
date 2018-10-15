@@ -134,6 +134,7 @@ if rank == 0:
         #creating list of mutational type to sync with the vcf type input
         mtypes = [str(genomes.shape[0])]
         os.chdir("../")  # get out of the source directory
+        broadcast = [broadcast_data, input_type, mtypes, startProcess, endProcess]
         ###############################################################################################################
     
     elif input_type=="matobj":
@@ -165,6 +166,7 @@ if rank == 0:
         mtypes = [str(genomes.shape[0])]
         
         os.chdir("../")  # get out of the source directory
+        broadcast = [broadcast_data, input_type, mtypes, startProcess, endProcess]
         #################################################################################################################
         
     elif input_type=="vcf":
@@ -249,6 +251,7 @@ if rank == 0:
             colnames  = genomes.columns
             #print ("index is okay", index)
             #print ("colnames is okay", colnames)
+        
     
         #create output directories to store all the results 
         output = out_put+"/"+m
