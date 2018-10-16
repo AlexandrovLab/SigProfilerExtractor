@@ -5,7 +5,7 @@ Created on Sun Oct  7 15:21:55 2018
 
 @author: mishugeb
 """
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import nimfa 
 import numpy as np
 import pandas as pd
@@ -618,46 +618,49 @@ def cluster_similarity(mat1=([0]), mat2=([0])):  # the matrices (mat1 and mat2) 
 #################################### STABILITY VS RECONSTRUCTION ERROR PLOT #################################
 #############################################################################################################
 
-def stabVsRerroe(csvfile, output):
-    
-    data = pd.read_csv(csvfile, sep=",")
-
-
-    # Create some mock data
-    t = np.array(data.iloc[:,0])
-    data1 = np.array(data.iloc[:,1])  #reconstruction error
-    data2 = np.array(data.iloc[:,2])  #process stability
-    
-    
-    #selecting the optimum signature
-    datanew = data[data[' Process stability']>0.85]
-    datanew = datanew[(datanew[' Reconstruction Error'] == datanew[' Reconstruction Error'].min())]
-    optimum_signature = int(datanew['Number of signature'])
-    
-    
-    #to the make the shadows with the optimum number of signatues in the plot
-    shadow_start = optimum_signature-0.2
-    shadow_end=optimum_signature+0.2
-    
-    fig, ax1 = plt.subplots(num=None, figsize=(10, 6), dpi=300, facecolor='w', edgecolor='k')
-    
-    color = 'tab:red'
-    ax1.set_xlabel('Number of Signatures')
-    ax1.set_ylabel('Relative Reconstruction Error', color=color)
-    ax1.plot(t, data1, marker='o', color=color)
-    ax1.tick_params(axis='y', labelcolor=color)
-    ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
-    ax1.axvspan(shadow_start, shadow_end, alpha=0.20, color='#ADD8E6')
-    # manipulate the y-axis values into percentage 
-    vals = ax1.get_yticks()
-    ax1.set_yticklabels(['{:,.0%}'.format(x) for x in vals])
-    
-    ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
-    color = 'tab:blue'
-    ax2.set_ylabel('Process Stability', color=color)  # we already handled the x-label with ax1
-    ax2.plot(t, data2, marker='o', color=color)
-    ax2.tick_params(axis='y', labelcolor=color)
-    
-    fig.tight_layout()  # otherwise the right y-label is slightly clipped
-    #plt.show()
-    plt.savefig(output+'/stability.pdf')    
+# =============================================================================
+# def stabVsRerroe(csvfile, output):
+#     
+#     data = pd.read_csv(csvfile, sep=",")
+# 
+# 
+#     # Create some mock data
+#     t = np.array(data.iloc[:,0])
+#     data1 = np.array(data.iloc[:,1])  #reconstruction error
+#     data2 = np.array(data.iloc[:,2])  #process stability
+#     
+#     
+#     #selecting the optimum signature
+#     datanew = data[data[' Process stability']>0.85]
+#     datanew = datanew[(datanew[' Reconstruction Error'] == datanew[' Reconstruction Error'].min())]
+#     optimum_signature = int(datanew['Number of signature'])
+#     
+#     
+#     #to the make the shadows with the optimum number of signatues in the plot
+#     shadow_start = optimum_signature-0.2
+#     shadow_end=optimum_signature+0.2
+#     
+#     fig, ax1 = plt.subplots(num=None, figsize=(10, 6), dpi=300, facecolor='w', edgecolor='k')
+#     
+#     color = 'tab:red'
+#     ax1.set_xlabel('Number of Signatures')
+#     ax1.set_ylabel('Relative Reconstruction Error', color=color)
+#     ax1.plot(t, data1, marker='o', color=color)
+#     ax1.tick_params(axis='y', labelcolor=color)
+#     ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
+#     ax1.axvspan(shadow_start, shadow_end, alpha=0.20, color='#ADD8E6')
+#     # manipulate the y-axis values into percentage 
+#     vals = ax1.get_yticks()
+#     ax1.set_yticklabels(['{:,.0%}'.format(x) for x in vals])
+#     
+#     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
+#     color = 'tab:blue'
+#     ax2.set_ylabel('Process Stability', color=color)  # we already handled the x-label with ax1
+#     ax2.plot(t, data2, marker='o', color=color)
+#     ax2.tick_params(axis='y', labelcolor=color)
+#     
+#     fig.tight_layout()  # otherwise the right y-label is slightly clipped
+#     #plt.show()
+#     plt.savefig(output+'/stability.pdf')    
+# 
+# =============================================================================

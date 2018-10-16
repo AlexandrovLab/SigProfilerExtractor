@@ -460,7 +460,7 @@ if rank == 0:
             fh.write('{}, {}, {}\n'.format(i, reconstruction_error, processStabityAvg))
             fh.close()
             
-        sub.stabVsRerroe(output+"/results_stat.csv", output)
+        #sub.stabVsRerroe(output+"/results_stat.csv", output)
         
 
 else:
