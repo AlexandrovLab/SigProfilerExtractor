@@ -31,6 +31,7 @@ from functools import partial
 from numpy import linalg as LA
 import time
 import subroutines as sub
+from random import shuffle
 sys.path.append('../SigProfilerMatrixGenerator/scripts/')
 import sigProfilerMatrixGeneratorFunc as datadump 
 
@@ -272,11 +273,7 @@ for m in mtypes:
         totalMutationTypes = genomes.shape[0];
         totalGenomes = genomes.shape[1];
         totalProcesses = i
-        Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
-        #print (Wall.shape)
-        Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
-        genomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
-        genomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
+        
         print ("Extracting signature {} for mutation type {}".format(i, m))
         
         
@@ -292,25 +289,61 @@ for m in mtypes:
         ######################################################### The parallel processing ends here ##################################################################################      
         ##############################################################################################################################################################################        
         
-        processCount=0
-        for j in range(len(results)):
-            W = results[j][0]
-            H = results[j][1]
-            genomeErrors[:, :, j] = genomes -  np.dot(W,H);
-            genomesReconstructed[:, :, j] = np.dot(W,H);
-            #print ("W", W.shape)
-            Wall[ :, processCount : (processCount + totalProcesses) ] = W;
-            Hall[ processCount : (processCount + totalProcesses), : ] = H;
-            processCount = processCount + totalProcesses;
-        #print (Wall.shape, Hall.shape)
         
-        W= np.array_split(Wall, totalIterations, axis=1)
-        H= np.array_split(Hall, totalIterations, axis=0)
+        ################### Achieve the best clustering by shuffling results list using a few iterations ########### 
+        avgSilhouetteCoefficients = -1.1
+        clusterSilhouetteCoefficients = [0]
+        processclust=[0]
+        exposerclust=[0]
+        finalWall=[0]
+        finalHall = [0]
+        finalgenomeErrors=[0]
+        finalgenomesReconstructed = [0]
+        
+        for k in range(25):
+            shuffle(results)
+            Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
+            #print (Wall.shape)
+            Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
+            genomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
+            genomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
+            
+            processCount=0
+            for j in range(len(results)):
+                W = results[j][0]
+                H = results[j][1]
+                genomeErrors[:, :, j] = genomes -  np.dot(W,H);
+                genomesReconstructed[:, :, j] = np.dot(W,H);
+                #print ("W", W.shape)
+                Wall[ :, processCount : (processCount + totalProcesses) ] = W;
+                Hall[ processCount : (processCount + totalProcesses), : ] = H;
+                processCount = processCount + totalProcesses;
+            #print (Wall.shape, Hall.shape)
+            
+            
+            W= np.array_split(Wall, totalIterations, axis=1)
+            H= np.array_split(Hall, totalIterations, axis=0)
+               
+            
+            loop_processclust, loop_exposerclust, loop_avgSilhouetteCoefficients, loop_clusterSilhouetteCoefficients= sub.find_clusters_v1(W, H)
+            
+            print ("stability", loop_avgSilhouetteCoefficients)
            
-        
-        processclust, exposerclust, avgSilhouetteCoefficients, clusterSilhouetteCoefficients= sub.find_clusters_v1(W, H)
-        
-        #print(avgSilhouetteCoefficients)
+            if loop_avgSilhouetteCoefficients>avgSilhouetteCoefficients:
+                avgSilhouetteCoefficients=loop_avgSilhouetteCoefficients
+                clusterSilhouetteCoefficients = loop_clusterSilhouetteCoefficients
+                processclust = loop_processclust
+                exposerclust = loop_exposerclust
+                finalWall = Wall
+                finalHall = Hall
+                finalgenomeErrors = genomeErrors 
+                finalgenomesReconstructed = genomesReconstructed
+                
+           
+                
+                
+            
+            #print(avgSilhouetteCoefficients)
         
            
         
@@ -330,7 +363,7 @@ for m in mtypes:
             exposureAvg[j,:] = np.mean(exposerclust[j], axis=1)
             exposureStd[j,:] = np.std(exposerclust[j], axis=1)
             
-        loopResults =[genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, genomeErrors, genomesReconstructed, Wall, Hall, processes]
+        loopResults =[genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, genomeErrors, genomesReconstructed, finalWall, finalHall, processes]
         #print ("loopResults ok", loopResults)
         
         #Flush output the process stability of the current signature
@@ -392,7 +425,9 @@ for m in mtypes:
         print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
         fh.write('{}, {}, {}\n'.format(i, reconstruction_error, processStabityAvg))
         fh.close()
-            
+    
+    
+    sub.stabVsRerroe(output+"/results_stat.csv", output)
             
         
     

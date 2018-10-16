@@ -17,7 +17,7 @@ import pickle
 from numpy import linalg as LA
 import sys
 import argparse
-
+from random import shuffle
 sys.path.append('../SigProfilerMatrixGenerator/scripts/')
 import sigProfilerMatrixGeneratorFunc as datadump 
 
@@ -337,30 +337,54 @@ if rank == 0:
     ######################################################### end of message passing interface for this loop #####################################################################      
     ##############################################################################################################################################################################        
             
-            processCount=0
-            for j in range(len(results)):
-                W = results[j][0]
-                H = results[j][1]
-                genomeErrors[:, :, j] = genomes -  np.dot(W,H);
-                genomesReconstructed[:, :, j] = np.dot(W,H);
-                #print ("W", W.shape)
-                Wall[ :, processCount : (processCount + totalProcesses) ] = W;
-                Hall[ processCount : (processCount + totalProcesses), : ] = H;
-                processCount = processCount + totalProcesses;
-            #print (Wall.shape, Hall.shape)
+            avgSilhouetteCoefficients = -1.1
+            clusterSilhouetteCoefficients = [0]
+            processclust=[0]
+            exposerclust=[0]
+            finalWall=[0]
+            finalHall = [0]
+            finalgenomeErrors=[0]
+            finalgenomesReconstructed = [0]
             
-            W= np.array_split(Wall, totalIterations, axis=1)
-            H= np.array_split(Hall, totalIterations, axis=0)
-           
-            
-            processclust, exposerclust, avgSilhouetteCoefficients, clusterSilhouetteCoefficients= sub.find_clusters_v1(W, H)
-            
-            #print(avgSilhouetteCoefficients)
-            
-           
-            
-            #meanGenomeErrors = np.mean(genomeErrors, axis=2)
-            #meanGenomeReconstructed = np.mean(genomesReconstructed)    
+            for k in range(25):
+                shuffle(results)
+                Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
+                #print (Wall.shape)
+                Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
+                genomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
+                genomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
+                
+                processCount=0
+                for j in range(len(results)):
+                    W = results[j][0]
+                    H = results[j][1]
+                    genomeErrors[:, :, j] = genomes -  np.dot(W,H);
+                    genomesReconstructed[:, :, j] = np.dot(W,H);
+                    #print ("W", W.shape)
+                    Wall[ :, processCount : (processCount + totalProcesses) ] = W;
+                    Hall[ processCount : (processCount + totalProcesses), : ] = H;
+                    processCount = processCount + totalProcesses;
+                #print (Wall.shape, Hall.shape)
+                
+                
+                W= np.array_split(Wall, totalIterations, axis=1)
+                H= np.array_split(Hall, totalIterations, axis=0)
+                   
+                
+                loop_processclust, loop_exposerclust, loop_avgSilhouetteCoefficients, loop_clusterSilhouetteCoefficients= sub.find_clusters_v1(W, H)
+                
+                print ("stability", loop_avgSilhouetteCoefficients)
+               
+                if loop_avgSilhouetteCoefficients>avgSilhouetteCoefficients:
+                    avgSilhouetteCoefficients=loop_avgSilhouetteCoefficients
+                    clusterSilhouetteCoefficients = loop_clusterSilhouetteCoefficients
+                    processclust = loop_processclust
+                    exposerclust = loop_exposerclust
+                    finalWall = Wall
+                    finalHall = Hall
+                    finalgenomeErrors = genomeErrors 
+                    finalgenomesReconstructed = genomesReconstructed
+                
             
             # computing the avg and std of the processes and exposures:
             processes=i
@@ -436,7 +460,7 @@ if rank == 0:
             fh.write('{}, {}, {}\n'.format(i, reconstruction_error, processStabityAvg))
             fh.close()
             
-        
+        sub.stabVsRerroe(output+"/results_stat.csv", output)
         
 
 else:
