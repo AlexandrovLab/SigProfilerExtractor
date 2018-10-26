@@ -373,7 +373,7 @@ if rank == 0:
                 
                 loop_processclust, loop_exposerclust, loop_avgSilhouetteCoefficients, loop_clusterSilhouetteCoefficients= sub.find_clusters_v1(W, H)
                 
-                print ("stability", loop_avgSilhouetteCoefficients)
+                #print ("stability", loop_avgSilhouetteCoefficients)
                
                 if loop_avgSilhouetteCoefficients>avgSilhouetteCoefficients:
                     avgSilhouetteCoefficients=loop_avgSilhouetteCoefficients
@@ -398,6 +398,17 @@ if rank == 0:
                 processStd[:,j] = np.std(processclust[j], axis=1)
                 exposureAvg[j,:] = np.mean(exposerclust[j], axis=1)
                 exposureStd[j,:] = np.std(exposerclust[j], axis=1)
+                
+                
+             ####################################################################### add sparsity in the exposureAvg #################################################################
+            stic = time.time() 
+            for s in range(exposureAvg.shape[1]):
+                #print (i)
+                exposureAvg[:,s] = sub.remove_all_single_signatures(processAvg, exposureAvg[:,s], genomes[:,s])
+                #print ("\n\n\n\n")
+            stoc = time.time()
+            print ("Optimization time is {} seconds".format(stoc-stic))
+        ##########################################################################################################################################################################    
                 
             loopResults =[genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, genomeErrors, genomesReconstructed, Wall, Hall, processes]
            

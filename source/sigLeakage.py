@@ -157,8 +157,8 @@ def remove_all_single_signatures(W, H, genomes):
             difference = originalSimilarity - newSimilarity
             #print(originalSimilarity)
             #print(newSample)
-            print(newExposure)
-            print(newSimilarity)
+            #print(newExposure)
+            #print(newSimilarity)
             
             #print(difference)
             #print (newExposure)
