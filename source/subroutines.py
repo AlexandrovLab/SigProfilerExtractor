@@ -785,7 +785,7 @@ def remove_all_single_signatures(W, H, genomes):
 #################################### STABILITY VS RECONSTRUCTION ERROR PLOT #################################
 #############################################################################################################
 
-def stabVsRError(csvfile, output):
+def stabVsRError(csvfile, output, title):
     
     data = pd.read_csv(csvfile, sep=",")
 
@@ -811,6 +811,7 @@ def stabVsRError(csvfile, output):
     color = 'tab:red'
     ax1.set_xlabel('Number of Signatures')
     ax1.set_ylabel('Relative Reconstruction Error', color=color)
+    ax1.set_title(title)
     ax1.plot(t, data1, marker='o', color=color)
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
@@ -828,4 +829,7 @@ def stabVsRError(csvfile, output):
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     #plt.show()
     plt.savefig(output+'/stability.pdf')    
+    
+    plt.close()
+    return optimum_signature
 
