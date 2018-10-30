@@ -20,7 +20,9 @@ import argparse
 from random import shuffle
 sys.path.append('../SigProfilerMatrixGenerator/scripts/')
 import sigProfilerMatrixGeneratorFunc as datadump 
-
+import string   
+import shutil
+import sigProfilerPlotting as plot
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1" 
@@ -118,6 +120,7 @@ if rank == 0:
         ################################### For text input files ######################################################
         if args.inputfile:
             text_file = args.inputfile
+            title = "" # set the title for plotting 
         else:
             raise Exception("Please provide an input file. Use --help to get more help.")
             
@@ -143,6 +146,7 @@ if rank == 0:
         ################################# For matlab input files #######################################################
         if args.inputfile:
             mat_file = args.inputfile
+            title = "" # set the title for plotting 
         else:
             raise Exception("Please provide an input file. Use --help to get more help.")
             
@@ -175,6 +179,7 @@ if rank == 0:
         ################################# For vcf input files #######################################################
         if args.project:
             project = args.project
+            title = project # set the title for plotting 
         else:
             raise Exception("Please provide the project name. Use --help to get more help.")
            
@@ -198,18 +203,24 @@ if rank == 0:
         if args.indel:
             indel = True
             limited_indel = True
+            mlist = ["96", "DINUC", "INDEL"] 
         else:
             limited_indel = False
-        
+            mlist = ["96", "DINUC"] 
         os.chdir("../SigProfilerMatrixGenerator/scripts")
         #data = datadump.sigProfilerMatrixGeneratorFunc ("project2", "GRCh37") 
         data = datadump.sigProfilerMatrixGeneratorFunc (project, refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
+        
+        print (data)
         #create a data to broadcast
+        
         broadcast_data=data
         
-        mlist = []
-        for m in data:
-            mlist.append(m)
+# =============================================================================
+#         mlist = []
+#         for m in data:
+#             mlist.append(m)
+# =============================================================================
             
          
         if args.mtypes:
@@ -260,9 +271,9 @@ if rank == 0:
         try:
             if not os.path.exists(output):
                     os.makedirs(output)
-                    os.makedirs(output+"/pickle_objects")
-                    os.makedirs(output+"/processes")
-                    os.makedirs(output+"/exposures")
+                    #os.makedirs(output+"/pickle_objects")
+                    os.makedirs(output+"/All solutions")
+                    #os.makedirs(output+"/Selected solution")
                     
             #Variables for the final output for all signatures in the csv file
             signatures = list() # will store the signature numbers
@@ -417,21 +428,47 @@ if rank == 0:
             
            
             
-    #################################################################### The result exporting part ################################################################        
+    #################################################################### The result exporting part ################################################################    
+    
+            # Determine the mutation type:
+            if not (m=="DINUC"or m=="INDEL"):
+                mutation_type = "SNV"
+                
+            else:
+                mutation_type = m
+            # Create the neccessary directories
+            subdirectory = output+"/All solutions/"+str(i)+" "+ mutation_type+ " Signature"
+            if not os.path.exists(subdirectory):
+                os.makedirs(subdirectory)
+        
+        
+        
+            #Export the loopResults as pickle objects
+        
+            resultname = "signature"+str(i)
+
+
+    
             #Export the loopResults as pickle objects
             
-            resultname = "signature"+str(i)
-            
-            f = open(output+"/pickle_objects/"+resultname, 'wb')
-        
-            pickle.dump(loopResults, f)
-            f.close()
-            
+# =============================================================================
+#             resultname = "signature"+str(i)
+#             
+#             f = open(output+"/pickle_objects/"+resultname, 'wb')
+#         
+#             pickle.dump(loopResults, f)
+#             f.close()
+#             
+# =============================================================================
        
             #preparing the column and row indeces for the Average processes and exposures:  
             listOfSignatures = []
-            for j in range(i):
-                listOfSignatures.append("signature"+str(j+1))
+            letters = list(string.ascii_uppercase)
+            letters.extend([i+b for i in letters for b in letters])
+            letters = letters[0:i]
+            
+            for j,l in zip(range(i),letters)  :
+                listOfSignatures.append("Signature "+l)
             listOfSignatures = np.array(listOfSignatures)
             
         
@@ -458,22 +495,48 @@ if rank == 0:
             processAvg= pd.DataFrame(processAvg)
             processes = processAvg.set_index(index)
             processes.columns = listOfSignatures
+            processes = processes.rename_axis("signatures", axis="columns")
             #print("process are ok", processes)
-            processes.to_csv(output+"/processes/process"+str(i)+".txt", "\t") 
+            processes.to_csv(subdirectory+"/processes.txt", "\t", index_label=[processes.columns.name])  
             
             #Second exporting the Average of the exposures
             exposureAvg = pd.DataFrame(exposureAvg)
             exposures = exposureAvg.set_index(listOfSignatures)
             exposures.columns = colnames
             #print("exposures are ok", exposures)
-            exposures.to_csv(output+"/exposures/exposure"+str(i)+".txt", "\t") 
+            exposures.to_csv(subdirectory+"/exposures.txt", "\t", index_label=[exposures.columns.name]) 
+            
+            
            
             fh = open(output+"/results_stat.csv", "a") 
             print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
             fh.write('{}, {}, {}\n'.format(i, reconstruction_error, processStabityAvg))
             fh.close()
             
-        sub.stabVsRError(output+"/results_stat.csv", output)
+            
+                    
+           ########################################### PLOT THE SIGNATURES ################################################
+            if m=="96":
+                plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+            elif m=="192": 
+                plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+            elif m=="DINUC":
+                plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+            elif m=="INDEL":
+                plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+            
+        ################################################################################################################
+        ########################################## Plot Stabiltity vs Reconstruction Error #############################        
+        ################################################################################################################    
+        
+        solution = sub.stabVsRError(output+"/results_stat.csv", output, title)
+        
+        if os.path.exists(output+"/Selected solution"):
+            shutil.rmtree(output+"/Selected solution") 
+        # Copy the best solution the "selected solution" folder
+        solutionFolderFrom= output+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
+        solutionFolderTo = output+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
+        shutil.copytree(solutionFolderFrom, solutionFolderTo)
         
 
 else:

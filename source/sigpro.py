@@ -406,8 +406,16 @@ for m in mtypes:
         #################################################################### The result exporting part ###########################################################################  
         ##########################################################################################################################################################################
         
+        # Determine the mutation type:
+        if not (m=="DINUC"or m=="INDEL"):
+            mutation_type = "SNV"
+            
+        else:
+            mutation_type = m
+            
+        #print ("The mutaion type is", mutation_type)    
         # Create the neccessary directories
-        subdirectory = output+"/All solutions/Signature "+str(i)
+        subdirectory = output+"/All solutions/"+str(i)+" "+ mutation_type+ " Signature"
         if not os.path.exists(subdirectory):
             os.makedirs(subdirectory)
         
@@ -502,8 +510,8 @@ for m in mtypes:
     if os.path.exists(output+"/Selected solution"):
         shutil.rmtree(output+"/Selected solution") 
     # Copy the best solution the "selected solution" folder
-    solutionFolderFrom= output+"/All solutions/Signature "+str(solution)
-    solutionFolderTo = output+"/Selected solution/Signature "+str(solution)
+    solutionFolderFrom= output+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
+    solutionFolderTo = output+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
     shutil.copytree(solutionFolderFrom, solutionFolderTo)
     
     
