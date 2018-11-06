@@ -31,13 +31,13 @@ from functools import partial
 from numpy import linalg as LA
 import time
 import subroutines as sub
-from random import shuffle
 sys.path.append('../SigProfilerMatrixGenerator/scripts/')
 import sigProfilerMatrixGeneratorFunc as datadump 
 import sigProfilerPlotting as plot
 import string   
 import shutil
 #Take the external inputs
+
 parser = argparse.ArgumentParser(description='Extraction of mutational signatures from Cancer genomes')
     
 parser.add_argument('-t','--input_type', type=str, 
@@ -68,7 +68,7 @@ parser.add_argument('-c','--cpu', type=int,
 parser.add_argument ('-o','--output', type =str, 
                      help= 'Posisional argument. Name of the output directory.')
   
-
+parser.add_argument('-l',"--layer", help='Optional parameter that set if the signatures will extrated in a hierarchical manner', action='store_true')
 parser.add_argument("--exome", help='Optional parameter instructs script to create the catalogues using only the exome regions. Whole genome context by default. This parameter is valid only for the "vcf" input.', action='store_true')
 parser.add_argument("--indel", help='Optional parameter instructs script to create the catalogue for limited INDELs. This parameter is valid only for the "vcf" input.', action='store_true')
 parser.add_argument("--extended_indel", help='Optional parameter instructs script to create the catalogue for extended INDELs. This parameter is valid only for the "vcf" input.', action='store_true')
@@ -123,6 +123,11 @@ if args.cpu:
     cpu = args.cpu
 else:
     cpu = -1
+    
+if args.layer:
+    hierarchi = True
+else:
+    hierarchi = False
    
 if input_type=="text":
     ################################### For text input files ######################################################
@@ -171,8 +176,8 @@ elif input_type=="matobj":
     index = []
     for i, j in zip(index1, index2):
         index.append(i[0]+"["+j+"]"+i[2])
-    colnames = pd.Series(mat[2])
-    index = pd.Series(index)
+    colnames = np.array(pd.Series(mat[2]))
+    index = np.array(pd.Series(index))
     
     #creating list of mutational type to sync with the vcf type input
     mtypes = [str(genomes.shape[0])]
@@ -248,272 +253,147 @@ elif input_type=="vcf":
 ###########################################################################################################################################################################################                  
 for m in mtypes:
     
+    # Determine the types of mutation which will be needed for exporting and copying the files
+    if not (m=="DINUC"or m=="INDEL"):
+        mutation_type = "SNV"
+        
+    else:
+        mutation_type = m
+    
     if input_type=="vcf":
         genomes = data[m]
-        
-        #print (genomes)
         index = genomes.index.values
         colnames  = genomes.columns
-        #print ("index is okay", index)
-        #print ("colnames is okay", colnames)
-        genomes = np.array(genomes)
+        
+        
+        
     #create output directories to store all the results 
     output = out_put+"/"+m
-    try:
-        if not os.path.exists(output):
-            os.makedirs(output)
-            #os.makedirs(output+"/pickle_objects")
-            os.makedirs(output+"/All solutions")
-            #os.makedirs(output+"/Selected solution")
+    
+    
+   
+    est_genomes = np.zeros([1,1])
+    listofsignatures=[]
+    H_iteration = 1 
+    
+    # While loop starts here
+    while genomes.shape[1]>10 and est_genomes.shape[1]!=genomes.shape[1]:
+        genomes = np.array(genomes)
+        information =[] 
+        if hierarchi is True:
+            layer_directory = output+"/L"+str(H_iteration)
+        elif hierarchi is False:
+            layer_directory = output
             
-            #Variables for the final output for all signatures in the csv file
-        signatures = list() # will store the signature numbers
-        norm = list() #will store the reconstruction errors from each number of signatures
-        stb = list()  #will store the process stabilities for each number of signatures 
-        fh = open(output+"/results_stat.csv", "w")   
+        try:
+            if not os.path.exists(layer_directory):
+                os.makedirs(layer_directory)
+                #os.makedirs(output+"/pickle_objects")
+                #os.makedirs(output+"/All solutions")
+            
+         
+        
+    
+            
+        except: 
+            print ("The {} folder could not be created".format("output"))
+        
+        
+        fh = open(layer_directory+"/results_stat.csv", "w")   
         fh.write("Number of signature, Reconstruction Error, Process stability\n") 
         fh.close()
-    
-            
-    except: 
-        print ("The {} folder could not be created".format("output"))
-    
-    
-    
-    # The following for loop operates to extract data from each number of signature
-    for i in range(startProcess,endProcess+1):
-        tic = time.time()
-        # The initial values accumute the results for each number of 
-        totalMutationTypes = genomes.shape[0];
-        totalGenomes = genomes.shape[1];
-        totalProcesses = i
-        
-        print ("Extracting signature {} for mutation type {}".format(i, m))
-        
-        
-        
-        ##############################################################################################################################################################################         
-        ############################################################# The parallel processing takes place here #######################################################################  
-        ##############################################################################################################################################################################         
-        results = sub.parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False)
-            
-        toc = time.time()
-        print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
-        ##############################################################################################################################################################################       
-        ######################################################### The parallel processing ends here ##################################################################################      
-        ##############################################################################################################################################################################        
-        
-        
-        ################### Achieve the best clustering by shuffling results list using a few iterations ########### 
-        avgSilhouetteCoefficients = -1.1
-        clusterSilhouetteCoefficients = [0]
-        processclust=[0]
-        exposerclust=[0]
-        finalWall=[0]
-        finalHall = [0]
-        finalgenomeErrors=[0]
-        finalgenomesReconstructed = [0]
-        
-        for k in range(25):
-            shuffle(results)
-            Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
-            #print (Wall.shape)
-            Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
-            genomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
-            genomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
-            
-            processCount=0
-            for j in range(len(results)):
-                W = results[j][0]
-                H = results[j][1]
-                genomeErrors[:, :, j] = genomes -  np.dot(W,H);
-                genomesReconstructed[:, :, j] = np.dot(W,H);
-                #print ("W", W.shape)
-                Wall[ :, processCount : (processCount + totalProcesses) ] = W;
-                Hall[ processCount : (processCount + totalProcesses), : ] = H;
-                processCount = processCount + totalProcesses;
-            #print (Wall.shape, Hall.shape)
-            
-            
-            W= np.array_split(Wall, totalIterations, axis=1)
-            H= np.array_split(Hall, totalIterations, axis=0)
-               
-            
-            loop_processclust, loop_exposerclust, loop_avgSilhouetteCoefficients, loop_clusterSilhouetteCoefficients= sub.find_clusters_v1(W, H)
-            
-            #print ("stability", loop_avgSilhouetteCoefficients)
-           
-            if loop_avgSilhouetteCoefficients>avgSilhouetteCoefficients:
-                avgSilhouetteCoefficients=loop_avgSilhouetteCoefficients
-                clusterSilhouetteCoefficients = loop_clusterSilhouetteCoefficients
-                processclust = loop_processclust
-                exposerclust = loop_exposerclust
-                finalWall = Wall
-                finalHall = Hall
-                finalgenomeErrors = genomeErrors 
-                finalgenomesReconstructed = genomesReconstructed
+        # The following for loop operates to extract data from each number of signature
+        for i in range(startProcess,endProcess+1):
                 
-           
+            processAvg, \
+            exposureAvg, \
+            processStd, \
+            exposureStd, \
+            avgSilhouetteCoefficients, \
+            clusterSilhouetteCoefficients, \
+            finalgenomeErrors, \
+            finalgenomesReconstructed, \
+            finalWall, \
+            finalHall, \
+            processes = sub.decipher_signatures(genomes= genomes, \
+                                                i = i, \
+                                                totalIterations=totalIterations, \
+                                                cpu=cpu, \
+                                                mut_context=m) 
+            
+            
+            ####################################################################### add sparsity in the exposureAvg #################################################################
+            
+            stic = time.time() 
+            for s in range(exposureAvg.shape[1]):
+                #print (s)
+                exposureAvg[:,s] = sub.remove_all_single_signatures(processAvg, exposureAvg[:,s], genomes[:,s])
+                #print ("Optimization for Sample {} is completed".format(s+1))
+                #print ("\n\n\n\n")
+            stoc = time.time()
+            print ("Optimization time is {} seconds".format(stoc-stic))
                 
-                
+            ##########################################################################################################################################################################
+            # store the resutls of the loop            
+            loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
+            information.append([processAvg, exposureAvg]) #Will be used during hierarchical approach
             
-            #print(avgSilhouetteCoefficients)
-        
-           
-        
-        #meanGenomeErrors = np.mean(genomeErrors, axis=2)
-        #meanGenomeReconstructed = np.mean(genomesReconstructed)    
-        
-        # computing the avg and std of the processes and exposures:
-        processes=i
-        processAvg = np.zeros((genomes.shape[0], processes))
-        exposureAvg = np.zeros((processes, genomes.shape[1]))
-        processStd = np.zeros((genomes.shape[0], processes))
-        exposureStd = np.zeros((processes, genomes.shape[1]))
-        
-        for j in range(0, processes):
-            processAvg[:,j]=np.mean(processclust[j], axis=1)
-            processStd[:,j] = np.std(processclust[j], axis=1)
-            exposureAvg[j,:] = np.mean(exposerclust[j], axis=1)
-            exposureStd[j,:] = np.std(exposerclust[j], axis=1)
+            ################################# Export the results ###########################################################    
+            sub.export_information(loopResults, m, layer_directory, index, colnames)
             
-                   
-        ####################################################################### add sparsity in the exposureAvg #################################################################
-        
-        stic = time.time() 
-        for s in range(exposureAvg.shape[1]):
-            #print (s)
-            exposureAvg[:,s] = sub.remove_all_single_signatures(processAvg, exposureAvg[:,s], genomes[:,s])
-            #print ("Optimization for Sample {} is completed".format(s+1))
-            #print ("\n\n\n\n")
-        stoc = time.time()
-        print ("Optimization time is {} seconds".format(stoc-stic))
             
-        ##########################################################################################################################################################################
-        # store the resutls of the loop            
-        loopResults =[genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, genomeErrors, genomesReconstructed, finalWall, finalHall, processes]
-        #print ("loopResults ok", loopResults)
-        
-        #Flush output the process stability of the current signature
-        #print (" The process stability for signature {} is {}\n\n".format( processes, round(avgSilhouetteCoefficients,4)))
-        
-        
-        
-        
-        
-        
-        ##########################################################################################################################################################################
-        #################################################################### The result exporting part ###########################################################################  
-        ##########################################################################################################################################################################
-        
-        # Determine the mutation type:
-        if not (m=="DINUC"or m=="INDEL"):
-            mutation_type = "SNV"
             
-        else:
-            mutation_type = m
-            
-        #print ("The mutaion type is", mutation_type)    
-        # Create the neccessary directories
-        subdirectory = output+"/All solutions/"+str(i)+" "+ mutation_type+ " Signature"
-        if not os.path.exists(subdirectory):
-            os.makedirs(subdirectory)
+        ################################################################################################################
+        ########################################## Plot Stabiltity vs Reconstruction Error #############################        
+        ################################################################################################################    
         
+        solution = sub.stabVsRError(layer_directory+"/results_stat.csv", layer_directory, title)
         
-        
-        #Export the loopResults as pickle objects
-        
-        resultname = "signature"+str(i)
-        
+        if os.path.exists(layer_directory+"/Selected solution"):
+            shutil.rmtree(layer_directory+"/Selected solution") 
+        # Copy the best solution the "selected solution" folder
+        solutionFolderFrom= layer_directory+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
+        solutionFolderTo = layer_directory+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
+        shutil.copytree(solutionFolderFrom, solutionFolderTo)
+    
 # =============================================================================
-#         f = open(output+"/pickle_objects/"+resultname, 'wb')
-#         
-#         pickle.dump(loopResults, f)
-#         f.close()
+#         # get the solution for this hierarchy
+#         for i in range(len(avgSilhouetteCoefficients)):
+#             if avgSilhouetteCoefficients[-(i+1)]>0.85:
+#                 solution = len(avgSilhouetteCoefficients)-(i)
+#                 break
+#             else:
+#                 solution = 0
 # =============================================================================
-        
-           
-        #preparing the column and row indeces for the Average processes and exposures:  
-        listOfSignatures = []
-        letters = list(string.ascii_uppercase)
-        letters.extend([i+b for i in letters for b in letters])
-        letters = letters[0:i]
-        
-        for j,l in zip(range(i),letters)  :
-            listOfSignatures.append("Signature "+l)
-        listOfSignatures = np.array(listOfSignatures)
-        
-        #print("print listOfSignares ok", listOfSignatures)
+        if hierarchi is True:
+            processAvg = information[solution-1][0]
+            exposureAvg = information[solution-1][1]
+            #del information
             
-        
-        #Extract the genomes, processAVG, processStabityAvg
-        genome= loopResults[0]
-        #print ("genomes are ok", genome)
-        processAvg= (loopResults[1])
-        exposureAvg= (loopResults[2])
-        processStabityAvg= (loopResults[5])
-        #print ("processStabityAvg is ok", processStabityAvg)
-        
-        # Calculating and listing the reconstruction error, process stability and signares to make a csv file at the end
-        reconstruction_error = LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genome, 'fro')
-        norm.append(reconstruction_error) 
-        stb.append(processStabityAvg)
-        signatures.append(loopResults[-1])
-        
-        #print ("reconstruction_error is ok", reconstruction_error)
-        #print (' Initial reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
-        # Preparing the results to export as textfiles for each signature
-        
-        #First exporting the Average of the processes
-        processAvg= pd.DataFrame(processAvg)
-        processes = processAvg.set_index(index)
-        processes.columns = listOfSignatures
-        processes = processes.rename_axis("signatures", axis="columns")
-        #print(processes)
-        #print("process are ok", processes)
-        processes.to_csv(subdirectory+"/processes.txt", "\t", index_label=[processes.columns.name]) 
-        
-        #Second exporting the Average of the exposures
-        exposureAvg = pd.DataFrame(exposureAvg)
-        exposures = exposureAvg.set_index(listOfSignatures)
-        exposures.columns = colnames
-        exposures = exposures.rename_axis("samples", axis="columns")
-        #print("exposures are ok", exposures)
-        exposures.to_csv(subdirectory+"/exposures.txt", "\t", index_label=[exposures.columns.name]) 
-           
-        fh = open(output+"/results_stat.csv", "a") 
-        print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
-        fh.write('{}, {}, {}\n'.format(i, reconstruction_error, processStabityAvg))
-        fh.close()
-        
-        
-        
-    ########################################### PLOT THE SIGNATURES ################################################
-        if m=="96":
-            plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
-        elif m=="192": 
-            plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
-        elif m=="DINUC":
-            plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
-        elif m=="INDEL":
-            plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+            est_genomes = np.dot(processAvg, exposureAvg) 
+            
+            low_similarity_idx = []
+            for i in range(genomes.shape[1]):
+                similarity = sub.cos_sim(genomes[:,i], est_genomes[:,i])
+                #print (similarity)
+                if similarity < 0.95:
+                    low_similarity_idx.append(i)
             
             
+            if len(low_similarity_idx)==0:   
+                low_similarity_idx = []
+            #print(low_similarity_idx)
             
-    
-    ################################################################################################################
-    ########################################## Plot Stabiltity vs Reconstruction Error #############################        
-    ################################################################################################################    
-    
-    solution = sub.stabVsRError(output+"/results_stat.csv", output, title)
-    
-    if os.path.exists(output+"/Selected solution"):
-        shutil.rmtree(output+"/Selected solution") 
-    # Copy the best solution the "selected solution" folder
-    solutionFolderFrom= output+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
-    solutionFolderTo = output+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
-    shutil.copytree(solutionFolderFrom, solutionFolderTo)
-    
-    
+            
+            listofsignatures.append(processAvg) 
+            genomes = genomes[:,low_similarity_idx]
+            colnames=colnames[low_similarity_idx]
+            H_iteration = H_iteration + 1
+        
+        elif hierarchi is False:
+            break
+        
+        
+        
     
        

@@ -15,6 +15,14 @@ import multiprocessing
 from functools import partial
 from scipy.optimize import minimize
 from numpy import linalg as LA
+from random import shuffle
+import sigProfilerPlotting as plot
+import string 
+import os
+os.environ["MKL_NUM_THREADS"] = "1" 
+os.environ["NUMEXPR_NUM_THREADS"] = "1" 
+os.environ["OMP_NUM_THREADS"] = "1"
+
 
 def extract_arrays(data, field, index=True):
     accumulator = list()
@@ -684,7 +692,7 @@ def remove_all_single_signatures(W, H, genomes):
         
         
         # get the total mutations for the given sample
-        maxmutation = round(np.sum(H))
+        maxmutation = round(np.sum(genomes))
         
         # new signature matrix omiting the column for zero
         #Winit = np.delete(W, initialZerosIdx, 1)
@@ -781,11 +789,290 @@ def remove_all_single_signatures(W, H, genomes):
 
 
 
+
+
+
+
+
+
+
+#############################################################################################################
+#################################### Decipher Signatures ###################################################
+#############################################################################################################
+
+def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96"):
+    m = mut_context
+    
+    tic = time.time()
+    # The initial values accumute the results for each number of 
+    totalMutationTypes = genomes.shape[0];
+    totalGenomes = genomes.shape[1];
+    totalProcesses = i
+    
+    print ("Extracting signature {} for mutation type {}".format(i, m))  # m is for the mutation context
+    
+    
+    
+    ##############################################################################################################################################################################         
+    ############################################################# The parallel processing takes place here #######################################################################  
+    ##############################################################################################################################################################################         
+    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False)
+        
+    toc = time.time()
+    print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
+    ##############################################################################################################################################################################       
+    ######################################################### The parallel processing ends here ##################################################################################      
+    ##############################################################################################################################################################################        
+    
+    
+    ################### Achieve the best clustering by shuffling results list using a few iterations ########### 
+    avgSilhouetteCoefficients = -1.1
+    clusterSilhouetteCoefficients = [0]
+    processclust=[0]
+    exposerclust=[0]
+    finalWall=[0]
+    finalHall = [0]
+    finalgenomeErrors=[0]
+    finalgenomesReconstructed = [0]
+    
+    for k in range(25):
+        shuffle(results)
+        Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
+        #print (Wall.shape)
+        Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
+        genomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
+        genomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
+        
+        processCount=0
+        for j in range(len(results)):
+            W = results[j][0]
+            H = results[j][1]
+            genomeErrors[:, :, j] = genomes -  np.dot(W,H);
+            genomesReconstructed[:, :, j] = np.dot(W,H);
+            #print ("W", W.shape)
+            Wall[ :, processCount : (processCount + totalProcesses) ] = W;
+            Hall[ processCount : (processCount + totalProcesses), : ] = H;
+            processCount = processCount + totalProcesses;
+        #print (Wall.shape, Hall.shape)
+        
+        
+        W= np.array_split(Wall, totalIterations, axis=1)
+        H= np.array_split(Hall, totalIterations, axis=0)
+           
+        
+        loop_processclust, loop_exposerclust, loop_avgSilhouetteCoefficients, loop_clusterSilhouetteCoefficients= find_clusters_v1(W, H)
+        
+        #print ("stability", loop_avgSilhouetteCoefficients)
+        #look for clusters which gives the best SilhouetteCoefficients
+        if loop_avgSilhouetteCoefficients>avgSilhouetteCoefficients:
+            avgSilhouetteCoefficients=loop_avgSilhouetteCoefficients
+            clusterSilhouetteCoefficients = loop_clusterSilhouetteCoefficients
+            processclust = loop_processclust
+            exposerclust = loop_exposerclust
+            finalWall = Wall
+            finalHall = Hall
+            finalgenomeErrors = genomeErrors 
+            finalgenomesReconstructed = genomesReconstructed
+            
+       
+            
+            
+        
+        #print(avgSilhouetteCoefficients)
+    
+       
+    
+    #meanGenomeErrors = np.mean(genomeErrors, axis=2)
+    #meanGenomeReconstructed = np.mean(genomesReconstructed)    
+    
+    # computing the avg and std of the processes and exposures:
+    processes=i #renamed the i as "processes"
+    processAvg = np.zeros((genomes.shape[0], processes))
+    exposureAvg = np.zeros((processes, genomes.shape[1]))
+    processStd = np.zeros((genomes.shape[0], processes))
+    exposureStd = np.zeros((processes, genomes.shape[1]))
+    
+    for j in range(0, processes):
+        processAvg[:,j]=np.mean(processclust[j], axis=1)
+        processStd[:,j] = np.std(processclust[j], axis=1)
+        exposureAvg[j,:] = np.mean(exposerclust[j], axis=1)
+        exposureStd[j,:] = np.std(exposerclust[j], axis=1)
+
+
+
+
+
+
+    return  processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes
+
+
+
+
+
+################################################### Generation of probabilities for each processes given to A mutation type ############################################
+def probabilities(W, H):  
+    
+    # setting up the indices 
+    rows = W.index
+    cols = H.columns
+    sigs = W.columns
+    
+    W = np.array(W)
+    H= np.array(H)
+    # rebuild the original matrix from the estimated W and H 
+    genomes = np.dot(W,H)
+    
+    
+    result = 0
+    for i in range(H.shape[1]): #here H.shape is the number of sample
+        
+        M = genomes[:,i][np.newaxis]
+        #print (M.shape)
+        
+        probs = W*H[:,i]/M.T
+        #print ("Sum of Probabilities for Sample {} is : ".format(i+1))
+        #print(probs)
+        #print ("Sum of Probabilities for Sample {} is: ".format(i+1))
+        #print(probs.sum(axis=1)[np.newaxis].T) 
+        
+        
+        probs = pd.DataFrame(probs)
+        probs.columns = sigs
+        col1 = [cols[i]]*len(rows)
+        probs.insert(loc=0, column='Sample', value=col1)
+        probs.insert(loc=1, column='Mutations', value = rows)
+        #print (probs)
+        #print ("\n")
+        if i!=0:
+            result = pd.concat([result, probs], axis=0)
+        else:
+            result = probs
+        
+    return result
+#########################################################################################################################################################################        
+
+
+
+
+
+        
+##########################################################################################################################################################################
+#################################################################### Result Exporting  ###################################################################################
+##########################################################################################################################################################################
+
+
+def export_information(loopResults, mutation_context, output, index, colnames):
+    
+    #print(colnames)
+    
+    i = loopResults[-1]
+    
+        
+    #print ("The mutaion type is", mutation_type)    
+    m = mutation_context
+    if not (m=="DINUC"or m=="INDEL"):
+        mutation_type = "SNV"
+        
+    else:
+        mutation_type = m
+    # Create the neccessary directories
+    subdirectory = output+"/All solutions/"+str(i)+" "+ mutation_type+ " Signature"
+    if not os.path.exists(subdirectory):
+        os.makedirs(subdirectory)
+    
+    
+    
+    #Export the loopResults as pickle objects
+    
+    #resultname = "signature"+str(i)
+    
+    # =============================================================================
+    #         f = open(output+"/pickle_objects/"+resultname, 'wb')
+    #         
+    #         pickle.dump(loopResults, f)
+    #         f.close()
+    # =============================================================================
+            
+       
+    #preparing the column and row indeces for the Average processes and exposures:  
+    listOfSignatures = []
+    letters = list(string.ascii_uppercase)
+    letters.extend([i+b for i in letters for b in letters])
+    letters = letters[0:i]
+    
+    for j,l in zip(range(i),letters)  :
+        listOfSignatures.append("Signature "+l)
+    listOfSignatures = np.array(listOfSignatures)
+    
+    #print("print listOfSignares ok", listOfSignatures)
+        
+    
+    #Extract the genomes, processAVG, processStabityAvg
+    genome= loopResults[0]
+    #print ("genomes are ok", genome)
+    processAvg= (loopResults[1])
+    exposureAvg= (loopResults[2])
+    processStabityAvg= (loopResults[5])
+    #print ("processStabityAvg is ok", processStabityAvg)
+    
+    # Calculating and listing the reconstruction error, process stability and signares to make a csv file at the end
+    reconstruction_error = LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genome, 'fro')
+    
+    
+    #print ("reconstruction_error is ok", reconstruction_error)
+    #print (' Initial reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
+    # Preparing the results to export as textfiles for each signature
+    
+    #First exporting the Average of the processes
+    processAvg= pd.DataFrame(processAvg)
+    processes = processAvg.set_index(index)
+    processes.columns = listOfSignatures
+    processes = processes.rename_axis("signatures", axis="columns")
+    #print(processes)
+    #print("process are ok", processes)
+    processes.to_csv(subdirectory+"/processes.txt", "\t", index_label=[processes.columns.name]) 
+    
+    #Second exporting the Average of the exposures
+    exposureAvg = pd.DataFrame(exposureAvg)
+    exposures = exposureAvg.set_index(listOfSignatures)
+    exposures.columns = colnames
+    exposures = exposures.rename_axis("samples", axis="columns")
+    #print("exposures are ok", exposures)
+    exposures.to_csv(subdirectory+"/exposures.txt", "\t", index_label=[exposures.columns.name]) 
+       
+    fh = open(output+"/results_stat.csv", "a") 
+    print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
+    fh.write('{}, {}, {}\n'.format(i, reconstruction_error, processStabityAvg))
+    fh.close()
+    
+    
+    
+    ########################################### PLOT THE SIGNATURES ################################################
+    if m=="96":
+        plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+    elif m=="192": 
+        plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+    elif m=="DINUC":
+        plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+    elif m=="INDEL":
+        plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+        
+    processAvg = pd.read_csv(subdirectory+"/processes.txt", sep="\t", index_col=0)
+    exposureAvg = pd.read_csv(subdirectory+"/exposures.txt", sep="\t", index_col=0)
+    probability = probabilities(processAvg, exposureAvg)
+    probability=probability.set_index("Sample")
+    probability.to_csv(subdirectory+"/probabilities.txt", "\t") 
+    
+
+
+
+
+
 #############################################################################################################
 #################################### STABILITY VS RECONSTRUCTION ERROR PLOT #################################
 #############################################################################################################
 
-def stabVsRError(csvfile, output, title):
+def stabVsRError(csvfile, outputfile, title):
     
     data = pd.read_csv(csvfile, sep=",")
 
@@ -828,7 +1115,7 @@ def stabVsRError(csvfile, output, title):
     
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     #plt.show()
-    plt.savefig(output+'/stability.pdf')    
+    plt.savefig(outputfile+'/stability.pdf')    
     
     plt.close()
     return optimum_signature
