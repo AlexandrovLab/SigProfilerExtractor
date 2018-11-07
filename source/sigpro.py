@@ -223,7 +223,7 @@ elif input_type=="vcf":
         
     os.chdir("../SigProfilerMatrixGenerator/scripts")
     #data = datadump.sigProfilerMatrixGeneratorFunc ("project2", "GRCh37") 
-    data = datadump.sigProfilerMatrixGeneratorFunc (project, refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
+    data = datadump.sigProfilerMatrixGeneratorFunc(project, refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
     #create a data to broadcast
     
     
