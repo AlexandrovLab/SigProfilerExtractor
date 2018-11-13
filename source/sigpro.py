@@ -86,26 +86,26 @@ args=parser.parse_args()
  
 
 
-   
+
 
    
     
 ################################ take the inputs from the mandatory arguments ####################################
 if args.input_type:
-    input_type = args.input_type
+    input_type = args.input_type;
 else:
     raise Exception("Please provide an among ('vcf', 'text' or 'matobj'). Use --help to get more help.")
     
 
 if args.output:
-    out_put = args.output
+    out_put = args.output;  
 else:
     raise Exception("Please provide the name of the output file. Use --help to get more help.")
     
 
-   ################################ take the inputs from the general optional arguments ####################################
+################################ take the inputs from the general optional arguments ####################################
 if args.startprocess:
-    startProcess=args.startprocess
+    startProcess=args.startprocess ; 
 else:
     startProcess=1
 
@@ -130,14 +130,16 @@ else:
     hierarchi = False
    
 if input_type=="text":
+    
     ################################### For text input files ######################################################
     if args.inputfile:
         text_file = args.inputfile
         title = "" # set the title for plotting 
+        
     else:
         raise Exception("Please provide an input file. Use --help to get more help.")
         
-    data = pd.read_csv("../input/"+text_file, sep="\t").iloc[:,:-1]
+    data = pd.read_csv("../input/"+text_file, sep="\t").iloc[:,:]
     genomes = data.iloc[:,1:]
     genomes = np.array(genomes)
     
@@ -150,6 +152,7 @@ if input_type=="text":
     #creating list of mutational type to sync with the vcf type input
     mtypes = [str(genomes.shape[0])]
     os.chdir("../")  # get out of the source directory
+    
 ###############################################################################################################
 
 ###########################################################################################################################################################################################
@@ -225,7 +228,7 @@ elif input_type=="vcf":
     #data = datadump.sigProfilerMatrixGeneratorFunc ("project2", "GRCh37") 
     data = datadump.sigProfilerMatrixGeneratorFunc(project, refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
     #create a data to broadcast
-    
+    print(data)
     
     
 # =============================================================================
@@ -249,7 +252,7 @@ elif input_type=="vcf":
     
     os.chdir("../../")
     
-       
+      
 ###########################################################################################################################################################################################                  
 for m in mtypes:
     
@@ -271,13 +274,13 @@ for m in mtypes:
     output = out_put+"/"+m
     
     
-   
+    
     est_genomes = np.zeros([1,1])
     listofsignatures=[]
     H_iteration = 1 
-    
+    flag = True # We need to enter into the first while loop regardless any condition
     # While loop starts here
-    while genomes.shape[1]>10 and est_genomes.shape[1]!=genomes.shape[1]:
+    while flag:
         genomes = np.array(genomes)
         information =[] 
         if hierarchi is True:
@@ -303,6 +306,7 @@ for m in mtypes:
         fh.write("Number of signature, Reconstruction Error, Process stability\n") 
         fh.close()
         # The following for loop operates to extract data from each number of signature
+         
         for i in range(startProcess,endProcess+1):
                 
             processAvg, \
@@ -389,6 +393,9 @@ for m in mtypes:
             genomes = genomes[:,low_similarity_idx]
             colnames=colnames[low_similarity_idx]
             H_iteration = H_iteration + 1
+            
+            if genomes.shape[1]>10 and est_genomes.shape[1]!=genomes.shape[1]:
+                flag = False #update the flag for the whileloop
         
         elif hierarchi is False:
             break
