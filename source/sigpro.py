@@ -13,10 +13,38 @@ Created on Mon Aug 27 13:39:29 2018
 
 @author: mishugeb
 """
+
+# This source code file is a part of SigProfilerExtractor
+# SigProfilerExtractor is a tool included as part of the SigProfiler
+# computational framework for comprehensive analysis of mutational
+# signatures from next-generation sequencing of cancer genomes.
+# SigProfilerExtractor allows de novo extraction of mutational 
+#signatures from data generated in a matrix format. The tool 
+#identifies the number of operative mutational signatures, 
+#their activities in each sample, and the probability for each 
+#signature to cause a specific mutation type in a cancer sample. 
+#The tool makes use of SigProfilerMatrixGenerator and SigProfilerPlotting.
+# Copyright (C) 2018 S M Ashiqul Islam (Mishu)
+#
+# SigProfilerExtractor is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# SigProfilerExtractor is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with SigProfilerExtractor.  If not, see http://www.gnu.org/licenses/
+
 import os
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1" 
+import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 import sys
 import argparse
 import scipy.io
