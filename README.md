@@ -117,13 +117,13 @@ Example 1:
 The above command will extract the mutational processes from a "vcf" _input type_ , from "projectA", using _referrence genomes_ "GRCh37". The _start processes_ will be 1, _end processes_ 10, the _number of iteration_ will be 500 and _number of cpus_ perticipating in the computaion will be 8. Processes will be extracted _hierarchically_ (since -l is there) for the _mutational contexts_ "96", "192 and "INDEL" (since --indel is there). Finally, the output information will stored in the "results" folder in the SigProfilerExtractor directory.    
 
 #### USING MESSAGE PASSING INTERFACE (MPI)
-To execute a job using SigProfilerExtractor, user need to run the sigpro.py file from the source directory inside SigProfilerExtractor. Users need to pass the parameters previously described argurments for the mpi_sigpro.py file. However, in the command section, users have to add _mpiexec_ command and its parameter _-n_ before the original command to run the python file. Here, _n_ is the number of cpus to be used. The "-c/--cpu" and "-l/--layer" arguments are **NOT applicable** for mpi_sigpro.py.  
+To execute a job using SigProfilerExtractor, user need to run the sigpro_mpi.py file from the source directory inside SigProfilerExtractor. Users need to pass the parameters previously described argurments for the sigpro_mpi.py file. However, in the command section, users have to add _mpiexec_ command and its parameter _-n_ before the original command to run the python file. Here, _n_ is the number of cpus to be used. The "-c/--cpu" and "-l/--layer" arguments are **NOT applicable** for mpi_sigpro.py.  
 
 Example 2: 
 
-``` mpiexec -n 8 python3 mpi_sigpro.py -t vcf -o results -p projectA -r GRCh37 -s 1 -e 10 -n 500 -m "96","192","INDEL" --indel ```
+``` mpiexec -n 8 python3 sigpro_mpi.py -t vcf -o results -p projectA -r GRCh37 -s 1 -e 10 -n 500 -m "96","192","INDEL" --indel ```
 
-The above command will perform the similam task as Example one except extracting the processes in a hierarchical manner since _"-l/--layer"_ argument is not applicable for mpi_sigpro.py.  
+The above command will perform the similam task as Example one except extracting the processes in a hierarchical manner since _"-l/--layer"_ argument is not applicable for sigpro_mpi.py.  
 
 
 ### OUTPUT
