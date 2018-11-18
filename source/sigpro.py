@@ -167,7 +167,8 @@ if input_type=="text":
     else:
         raise Exception("Please provide an input file. Use --help to get more help.")
         
-    data = pd.read_csv("../input/"+text_file, sep="\t").iloc[:,:-1]
+    data = pd.read_csv("../input/"+text_file, sep="\t").iloc[:,:]
+    data=data.dropna(axis=1, inplace=False)
     genomes = data.iloc[:,1:]
     genomes = np.array(genomes)
     
