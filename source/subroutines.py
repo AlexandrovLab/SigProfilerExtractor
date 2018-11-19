@@ -1082,7 +1082,7 @@ def export_information(loopResults, mutation_context, output, index, colnames):
         plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
     elif m=="DINUC":
         plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
-    elif m=="INDEL":
+    elif m=="INDEL" or m=="83":
         plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
         
     processAvg = pd.read_csv(subdirectory+"/processes.txt", sep="\t", index_col=0)

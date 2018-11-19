@@ -151,8 +151,10 @@ if rank == 0:
         else:
             raise Exception("Please provide an input file. Use --help to get more help.")
             
-        data = pd.read_csv("../input/"+text_file, sep="\t").iloc[:,:-1]
+        data = pd.read_csv("../input/"+text_file, sep="\t").iloc[:,:]
+        data=data.dropna(axis=1, inplace=False)
         genomes = data.iloc[:,1:]
+        genomes = np.array(genomes)
         
         
         #Contruct the indeces of the matrix
@@ -544,13 +546,21 @@ if rank == 0:
                     
            ########################################### PLOT THE SIGNATURES ################################################
             if m=="96":
-                plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+                plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
             elif m=="192": 
-                plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+                plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
             elif m=="DINUC":
-                plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
-            elif m=="INDEL":
-                plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "BRCA560", True)
+                plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+            elif m=="INDEL" or m=="83":
+                plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+                
+            
+            
+            processAvg = pd.read_csv(subdirectory+"/processes.txt", sep="\t", index_col=0)
+            exposureAvg = pd.read_csv(subdirectory+"/exposures.txt", sep="\t", index_col=0)
+            probability = sub.probabilities(processAvg, exposureAvg)
+            probability=probability.set_index("Sample")
+            probability.to_csv(subdirectory+"/probabilities.txt", "\t") 
             
         ################################################################################################################
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
