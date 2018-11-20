@@ -1113,7 +1113,7 @@ def stabVsRError(csvfile, outputfile, title):
     
     #selecting the optimum signature
     datanew = data[data[' Process stability']>0.85]
-    datanew = datanew[(datanew[' Reconstruction Error'] == datanew[' Reconstruction Error'].min())]
+    datanew = datanew[(datanew[' Process stability'] == datanew[' Process stability'].min())]
     optimum_signature = int(datanew['Number of signature'])
     
     
