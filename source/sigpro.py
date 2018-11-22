@@ -399,8 +399,8 @@ for m in mtypes:
 #                 solution = 0
 # =============================================================================
         if hierarchi is True:
-            processAvg = information[solution-1][0]
-            exposureAvg = information[solution-1][1]
+            processAvg = information[solution-startProcess][0]
+            exposureAvg = information[solution-startProcess][1]
             #del information
             
             est_genomes = np.dot(processAvg, exposureAvg) 
@@ -423,7 +423,7 @@ for m in mtypes:
             colnames=colnames[low_similarity_idx]
             H_iteration = H_iteration + 1
             
-            if genomes.shape[1]>10 and est_genomes.shape[1]!=genomes.shape[1]:
+            if genomes.shape[1]<10 or est_genomes.shape[1]==genomes.shape[1]:
                 flag = False #update the flag for the whileloop
         
         elif hierarchi is False:
@@ -433,3 +433,4 @@ for m in mtypes:
         
     
        
+
