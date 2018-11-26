@@ -92,10 +92,14 @@ These commands are required to run SigProfilerExtractor
  
  **-l _or_  --layer**: Optional parameter that set if the signatures will be extrated in a _hierarchical manner_.
 
- 
+ **--snv**: Optional parameter instructs script to create the
+                        catalogue for _SNV_. This parameter is valid
+                        only for the "vcf" type input. 
  **--indel**: Optional parameter instructs script to create the
                         catalogue for _limited INDELs_. This parameter is valid
-                        only for the "vcf" input.
+                        only for the "vcf" type input. Users need to use at any of the 
+                        --snv or --indel parameters to get a valid result for a
+                        "vcf" type input.
    
  **--extended_indel**: Optional parameter instructs script to create the
                         catalogue for _extended INDELs_. This parameter is valid
