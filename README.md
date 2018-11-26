@@ -13,7 +13,7 @@ packages referred in the table below:
 
 | Name of packages | Version     | How to install  |
 | ------------- |:-------------:| :-----:|
-| nimfa         | 1.3.4 or more | ``` conda install -c cdeepakroy nimfa   ```|
+| nimfa         | 1.3.4 or more | ``` pip install nimfa   ```|
 | sigProfilerPlotting | 1.1 or more      |  ``` conda install sigProfilerPlotting ```|
 | scipy          | 1.1 or more      |  ``` conda install scipy ``` |
 | scikit-learn   | 0.19.1 or more | ``` conda install scikit-learn ```|
