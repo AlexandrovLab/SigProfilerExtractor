@@ -1074,7 +1074,7 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     fh.close()
     
     
-    
+   
     ########################################### PLOT THE SIGNATURES ################################################
     if m=="96":
         plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)

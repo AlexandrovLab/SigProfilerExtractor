@@ -108,7 +108,7 @@ parser.add_argument('-m','--mtypes', type =str,
                     For example, if the user wants analyze mutation type 96, 192 and DINUC, that person should pass\
                     "--mtypes 96,192,DINUC" as in the argument. If the argument is not used, all the mutations will\
                     be analyzed')
-
+parser.add_argument("--snv",help='Optional parameter instructs script to create the catalogue for SNVs. This parameter is valid only for the "vcf" input.', action='store_true')
 args=parser.parse_args()
 
  
@@ -232,7 +232,11 @@ elif input_type=="vcf":
         refgen = args.refgen
     else:
         raise Exception("Please provide the refence genome name. Use --help to get more help.")
-        
+    
+    if args.snv:
+        SNV = True
+    else:
+        SNV = False
     
     if args.exome:
         exome = True
@@ -244,20 +248,30 @@ elif input_type=="vcf":
     else: 
         indel = False
 
-    if args.indel:
+    if args.indel and args.snv:
         indel = True
         limited_indel = True
         mlist = ["96", "DINUC", "INDEL"] 
-    else:
+        #print(mlist)
+    elif args.snv:
         limited_indel = False
         mlist = ["96", "DINUC"] 
+        #print(mlist)
+    elif args.indel:
+        indel = True
+        limited_indel = True
+        mlist = ["INDEL"] 
+        #print(mlist)
+    else:
+        raise Exception("Please pass either --snv or --indel or both arguments to get a valide result")
         
         
+      
     os.chdir("../SigProfilerMatrixGenerator/scripts")
     #data = datadump.sigProfilerMatrixGeneratorFunc ("project2", "GRCh37") 
-    data = datadump.sigProfilerMatrixGeneratorFunc(project, refgen, exome= exome, indel=limited_indel, indel_extended=indel, bed_file=None) 
+    data = datadump.sigProfilerMatrixGeneratorFunc(project, refgen, exome=exome, SNVs=SNV,indel=limited_indel, indel_extended=indel, bed_file=None, chrom_based=False, plot=False, gs=False) 
     #create a data to broadcast
-    print(data)
+    #print(data)
     
     
 # =============================================================================
@@ -297,7 +311,7 @@ for m in mtypes:
         index = genomes.index.values
         colnames  = genomes.columns
         
-        
+    #print(genomes.shape)   
         
     #create output directories to store all the results 
     output = out_put+"/"+m
