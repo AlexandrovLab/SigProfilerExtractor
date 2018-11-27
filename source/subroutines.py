@@ -1076,14 +1076,14 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     
    
     ########################################### PLOT THE SIGNATURES ################################################
-    if m=="96":
-        plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
-    elif m=="192": 
-        plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
-    elif m=="DINUC":
-        plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+    
+    if m=="DINUC" or m=="78":
+        plot.plotDBS(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , "", "78", True)
     elif m=="INDEL" or m=="83":
-        plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+        plot.plotID(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , "", "94", True)
+    else:
+        plot.plotSBS(subdirectory+"/processes.txt", subdirectory+"/Signature_plot", "", m, True)
+     
         
     processAvg = pd.read_csv(subdirectory+"/processes.txt", sep="\t", index_col=0)
     exposureAvg = pd.read_csv(subdirectory+"/exposures.txt", sep="\t", index_col=0)

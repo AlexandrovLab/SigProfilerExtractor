@@ -269,11 +269,13 @@ if rank == 0:
 # =============================================================================
             
          
-        if args.mtypes:
+      
             
+        if args.mtypes:
+            mkeys = data.keys()
             mtypes = args.mtypes.split(",")
-            if any(x not in mlist for x in mtypes):
-                 raise Exception("Please pass valid mutation types seperated by comma with no space. Also please use the uppercase characters")
+            if any(x not in mkeys for x in mtypes):
+                raise Exception("Please pass valid mutation types seperated by comma with no space. Also please use the uppercase characters")
                 
                  
         else:
@@ -562,14 +564,12 @@ if rank == 0:
             
                     
            ########################################### PLOT THE SIGNATURES ################################################
-            if m=="96":
-                plot.plot96(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
-            elif m=="192": 
-                plot.plot192(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
-            elif m=="DINUC":
-                plot.plotDINUC(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+            if m=="DINUC" or m=="78":
+                plot.plotDBS(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , "", "78", True)
             elif m=="INDEL" or m=="83":
-                plot.plotINDEL(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , True, "", True)
+                plot.plotID(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , "", "94", True)
+            else:
+                plot.plotSBS(subdirectory+"/processes.txt", subdirectory+"/Signature_plot", "", m, True)
                 
             
             

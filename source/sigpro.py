@@ -282,9 +282,9 @@ elif input_type=="vcf":
         
      
     if args.mtypes:
-        
+        mkeys = data.keys()
         mtypes = args.mtypes.split(",")
-        if any(x not in mlist for x in mtypes):
+        if any(x not in mkeys for x in mtypes):
              raise Exception("Please pass valid mutation types seperated by comma with no space. Also please use the uppercase characters")
             
              
