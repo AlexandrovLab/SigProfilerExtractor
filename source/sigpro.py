@@ -64,6 +64,7 @@ import sigProfilerMatrixGeneratorFunc as datadump
 import sigProfilerPlotting as plot
 import string   
 import shutil
+import multiprocessing as mp
 #Take the external inputs
 
 parser = argparse.ArgumentParser(description='Extraction of mutational signatures from Cancer genomes')
@@ -371,15 +372,29 @@ for m in mtypes:
             
             ####################################################################### add sparsity in the exposureAvg #################################################################
             
-            stic = time.time() 
-            for s in range(exposureAvg.shape[1]):
-                #print (s)
-                exposureAvg[:,s] = sub.remove_all_single_signatures(processAvg, exposureAvg[:,s], genomes[:,s])
-                #print ("Optimization for Sample {} is completed".format(s+1))
-                #print ("\n\n\n\n")
-            stoc = time.time()
-            print ("Optimization time is {} seconds".format(stoc-stic))
+# =============================================================================
+#             stic = time.time() 
+#             for s in range(exposureAvg.shape[1]):
+#                 #print (s)
+#                 exposureAvg[:,s] = sub.remove_all_single_signatures(processAvg, exposureAvg[:,s], genomes[:,s])
+#                 #print ("Optimization for Sample {} is completed".format(s+1))
+#                 #print ("\n\n\n\n")
+#             stoc = time.time()
+#             print ("Optimization time is {} seconds".format(stoc-stic))
+# =============================================================================
                 
+            stic = time.time() 
+            pool = mp.Pool()
+            results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
+            output = [p.get() for p in results]
+            #print(results)
+            
+            
+            for i in range(len(output)):
+                #print(results[i])
+                exposureAvg[:,i]=output[i]
+            stoc = time.time()
+            print ("Optimization time is {} seconds".format(stoc-stic))    
             ##########################################################################################################################################################################
             # store the resutls of the loop            
             loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
