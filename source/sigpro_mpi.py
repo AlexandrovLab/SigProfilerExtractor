@@ -5,8 +5,6 @@ Created on Thu Oct 11 22:06:07 2018
 
 @author: mishugeb
 """
-
-
 import os
 from mpi4py import MPI
 import time 

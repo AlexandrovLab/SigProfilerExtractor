@@ -5,7 +5,6 @@ Created on Sun Oct  7 15:21:55 2018
 
 @author: mishugeb
 """
-
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 import nimfa 

@@ -13,9 +13,6 @@ Created on Mon Aug 27 13:39:29 2018
 
 @author: mishugeb
 """
-
-
-
 import os
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
