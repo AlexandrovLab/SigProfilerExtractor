@@ -5,6 +5,7 @@ Created on Sun Oct  7 15:21:55 2018
 
 @author: mishugeb
 """
+from scipy.cluster import hierarchy
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
 import nimfa 
@@ -24,6 +25,18 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1"
 
+def make_letter_ids(idlenth = 10):
+    listOfSignatures = []
+    letters = list(string.ascii_uppercase)
+    letters.extend([i+b for i in letters for b in letters])
+    letters = letters[0:idlenth]
+    
+    for j,l in zip(range(idlenth),letters)  :
+        listOfSignatures.append("Signature "+l)
+    listOfSignatures = np.array(listOfSignatures)
+    return listOfSignatures
+    
+                    
 
 def extract_arrays(data, field, index=True):
     accumulator = list()
@@ -126,6 +139,7 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose 
     result_list = pool.map(pool_nmf, range(iterations)) 
     pool.close()
     pool.join()
+    
     return result_list
 
 ############################################################## FUNCTION ONE ##########################################
@@ -632,7 +646,10 @@ def cluster_similarity(mat1=([0]), mat2=([0])):  # the matrices (mat1 and mat2) 
 
 def parameterized_objective2_custom(x, signatures, samples):
     rec = np.dot(signatures, x)
-    y = LA.norm(samples-rec)
+    try:
+        y = LA.norm(samples-rec[:,np.newaxis])
+    except:
+        y = LA.norm(samples-rec)
     return y
 
 
@@ -920,6 +937,186 @@ def remove_all_single_signatures_pool(indices, W, exposures, totoalgenomes):
     return successList[1]
 
 
+#################################################################### Function to add signatures to samples from database #############################
+def add_signatures(W, genome, cutoff=0.025):
+    
+    # This function takes an array of signature and a single genome as input, returns a dictionray of cosine similarity, exposures and presence 
+    # of signatures according to the indices of the original signature array
+    
+    originalSimilarity = -1 # it can be also written as oldsimilarity
+    maxmutation = round(np.sum(genome))
+    init_listed_idx = []
+    init_nonlisted_idx = list(range(W.shape[1]))
+    finalRecord = [["similarity place-holder" ], ["newExposure place-holder"], ["signatures place-holder"]] #for recording the cosine difference, similarity, the new exposure and the index of the best signauture
+    
+    
+    while True:
+        bestDifference = -1 
+        bestSimilarity = -1
+        loopRecord = [["newExposure place-holder"], ["signatures place-holder"], ["best loop signature place-holder"]]
+        for sig in init_nonlisted_idx:
+            
+            
+            if len(init_listed_idx)!=0:
+                loop_liststed_idx=init_listed_idx+[sig]
+                loop_liststed_idx.sort()
+                #print(loop_liststed_idx)
+                W1 = W[:,loop_liststed_idx]
+                #print (W1.shape)
+                #initialize the guess
+                x0 = np.random.rand(W1.shape[1], 1)*maxmutation
+                x0= x0/np.sum(x0)*maxmutation
+                
+                #set the bounds and constraints
+                bnds = create_bounds([], genome, W1.shape[1]) 
+                cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]} 
+            # for the first time addintion  
+            else:
+                W1 = W[:,sig][:,np.newaxis]
+                #print (W1.shape)        
+                #initialize the guess
+                x0 = np.ones((1,1))*maxmutation    
+            
+                #set the bounds and constraints
+                bnds = create_bounds([], genome, 1) 
+                cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]} 
+            
+            #the optimization step
+            sol = minimize(parameterized_objective2_custom, x0, args=(W1, genome),  bounds=bnds, constraints =cons1, tol=1e-30)
+            
+            #print(W1)
+            #convert the newExposure vector into list type structure
+            newExposure = list(sol.x)
+            
+            # get the maximum value of the new Exposure
+            maxcoef = max(newExposure)
+            idxmaxcoef = newExposure.index(maxcoef)
+            
+            newExposure = np.round(newExposure)
+            
+            # We may need to tweak the maximum value of the new exposure to keep the total number of mutation equal to the original mutations in a genome
+            if np.sum(newExposure)!=maxmutation:
+                newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
+             
+            # compute the estimated genome
+            est_genome = np.dot(W1, newExposure)
+            newSimilarity = cos_sim(genome[:,0], est_genome)
+            
+            difference = newSimilarity - originalSimilarity 
+            
+            # record the best values so far
+            if difference>bestDifference:
+                bestDifference = difference
+                bestSimilarity = newSimilarity
+                loopRecord = [newExposure, W1, sig]  #recording the cosine difference, the new exposure and the index of the best signauture
+                #print(newSimilarity)
+        
+        # 0.01 is the thresh-hold for now 
+        if bestSimilarity-originalSimilarity>cutoff:
+            originalSimilarity = bestSimilarity
+            init_listed_idx.append(loopRecord[2])
+            init_nonlisted_idx.remove(loopRecord[2])
+            init_listed_idx.sort()
+            #print(originalSimilarity)
+            finalRecord = [originalSimilarity, loopRecord[0], init_listed_idx, loopRecord[1], genome]
+            #print (finalRecord)
+            
+            if len(init_nonlisted_idx)!= 0:
+                
+                continue
+            else:
+                break
+        else:
+            break
+        
+    #print(finalRecord)
+    dictExposure= {"similarity":finalRecord[0], "exposures":finalRecord[1], "signatures": finalRecord[2]}  
+    addExposure = np.zeros([W.shape[1]])
+    addExposure[dictExposure["signatures"]]=dictExposure["exposures"]
+    
+    return  addExposure, finalRecord[0]
+
+
+
+################################### Dicompose the new signatures into global signatures   #########################
+def signature_decomposition(signatures, mtype, directory):
+    
+    if signatures.shape[0]==96:
+        sigDatabase = pd.read_csv("data/sigProfiler_SBS_signatures_2018_03_28.csv", sep=",")
+        sigDatabase=sigDatabase.sort_values(['SubType'], ascending=[True])
+        List=list("A"*24)+list("C"*24)+list("G"*24)+list("T"*24)
+        sigDatabase['group']=List
+        sigDatabase = sigDatabase.sort_values(['group', 'Type'], ascending=[True, True]).groupby('group').head(96).iloc[:,2:-1]
+        signames = sigDatabase.columns 
+        
+        
+    elif signatures.shape[0]==78:
+        sigDatabase = pd.read_csv("data/sigProfiler_DBS_signatures.csv", sep=",").iloc[:,1:]
+        signames = sigDatabase.columns
+    elif signatures.shape[0]==83:
+        sigDatabase = pd.read_csv("data/sigProfiler_ID_signatures.csv", sep=",").iloc[:,1:]
+        signames = sigDatabase.columns
+    else:
+        sigDatabase = np.random.rand(signatures.shape[0],2)
+        signames = list(range(signatures.shape[0]))
+        
+    sigDatabases = sigDatabase
+    letters = list(string.ascii_uppercase)
+    letters.extend([i+b for i in letters for b in letters])
+    letters = letters[0:signatures.shape[1]]
+    
+    
+    # replace the probability data of the process matrix with the number of mutation
+    for i in range(signatures.shape[1]):
+        signatures[:, i] =  signatures[:, i]*5000      #(np.sum(exposureAvg[i, :]))
+    
+    sigDatabase = np.array(sigDatabase)
+    allsignatures = np.array([])
+    newsig = list() # will create the letter based id of newsignatures
+    newsigmatrixidx = list() # will create the original id of newsignature to help to record the original matrix
+    fh = open(directory+"/comparison_with_gobal_ID_signatures.csv", "w")
+    fh.write("De novo extracted, Global NMF Signatures, Similarity\n")
+    fh.close()
+    
+    for i in range(signatures.shape[1]):
+        
+        
+        exposures, similarity = add_signatures(sigDatabase, signatures[:,i][:,np.newaxis])
+        #print(signames[np.nonzero(exposures)], similarity)
+        #print(exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100)
+        exposure_percentages = exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100
+        listofinformation = list("0"*len(np.nonzero(exposures)[0])*3)
+        
+        count =0
+        for j in np.nonzero(exposures)[0]:
+            listofinformation[count*3] = signames[j]
+            listofinformation[count*3+1] = round(exposure_percentages[count],2)
+            listofinformation[count*3+2]="%"
+            count+=1
+        ListToTumple = tuple([mtype, letters[i]]+listofinformation+ [similarity])
+        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f\n" 
+        #print(strings%(ListToTumple))
+        if len(np.nonzero(exposures)[0])<4:
+            allsignatures = np.append(allsignatures, np.nonzero(exposures))
+            fh = open(directory+"/comparison_with_gobal_ID_signatures.csv", "a")
+            fh.write(strings%(ListToTumple))
+            fh.close()
+        else:
+            newsig.append("Signature "+letters[i])
+            newsigmatrixidx.append(i)
+            fh = open(directory+"/comparison_with_gobal_ID_signatures.csv", "a")
+            fh.write("Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 ))
+            fh.close()
+            
+       
+    
+    different_signatures = np.unique(allsignatures)
+    different_signatures=different_signatures.astype(int)
+    detected_signatures = signames[different_signatures]
+    
+    globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
+    newsigsmats=signatures[:,newsigmatrixidx]
+    return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats} 
 
 
 
@@ -1160,7 +1357,7 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     processes = processes.rename_axis("signatures", axis="columns")
     #print(processes)
     #print("process are ok", processes)
-    processes.to_csv(subdirectory+"/processes.txt", "\t", index_label=[processes.columns.name]) 
+    processes.to_csv(subdirectory+"/signatures.txt", "\t", index_label=[processes.columns.name]) 
     
     #Second exporting the Average of the exposures
     exposureAvg = pd.DataFrame(exposureAvg)
@@ -1180,14 +1377,14 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , "", "78", True)
+        plot.plotDBS(subdirectory+"/signatures.txt", subdirectory+"/Signature_plot" , "", "78", True)
     elif m=="INDEL" or m=="83":
-        plot.plotID(subdirectory+"/processes.txt", subdirectory+"/Signature_plot" , "", "94", True)
+        plot.plotID(subdirectory+"/signatures.txt", subdirectory+"/Signature_plot" , "", "94", True)
     else:
-        plot.plotSBS(subdirectory+"/processes.txt", subdirectory+"/Signature_plot", "", m, True)
+        plot.plotSBS(subdirectory+"/signatures.txt", subdirectory+"/Signature_plot", "", m, True)
      
         
-    processAvg = pd.read_csv(subdirectory+"/processes.txt", sep="\t", index_col=0)
+    processAvg = pd.read_csv(subdirectory+"/signatures.txt", sep="\t", index_col=0)
     exposureAvg = pd.read_csv(subdirectory+"/exposures.txt", sep="\t", index_col=0)
     probability = probabilities(processAvg, exposureAvg)
     probability=probability.set_index("Sample")
@@ -1250,4 +1447,66 @@ def stabVsRError(csvfile, outputfile, title):
     plt.close()
     return optimum_signature
 
+######################################## Clustering ####################################################
+def dendrogram(data, threshold, layer_directory):
+    colnames = data.columns
+    data = np.array(data)
+    
+    Z = hierarchy.linkage(data.T, 'single',  'cosine')
+    plt.figure(figsize=(15, 9))
+    dn = hierarchy.dendrogram(Z, labels = colnames, color_threshold=threshold)
+    plt.title("Clustering of Samples Based on Mutational Signatures" )
+    plt.ylabel("Cosine Distance")
+    plt.xlabel("Sample IDs")
+    #plt.ylim((0,1))
+    plt.savefig(layer_directory+'/dendrogram', format='png', dpi=300)
+    # which datapoints goes to which cluster
+    # The indices of the datapoints will be displayed as the ids 
+    Y = hierarchy.fcluster(Z, 0.03, criterion='distance', depth=6, R=None, monocrit=None)
+    return {"clusters":Y, "informations":dn}
 
+#############################################################################################################
+######################################## MAKE THE FINAL FOLDER ##############################################
+#############################################################################################################
+def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames):
+    
+   
+    allgenomes = np.array(allgenomes)
+    exposureAvg = np.zeros([processAvg.shape[1], allgenomes.shape[1]] )
+    for g in range(allgenomes.shape[1]):
+        
+        exposures, similarity = add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], cutoff=0.011)
+        exposureAvg[:,g] = exposures
+    
+    
+    processAvg= pd.DataFrame(processAvg)
+    processes = processAvg.set_index(index)
+    processes.columns = allsigids
+    processes = processes.rename_axis("Signatures", axis="columns")
+    processes.to_csv(layer_directory+"/signatures.txt", "\t", index_label=[processes.columns.name]) 
+    
+     
+    exposureAvg = pd.DataFrame(exposureAvg)
+    allsigids = np.array(allsigids)
+    exposures = exposureAvg.set_index(allsigids)
+    exposures.columns = allcolnames
+    exposures = exposures.rename_axis("Samples", axis="columns")
+    exposures.to_csv(layer_directory+"/exposures.txt", "\t", index_label=[exposures.columns.name]) 
+    
+    ########################################### PLOT THE SIGNATURES ################################################
+    
+    if m=="DINUC" or m=="78":
+        plot.plotDBS(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot" , "", "78", True)
+    elif m=="INDEL" or m=="83":
+        plot.plotID(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot" , "", "94", True)
+    else:
+        plot.plotSBS(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot", "", m, True)
+     
+        
+    processAvg = pd.read_csv(layer_directory+"/signatures.txt", sep="\t", index_col=0)
+    exposureAvg = pd.read_csv(layer_directory+"/exposures.txt", sep="\t", index_col=0)
+    probability = probabilities(processAvg, exposureAvg)
+    probability=probability.set_index("Sample")
+    probability.to_csv(layer_directory+"/probabilities.txt", "\t") 
+    
+    Y, dn = dendrogram(exposureAvg, 0.05, layer_directory)

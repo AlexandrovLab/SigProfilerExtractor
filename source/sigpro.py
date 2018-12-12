@@ -146,12 +146,13 @@ if input_type=="text":
     data=data.dropna(axis=1, inplace=False)
     genomes = data.iloc[:,1:]
     genomes = np.array(genomes)
-    
+    allgenomes = genomes.copy()  # save the allgenomes for the final results 
     
     #Contruct the indeces of the matrix
     #setting index and columns names of processAvg and exposureAvg
     index = data.iloc[:,0]
     colnames  = data.columns[1:]
+    allcolnames = colnames.copy() # save the allcolnames for the final results
     
     #creating list of mutational type to sync with the vcf type input
     mtypes = [str(genomes.shape[0])]
@@ -172,6 +173,7 @@ elif input_type=="matobj":
     mat = scipy.io.loadmat('../input/'+ mat_file)
     mat = sub.extract_input(mat)
     genomes = mat[1]
+    allgenomes = genomes.copy()  # save the allgenomes for the final results 
     
     
   
@@ -184,6 +186,7 @@ elif input_type=="matobj":
     for i, j in zip(index1, index2):
         index.append(i[0]+"["+j+"]"+i[2])
     colnames = np.array(pd.Series(mat[2]))
+    allcolnames = colnames.copy() # save the allcolnames for the final results
     index = np.array(pd.Series(index))
     
     #creating list of mutational type to sync with the vcf type input
@@ -283,13 +286,16 @@ for m in mtypes:
     
     if input_type=="vcf":
         genomes = data[m]
+        allgenomes = genomes.copy()  # save the allgenomes for the final results 
         index = genomes.index.values
         colnames  = genomes.columns
+        allcolnames = colnames.copy() # save the allcolnames for the final results 
         
-    #print(genomes.shape)   
+       
         
     #create output directories to store all the results 
     output = out_put+"/"+m
+    
     
     
     
@@ -302,7 +308,7 @@ for m in mtypes:
         genomes = np.array(genomes)
         information =[] 
         if hierarchi is True:
-            layer_directory = output+"/L"+str(H_iteration)
+            layer_directory = output+"/Analysis/L"+str(H_iteration)
         elif hierarchi is False:
             layer_directory = output
             
@@ -356,19 +362,22 @@ for m in mtypes:
 #             stoc = time.time()
 #             print ("Optimization time is {} seconds".format(stoc-stic))
 # =============================================================================
+            # remove signatures only if the process stability is above a thresh-hold of 0.85
+            if  avgSilhouetteCoefficients>0.85:   
+                stic = time.time() 
+                pool = mp.Pool()
+                results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
+                pooloutput = [p.get() for p in results]
+                #print(results)
+                pool.close()
                 
-            stic = time.time() 
-            pool = mp.Pool()
-            results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
-            pooloutput = [p.get() for p in results]
-            #print(results)
+                for i in range(len(pooloutput)):
+                    #print(results[i])
+                    exposureAvg[:,i]=pooloutput[i]
+                stoc = time.time()
+                print ("Optimization time is {} seconds".format(stoc-stic))    
             
             
-            for i in range(len(pooloutput)):
-                #print(results[i])
-                exposureAvg[:,i]=pooloutput[i]
-            stoc = time.time()
-            print ("Optimization time is {} seconds".format(stoc-stic))    
             ##########################################################################################################################################################################
             # store the resutls of the loop            
             loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
@@ -382,37 +391,38 @@ for m in mtypes:
         ################################################################################################################
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
         ################################################################################################################    
-        
+        # Print the Stabiltity vs Reconstruction Error as get the solution as well
         solution = sub.stabVsRError(layer_directory+"/results_stat.csv", layer_directory, title)
+        #print ("The mutution type is %s"%(m)
         
-        if os.path.exists(layer_directory+"/Selected solution"):
-            shutil.rmtree(layer_directory+"/Selected solution") 
-        # Copy the best solution the "selected solution" folder
-        solutionFolderFrom= layer_directory+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
-        solutionFolderTo = layer_directory+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
-        shutil.copytree(solutionFolderFrom, solutionFolderTo)
+        
+        
     
-# =============================================================================
-#         # get the solution for this hierarchy
-#         for i in range(len(avgSilhouetteCoefficients)):
-#             if avgSilhouetteCoefficients[-(i+1)]>0.85:
-#                 solution = len(avgSilhouetteCoefficients)-(i)
-#                 break
-#             else:
-#                 solution = 0
-# =============================================================================
+        ################################### Hierarchical Extraction  #########################
         if hierarchi is True:
+            
+            if os.path.exists(layer_directory+"/Selected solution"):
+                shutil.rmtree(layer_directory+"/Selected solution") 
+            # Copy the best solution the "selected solution" folder
+            solutionFolderFrom= layer_directory+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
+            solutionFolderTo = layer_directory+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
+            shutil.copytree(solutionFolderFrom, solutionFolderTo)
+            
+            # load the best processAvg and exposureAvg based on the solution
             processAvg = information[solution-startProcess][0]
             exposureAvg = information[solution-startProcess][1]
             #del information
             
+            # Compute the estimated genome from the processAvg and exposureAvg
             est_genomes = np.dot(processAvg, exposureAvg) 
             
+            # make the list of the samples which have similarity lower than the thresh-hold with the estimated ones
             low_similarity_idx = []
             for i in range(genomes.shape[1]):
                 similarity = sub.cos_sim(genomes[:,i], est_genomes[:,i])
                 #print (similarity)
-                if similarity < 0.95:
+                # The tresh-hold for hierarchy is 0.95 for now
+                if similarity < 0.95:    
                     low_similarity_idx.append(i)
             
             
@@ -420,20 +430,100 @@ for m in mtypes:
                 low_similarity_idx = []
             #print(low_similarity_idx)
             
-            
+            # Accumulated the signatures for the final results
             listofsignatures.append(processAvg) 
+            
             genomes = genomes[:,low_similarity_idx]
             colnames=colnames[low_similarity_idx]
             H_iteration = H_iteration + 1
             
+            #########################################################################################################
+            # do the necessary operations and put the outputs in the "Final Solution" folder when the while loop ends
             if genomes.shape[1]<10 or est_genomes.shape[1]==genomes.shape[1]:
                 flag = False #update the flag for the whileloop
+                
+                # create the folder for the final solution/ De Novo Solution
+                layer_directory1 = output+"/Final Solution/De Novo Solution"
+                try:
+                    if not os.path.exists(layer_directory1):
+                        os.makedirs(layer_directory1)
+                except: 
+                    print ("The {} folder could not be created".format("output"))
         
+        
+                count = 0
+                for p in listofsignatures:
+                    if count==0:
+                        processAvg=p
+                    else:
+                        processAvg = np.hstack([processAvg, p]) 
+                    count+=1
+                    
+                    
+                # make de novo solution(processAvg, allgenomes, layer_directory1)
+                listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
+                sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames)    
+                
+                
+                # create the folder for the final solution/ Decomposed Solution
+                layer_directory2 = output+"/Final Solution/Decomposed Solution"
+                try:
+                    if not os.path.exists(layer_directory2):
+                        os.makedirs(layer_directory2)
+                except: 
+                    print ("The {} folder could not be created".format("output"))
+        
+                
+                final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2)                
+                # extract the global signatures and new signatures from the final_signatures dictionary
+                globalsigs = final_signatures["globalsigs"]
+                globalsigs = np.array(globalsigs)
+                newsigs = final_signatures["newsigs"]
+                processAvg = np.hstack([globalsigs, newsigs])  
+                allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+                
+                sub.make_final_solution(processAvg, allgenomes, allsigids, layer_directory2, m, index, allcolnames)
+                
+            #######################################################################################################
         elif hierarchi is False:
+            
+            ################################### Decompose the new signatures into global signatures   #########################
+            processAvg = information[solution-startProcess][0]
+           
+            # create the folder for the final solution/ De Novo Solution
+            layer_directory1 = output+"/Final Solution/De Novo Solution"
+            try:
+                if not os.path.exists(layer_directory1):
+                    os.makedirs(layer_directory1)
+            except: 
+                print ("The {} folder could not be created".format("output"))
+            
+            # make de novo solution(processAvg, allgenomes, layer_directory1)
+            listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
+            sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames)    
+            
+           # create the folder for the final solution/ Decomposed Solution
+            layer_directory2 = output+"/Final Solution/Decomposed Solution"
+            try:
+                if not os.path.exists(layer_directory2):
+                    os.makedirs(layer_directory2)
+            except: 
+                print ("The {} folder could not be created".format("output"))
+        
+            
+            final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2)
+            # extract the global signatures and new signatures from the final_signatures dictionary
+            globalsigs = final_signatures["globalsigs"]
+            globalsigs = np.array(globalsigs)
+            newsigs = final_signatures["newsigs"]
+            processAvg = np.hstack([globalsigs, newsigs])  
+            allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+            
+            sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames)
+            
             break
         
         
         
-    
        
 
