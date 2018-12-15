@@ -24,6 +24,7 @@ import os
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1"
+import sigproextractor as cosmic
 
 def make_letter_ids(idlenth = 10):
     listOfSignatures = []
@@ -1041,8 +1042,10 @@ def add_signatures(W, genome, cutoff=0.025):
 ################################### Dicompose the new signatures into global signatures   #########################
 def signature_decomposition(signatures, mtype, directory):
     
+    paths = cosmic.__path__[0]
+    
     if signatures.shape[0]==96:
-        sigDatabase = pd.read_csv("data/sigProfiler_SBS_signatures_2018_03_28.csv", sep=",")
+        sigDatabase = pd.read_csv(paths+"/data/sigProfiler_SBS_signatures_2018_03_28.csv", sep=",")
         sigDatabase=sigDatabase.sort_values(['SubType'], ascending=[True])
         List=list("A"*24)+list("C"*24)+list("G"*24)+list("T"*24)
         sigDatabase['group']=List
@@ -1051,10 +1054,10 @@ def signature_decomposition(signatures, mtype, directory):
         
         
     elif signatures.shape[0]==78:
-        sigDatabase = pd.read_csv("data/sigProfiler_DBS_signatures.csv", sep=",").iloc[:,1:]
+        sigDatabase = pd.read_csv(paths+"/data/sigProfiler_DBS_signatures.csv", sep=",").iloc[:,1:]
         signames = sigDatabase.columns
     elif signatures.shape[0]==83:
-        sigDatabase = pd.read_csv("data/sigProfiler_ID_signatures.csv", sep=",").iloc[:,1:]
+        sigDatabase = pd.read_csv(paths+"/data/sigProfiler_ID_signatures.csv", sep=",").iloc[:,1:]
         signames = sigDatabase.columns
     else:
         sigDatabase = np.random.rand(signatures.shape[0],2)
@@ -1470,7 +1473,7 @@ def dendrogram(data, threshold, layer_directory):
 #############################################################################################################
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames):
     
-   
+    
     allgenomes = np.array(allgenomes)
     exposureAvg = np.zeros([processAvg.shape[1], allgenomes.shape[1]] )
     for g in range(allgenomes.shape[1]):

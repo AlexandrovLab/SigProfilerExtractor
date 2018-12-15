@@ -1,0 +1,16 @@
+MANIFEST.in
+README.md
+setup.py
+sigproextractor/__init__.py
+sigproextractor/sigpro.py
+sigproextractor/subroutines.py
+sigproextractor.egg-info/PKG-INFO
+sigproextractor.egg-info/SOURCES.txt
+sigproextractor.egg-info/dependency_links.txt
+sigproextractor.egg-info/not-zip-safe
+sigproextractor.egg-info/top_level.txt
+sigproextractor/data/21_breast_WGS_substitutions.mat
+sigproextractor/data/all_mice_silvio.txt
+sigproextractor/data/sigProfiler_DBS_signatures.csv
+sigproextractor/data/sigProfiler_ID_signatures.csv
+sigproextractor/data/sigProfiler_SBS_signatures_2018_03_28.csv
