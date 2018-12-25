@@ -19,11 +19,11 @@ packages referred in the table below:
 | scikit-learn   | 0.19.1 or more | ``` conda install scikit-learn ```|
 | SigProfilerMatrixGenerator |       |  ``` conda install SigProfilerMatrixGenerator ```|
 
-"Conda" is a cross-platform, open source package manager that can be used to install different versions of software packages and libraries. To get help to install and use conda, please visit [SigProfilerMatrixGenerator](https://github.com/AlexandrovLab/SigProfilerMatrixGenerator/blob/master/README.md). Currently, SigProfilerExtractor supports only the Linux/Unix operating system. 
+"Conda" is a cross-platform, open source package manager that can be used to install different versions of software packages and libraries. To get help to install and use conda, please visit [SigProfilerMatrixGenerator](https://github.com/AlexandrovLab/SigProfilerMatrixGenerator/blob/master/README.md).SigProfilerExtractor supports all operating system. 
 
 ## FUNCTIONS
 
-importdata(datatype="matobj")
+### importdata(datatype="matobj")
     
     """
     Imports the path of example data.
@@ -51,7 +51,9 @@ importdata(datatype="matobj")
         
     """
 
-sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False): 
+
+
+### sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False): 
     
     """
     Extracts mutational signatures from an array of samples.
