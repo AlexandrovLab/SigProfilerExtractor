@@ -21,6 +21,13 @@ packages referred in the table below:
 
 "Conda" is a cross-platform, open source package manager that can be used to install different versions of software packages and libraries. To get help to install and use conda, please visit [SigProfilerMatrixGenerator](https://github.com/AlexandrovLab/SigProfilerMatrixGenerator/blob/master/README.md).SigProfilerExtractor supports all operating system. 
 
+## INSTALLATION
+In the commandline, please type the following line:
+
+pip install -i https://test.pypi.org/simple/ sigproextractor
+
+open a python interpreter and import the SigProfilerExtractor module. Please see the examples of the functions. 
+
 ## FUNCTIONS
 
 ### importdata 
