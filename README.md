@@ -32,7 +32,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
 
 ### importdata 
     
-    """
+    
     Imports the path of example data.
     
     importdata(datatype="matobj")
@@ -58,16 +58,17 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     
     This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function
         
-    """
+    
 
 
 
 ### sigProfilerExtractor 
     
-    """
+    
     Extracts mutational signatures from an array of samples.
     
-    sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8,                   cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False)
+    sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, 
+    cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False)
     
     Parameters
     ----------
@@ -203,7 +204,6 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     Check the current working directory for the "example_output" folder.
     
     
-    """
 ## COPYRIGHT
 This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
