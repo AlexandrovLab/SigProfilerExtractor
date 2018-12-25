@@ -23,7 +23,7 @@ packages referred in the table below:
 
 ## FUNCTIONS
 
-### importdata (datatype="matobj")
+### importdata 
     
     """
     Imports the path of example data.
@@ -53,7 +53,7 @@ packages referred in the table below:
 
 
 
-### sigProfilerExtractor (input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False): 
+### sigProfilerExtractor 
     
     """
     Extracts mutational signatures from an array of samples.
