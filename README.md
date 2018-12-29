@@ -23,8 +23,16 @@ packages referred in the table below:
 
 ## INSTALLATION
 In the commandline, please type the following line:
-
-pip install sigproextractor
+```
+$pip install sigproextractor
+```
+Install your desired reference genome from the command line/terminal as follows (available reference genomes are: GRCh37, GRCh38, mm9, and mm10):
+```
+$ python
+>> from SigProfilerMatrixGenerator import install as genInstall
+>> genInstall.install('GRCh37')
+```
+This will install the human 37 assembly as a reference genome. You may install as many genomes as you wish.
 
 open a python interpreter and import the SigProfilerExtractor module. Please see the examples of the functions. 
 
