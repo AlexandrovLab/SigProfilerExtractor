@@ -4,23 +4,6 @@ The tool identifies the number of operative mutational signatures, their activit
 for each signature to cause a specific mutation type in a cancer sample. The tool makes use of SigProfilerMatrixGenerator 
 and SigProfilerPlotting. 
 
-## PREREQUISITES
-
-This module requires all the prerequisites of the 
-[SigProfilerMatrixGenerator](https://github.com/AlexandrovLab/SigProfilerMatrixGenerator/blob/master/README.md) and 
-[SigProfilerPlotting](https://github.com/AlexandrovLab/SigProfilerPlotting/blob/master/README.md) plus the following
-packages referred in the table below:
-
-| Name of packages | Version     | How to install  |
-| ------------- |:-------------:| :-----:|
-| nimfa         | 1.3.4 or more | ``` conda install -c cdeepakroy nimfa   ```|
-| sigProfilerPlotting | 1.1 or more      |  ``` conda install sigProfilerPlotting ```|
-| scipy          | 1.1 or more      |  ``` conda install scipy ``` |
-| scikit-learn   | 0.19.1 or more | ``` conda install scikit-learn ```|
-| SigProfilerMatrixGenerator |       |  ``` conda install SigProfilerMatrixGenerator ```|
-
-"Conda" is a cross-platform, open source package manager that can be used to install different versions of software packages and libraries. To get help to install and use conda, please visit [SigProfilerMatrixGenerator](https://github.com/AlexandrovLab/SigProfilerMatrixGenerator/blob/master/README.md).SigProfilerExtractor supports all operating system. 
-
 ## INSTALLATION
 In the commandline, please type the following line:
 ```
