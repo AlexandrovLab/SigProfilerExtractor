@@ -24,7 +24,7 @@ packages referred in the table below:
 ## INSTALLATION
 In the commandline, please type the following line:
 
-pip install -i https://test.pypi.org/simple/ sigproextractor
+pip install sigproextractor
 
 open a python interpreter and import the SigProfilerExtractor module. Please see the examples of the functions. 
 
