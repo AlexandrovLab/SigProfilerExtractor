@@ -27,27 +27,19 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     Imports the path of example data.
     
     importdata(datatype="matobj")
-    
-    parameters
-    ----------
-    
-    datatype: A string. Type of data. The type of data should be one of the following:
-            - "vcf": used for vcf format data.
-            - "text": used for text format data.
-            - "matobj": used for matlab object format data.
-    
-    
-    Returns:
-    -------
-
-    The path of the example data.
 
     Example: 
     -------
+    ```
     >>> from sigproextractor import sigpro as sig
     >>> data = sig.importdata("text")
+    ```
+    This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function.
+    To get help on the parameters and outputs of the "importdata" function, the write follow line:
     
-    This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function
+    ```
+    >>> help(sig.importdata)
+    ```
         
     
 
