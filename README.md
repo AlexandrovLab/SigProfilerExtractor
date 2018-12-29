@@ -34,7 +34,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     >>> data = sig.importdata("text")
     This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function.
     
-    To get help on the parameters and outputs of the "importdata" function, the write follow line:
+    To get help on the parameters and outputs of the "importdata" function, please write down the following line:
     
     >>> help(sig.importdata)
         
@@ -59,7 +59,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
     Check the current working directory for the "example_output" folder.
     
-    To get help on the parameters and outputs of the "sigProfilerExtractor" function, the write follow line:
+    To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
     
     >>> help(sig.sigProfilerExtractor)
     
