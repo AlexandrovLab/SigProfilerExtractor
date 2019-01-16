@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Sep  7 11:04:39 2018
-
-@author: mishugeb
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
 Created on Mon Aug 27 13:39:29 2018
 
-@author: mishugeb
+@author: S M Ashiqul Islam (Mishu)
+
+
+    ##########################################
+    SigProfilerExtractor (``sigproextractor``)
+    ##########################################
+    
+    SigProfilerExtractor allows de novo extraction of mutational signatures from data 
+    generated in a matrix format. The tool identifies the number of operative mutational 
+    signatures, their activities in each sample, and the probability for each signature to 
+    cause a specific mutation type in a cancer sample. The tool makes use of SigProfilerMatrixGenerator 
+    and SigProfilerPlotting. 
+
 """
 import os
 os.environ["MKL_NUM_THREADS"] = "1" 
@@ -27,13 +31,193 @@ from sigproextractor import subroutines as sub
 from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as datadump   
 import shutil
 import multiprocessing as mp
+import sigproextractor as cosmic
 
 
 
-
-
-def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False): 
+def importdata(datatype="matobj"):
     
+    """
+    Imports the path of example data.
+    
+    parameters
+    ----------
+    
+    datatype: A string. Type of data. The type of data should be one of the following:
+            - "vcf": used for vcf format data.
+            - "text": used for text format data.
+            - "matobj": used for matlab object format data.
+    
+    
+    Returns:
+    -------
+
+    The path of the example data.
+
+    Example: 
+    -------
+    >>> from sigproextractor import sigpro as sig
+    >>> data = sig.importdata("text")
+    
+    This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function
+        
+    """
+    
+    paths = cosmic.__path__[0]
+    if datatype=="matobj":
+        data = paths+"/data/21_breast_WGS_substitutions.mat"
+    elif datatype=="text":
+        data = paths+"/data/all_mice_silvio.txt"
+    elif datatype=="vcf":
+        directory = os.getcwd()
+        dataold = paths+"/data/vcftest"
+        datanew = directory+"/vcftest"
+        shutil.copytree(dataold , datanew) 
+        data="vcftest"
+    return data
+
+
+def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False): 
+    
+    """
+    Extracts mutational signatures from an array of samples.
+    
+    
+    Parameters
+    ----------
+    
+    input_type: A string. Type of input. The type of input should be one of the following:
+            - "vcf": used for vcf format inputs.
+            - "text": used for text format inputs.
+            - "matobj": used for matlab object format of inputs. 
+        
+    out_put: A string. The name of the output folder. The output folder will be generated in the current working
+            directory. 
+            
+    project: A string. Name of the input folder (in case of "vcf" type input) or the input file 
+            (in case of "text" or "matobj" type input). The project file or folder should be inside the current working directory. 
+            For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats.
+            The "text" or "matobj" type projects have to be a file. "matobj" projects should have .mat extension.  
+            
+    refgen: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only 
+            if the input_type is "vcf".
+            
+    startProcess: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1 
+    
+    endProcess: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
+    
+    totalIterations: A positive integer, optional. The number of iteration to be performed to extract each number signature. 
+            The default value is 8
+            
+    cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will
+            use all available processors. 
+    
+    hierarchy: boolean, optional. Defines if the signature will be extracted in a hierarchical fashion. The default value is "False".
+    
+    mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. 
+            The default value is ["96", "DINUC" , "INDEL"].
+            
+    exome: boolean, optional. Defines if the exomes will be extracted. The default value is "False".
+    
+    
+    
+    
+    Returns
+    -------
+    
+    After sigProfilerExtractor is successfully executed, an output directory will be generated in the current working directory 
+    according to the name of the  parameter of the "out_put" argument. In the "output" directory there will be subfolder 
+    for each type of mutational contexts. 
+    
+    If the "hierarchy" parameter is false, inside of each mutational context subdirectory, there will be subdirectories named 
+    "All solutions" and "Final solution". Besides the subdirectories, there will be a file named "results_stat.csv" which 
+    will contain the record of the relative reconstruction error and process stability for each number of signatures. 
+    Another file named stibility.pdf will contain the plot of recontruction error vs process stability. The "All solution"
+    directory will contain the subdirectories for each number of signatures which will further contain the solution files 
+    ("signature.txt", "exposure.txt", "probabilities.txt" and a pdf file that depicts the  proportion of the mututaions 
+    for each number signatures. On the other hand, the "Final solution" directory contains two subdirectories: "De Novo Solution"
+    and "Decomposed Solution". The "De Novo Solution" subdirectory will contain the solution files for the optimum number of 
+    "De Novo Signatures" signatures with a dendrogram file where the samples are clustered by the de novo signatures. The "Decomposed 
+    Solution" subfolder contains the records  where "De Novo Signatures" are further decomposed into the global signatures. 
+    
+    If the "hierarchy" parameter is true, inside of each mutational context subdirectory, there will be a subdirectory named
+    "Analysis" which will further contain the solutions  in the layer (L) subdirectories. Everything else will be similar to
+    the previously deccribed directory structures. The structure of the result folder is synopsized below:
+        
+        If Hierarchy is False:
+            
+        -Mutational Context folder
+            -All solution folder
+                -Signature folder
+                    -exposure.txt file
+                    -signature.txt file
+                    -probabilities.txt file
+                    -signature plot pdf file
+            -Final solution folder
+                -De Novo Solution folder
+                    -exposure.txt file
+                    -signature.txt file
+                    -probabilities.txt file
+                    -signature plot pdf file
+                    -dendrogram plot file
+                -Decomposed Solution folder
+                    -comparison with global signature.csv file
+                    -exposure.txt file
+                    -signature.txt file
+                    -probabilities.txt file
+                    -signature plot pdf file
+                    -dendrogram plot file
+            -results_stat.csv file
+            -stability plot pdf
+            
+                    
+        If Hierarchy is True:
+            
+        -Mutational Context folder
+            -Analysis folder
+                -Layer folder (L)
+                    -All solution folder
+                        -Signature folder
+                            -exposure.txt file
+                            -signature.txt file
+                            -probabilities.txt file
+                            -signature plot pdf file
+                    -Selected solution folder
+                        -exposure.txt file
+                        -signature.txt file
+                        -probabilities.txt file
+                        -signature plot pdf file
+                    -results_stat.csv file
+                    -stability plot pdf
+            -Final solution folder
+                -De Novo Solution folder
+                    -exposure.txt file
+                    -signature.txt file
+                    -probabilities.txt file
+                    -signature plot pdf file
+                    -dendrogram plot file
+                -Decomposed Solution folder
+                    -comparison with global signature.csv file
+                    -exposure.txt file
+                    -signature.txt file
+                    -probabilities.txt file
+                    -signature plot pdf file
+                    -dendrogram plot file
+            -results_stat.csv file
+            -stability plot pdf
+    
+    Examples
+    --------
+    
+    >>> from sigproextractor import sigpro as sig
+    >>> data = sig.importdata("vcf")
+    >>> sig.sigProfilerExtractor("vcf", "example_output", data, startProcess=1, endProcess=3)
+    
+    Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
+    Check the current working directory for the "example_output" folder.
+    
+    
+    """
     ################################ take the inputs from the mandatory arguments ####################################
     input_type = input_type;
     out_put = out_put;  
@@ -59,6 +243,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
             
         data = pd.read_csv(text_file, sep="\t").iloc[:,:]
         data=data.dropna(axis=1, inplace=False)
+        data = data.loc[:, (data != 0).any(axis=0)]
         genomes = data.iloc[:,1:]
         genomes = np.array(genomes)
         allgenomes = genomes.copy()  # save the allgenomes for the final results 
@@ -122,20 +307,19 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         exome = exome
     
         
-        indel_extended = indel_extended
-    
-        mtype = mtype     
         
-        data = datadump.SigProfilerMatrixGeneratorFunc(project, refgen, project, exome=exome, indel_extended=indel_extended, bed_file=None, chrom_based=False, plot=False, gs=False)
+    
+            
+        
+        data = datadump.SigProfilerMatrixGeneratorFunc(project, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
         
         
         
     
         # Selecting the mutation types    
-        mtype = mtype 
         if mtype != ["default"]:
             mkeys = data.keys()
-            mtypes = mtypes
+            mtypes = mtype
             if any(x not in mkeys for x in mtypes):
                  raise Exception("Please pass valid mutation types seperated by comma with no space. Carefully check (using SigProfilerMatrixGenerator)"\
                                  "what mutation contexts should be generated by your VCF files. Also please use the uppercase characters")
@@ -166,6 +350,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
         if input_type=="vcf":
             genomes = data[m]
+            genomes = genomes.loc[:, (genomes != 0).any(axis=0)]
             allgenomes = genomes.copy()  # save the allgenomes for the final results 
             index = genomes.index.values
             colnames  = genomes.columns
@@ -393,14 +578,8 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames)
                
                 break
-            
-        
+             
+                
 
+     
 
-if __name__=="__main__":
-    
-    sigProfilerExtractor("text", "textfunc", "all_mice_silvio.txt", refgen="GRCh37", startProcess=1, endProcess=2, totalIterations=3, \
-                         cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False)
-    
-
-print (__name__)
