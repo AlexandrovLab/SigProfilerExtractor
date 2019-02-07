@@ -1119,7 +1119,10 @@ def signature_decomposition(signatures, mtype, directory):
     
     globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
     newsigsmats=signatures[:,newsigmatrixidx]
-    return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats} 
+    
+    
+    
+    return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000} 
 
 
 
@@ -1412,11 +1415,16 @@ def stabVsRError(csvfile, outputfile, title):
     data1 = np.array(data.iloc[:,1])  #reconstruction error
     data2 = np.array(data.iloc[:,2])  #process stability
     
-    
-    #selecting the optimum signature
-    datanew = data[data[' Process stability']>0.85]
-    datanew = datanew[(datanew['Number of signature'] == datanew['Number of signature'].max())]
-    optimum_signature = int(datanew['Number of signature'])
+    try:
+        #selecting the optimum signature
+        datanew = data[data[' Process stability']>0.85]
+        datanew = datanew[(datanew['Number of signature'] == datanew['Number of signature'].max())]
+        optimum_signature = int(datanew['Number of signature'])
+        
+    except:
+        print("No signature set crosses the limit of the thresh-hold. So we cannot recommend any optimum \n number of signature. Selecting the lowest signature number." )
+        optimum_signature = data.iloc[0,0]
+        
     
     
     #to the make the shadows with the optimum number of signatues in the plot
@@ -1478,7 +1486,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     exposureAvg = np.zeros([processAvg.shape[1], allgenomes.shape[1]] )
     for g in range(allgenomes.shape[1]):
         
-        exposures, similarity = add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], cutoff=0.011)
+        exposures, similarity = add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], cutoff=0.025)
         exposureAvg[:,g] = exposures
     
     
@@ -1504,6 +1512,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         plot.plotID(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot" , "", "94", True)
     else:
         plot.plotSBS(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot", "", m, True)
+   
      
         
     processAvg = pd.read_csv(layer_directory+"/signatures.txt", sep="\t", index_col=0)
@@ -1513,3 +1522,55 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     probability.to_csv(layer_directory+"/probabilities.txt", "\t") 
     
     Y, dn = dendrogram(exposureAvg, 0.05, layer_directory)
+    
+
+
+
+#############################################################################################################
+##################################### Get Input From CSV Files ##############################################
+#############################################################################################################
+def read_csv(filename):
+    genomes = pd.read_csv(filename, sep=",")
+    mtypes = [str(genomes.shape[0])]
+    
+    if mtypes == ['96']:
+        # create the list to sort the mutation types
+        orderlist = ['A[C>A]A', 'A[C>A]C', 'A[C>A]G', 'A[C>A]T', 'A[C>G]A', 'A[C>G]C', 'A[C>G]G', 'A[C>G]T', 'A[C>T]A', 'A[C>T]C', 'A[C>T]G', 'A[C>T]T',
+                     'A[T>A]A', 'A[T>A]C', 'A[T>A]G', 'A[T>A]T', 'A[T>C]A', 'A[T>C]C', 'A[T>C]G', 'A[T>C]T', 'A[T>G]A', 'A[T>G]C', 'A[T>G]G', 'A[T>G]T',
+                     'C[C>A]A', 'C[C>A]C', 'C[C>A]G', 'C[C>A]T', 'C[C>G]A', 'C[C>G]C', 'C[C>G]G', 'C[C>G]T', 'C[C>T]A', 'C[C>T]C', 'C[C>T]G', 'C[C>T]T',
+                     'C[T>A]A', 'C[T>A]C', 'C[T>A]G', 'C[T>A]T', 'C[T>C]A', 'C[T>C]C', 'C[T>C]G', 'C[T>C]T', 'C[T>G]A', 'C[T>G]C', 'C[T>G]G', 'C[T>G]T',
+                     'G[C>A]A', 'G[C>A]C', 'G[C>A]G', 'G[C>A]T', 'G[C>G]A', 'G[C>G]C', 'G[C>G]G', 'G[C>G]T', 'G[C>T]A', 'G[C>T]C', 'G[C>T]G', 'G[C>T]T',
+                     'G[T>A]A', 'G[T>A]C', 'G[T>A]G', 'G[T>A]T', 'G[T>C]A', 'G[T>C]C', 'G[T>C]G', 'G[T>C]T', 'G[T>G]A', 'G[T>G]C', 'G[T>G]G', 'G[T>G]T',
+                     'T[C>A]A', 'T[C>A]C', 'T[C>A]G', 'T[C>A]T', 'T[C>G]A', 'T[C>G]C', 'T[C>G]G', 'T[C>G]T', 'T[C>T]A', 'T[C>T]C', 'T[C>T]G', 'T[C>T]T',
+                     'T[T>A]A', 'T[T>A]C', 'T[T>A]G', 'T[T>A]T', 'T[T>C]A', 'T[T>C]C', 'T[T>C]G', 'T[T>C]T', 'T[T>G]A', 'T[T>G]C', 'T[T>G]G', 'T[T>G]T']
+    #Contruct the indeces of the matrix
+    #setting index and columns names of processAvg and exposureAvg
+    index1 = genomes.iloc[:,1]
+    index2 = genomes.iloc[:,0]
+    index = []
+    for i, j in zip(index1, index2):
+        index.append(i[0]+"["+j+"]"+i[2])
+    
+    
+    index = np.array(pd.Series(index))
+    genomes["index"] = index
+    
+    if mtypes == ['96']:
+        #sort the mutationa types
+        genomes["index"]= pd.Categorical(genomes["index"], orderlist)
+        genomes = genomes.sort_values("index")
+    
+    genomes = genomes.iloc[:,2:genomes.shape[1]]
+    
+    
+    
+    # set the index 
+    genomes = genomes.set_index("index")
+    
+    # prepare the index and colnames variables
+    index = np.array(orderlist)
+    colnames = np.array(pd.Series(genomes.columns.tolist()))
+   
+    
+    
+    return(genomes, index, colnames, mtypes)
