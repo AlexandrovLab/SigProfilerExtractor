@@ -1529,8 +1529,29 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
 #############################################################################################################
 ##################################### Get Input From CSV Files ##############################################
 #############################################################################################################
-def read_csv(filename):
-    genomes = pd.read_csv(filename, sep=",")
+def read_csv(filename, folder = False):
+    
+  
+    if folder==False:
+        genomes = pd.read_csv(filename, sep=",")
+    
+    else:
+    
+        count = 1
+        for file in os.listdir(filename):
+            #print(count) 
+            df = pd.read_csv(filename+"/"+file)
+            if count==1:
+                    genomes = df
+            else:
+                    genomes = pd.merge(genomes, df, on=["Mutation type", "Trinucleotide"])
+            count += 1
+
+
+    
+
+    
+    
     mtypes = [str(genomes.shape[0])]
     
     if mtypes == ['96']:
@@ -1543,33 +1564,41 @@ def read_csv(filename):
                      'G[T>A]A', 'G[T>A]C', 'G[T>A]G', 'G[T>A]T', 'G[T>C]A', 'G[T>C]C', 'G[T>C]G', 'G[T>C]T', 'G[T>G]A', 'G[T>G]C', 'G[T>G]G', 'G[T>G]T',
                      'T[C>A]A', 'T[C>A]C', 'T[C>A]G', 'T[C>A]T', 'T[C>G]A', 'T[C>G]C', 'T[C>G]G', 'T[C>G]T', 'T[C>T]A', 'T[C>T]C', 'T[C>T]G', 'T[C>T]T',
                      'T[T>A]A', 'T[T>A]C', 'T[T>A]G', 'T[T>A]T', 'T[T>C]A', 'T[T>C]C', 'T[T>C]G', 'T[T>C]T', 'T[T>G]A', 'T[T>G]C', 'T[T>G]G', 'T[T>G]T']
-    #Contruct the indeces of the matrix
-    #setting index and columns names of processAvg and exposureAvg
-    index1 = genomes.iloc[:,1]
-    index2 = genomes.iloc[:,0]
-    index = []
-    for i, j in zip(index1, index2):
-        index.append(i[0]+"["+j+"]"+i[2])
+        #Contruct the indeces of the matrix
+        #setting index and columns names of processAvg and exposureAvg
+        index1 = genomes.iloc[:,1]
+        index2 = genomes.iloc[:,0]
+        index = []
+        for i, j in zip(index1, index2):
+            index.append(i[0]+"["+j+"]"+i[2])
     
     
-    index = np.array(pd.Series(index))
-    genomes["index"] = index
+        index = np.array(pd.Series(index))
+        genomes["index"] = index
     
-    if mtypes == ['96']:
+    
         #sort the mutationa types
         genomes["index"]= pd.Categorical(genomes["index"], orderlist)
         genomes = genomes.sort_values("index")
+        
     
-    genomes = genomes.iloc[:,2:genomes.shape[1]]
+        genomes = genomes.iloc[:,2:genomes.shape[1]]
     
     
     
-    # set the index 
-    genomes = genomes.set_index("index")
+        # set the index 
+        genomes = genomes.set_index("index")
     
-    # prepare the index and colnames variables
-    index = np.array(orderlist)
-    colnames = np.array(pd.Series(genomes.columns.tolist()))
+        # prepare the index and colnames variables
+        index = np.array(orderlist)
+        colnames = np.array(pd.Series(genomes.columns.tolist()))
+    
+    else:
+        
+        index = np.array(genomes.iloc[:,0])
+        colnames = genomes.columns
+        genomes = genomes.iloc[:,1:]
+        
    
     
     

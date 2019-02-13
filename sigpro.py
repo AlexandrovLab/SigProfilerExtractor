@@ -324,8 +324,12 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
         
     
-            
-        project_name = project.split("/")[-1]
+        if project[-1] != "/":    
+            project_name = project.split("/")[-1]
+        else: 
+            project_name = project.split("/")[-2]
+        
+        
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
         
         
