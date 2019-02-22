@@ -21,6 +21,7 @@ from random import shuffle
 import sigProfilerPlotting as plot
 import string 
 import os
+import scipy
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1"
@@ -176,20 +177,27 @@ def mat_ave_std(matlst):
 ################################################################### FUNCTION ONE ###################################################################
 #function to calculate the cosine similarity
 def cos_sim(a, b):
-	"""Takes 2 vectors a, b and returns the cosine similarity according 
-	to the definition of the dot product
+      
+    
+    """Takes 2 vectors a, b and returns the cosine similarity according 
+    to the definition of the dot product
     
     Dependencies: 
-        *Requires numpy library. 
-        *Does not require any custom function (constructed by me)
-        
+    *Requires numpy library. 
+    *Does not require any custom function (constructed by me)
+    
     Required by:
-        * pairwise_cluster_raw
-	"""
-	dot_product = np.dot(a, b)
-	norm_a = np.linalg.norm(a)
-	norm_b = np.linalg.norm(b)
-	return dot_product / (norm_a * norm_b)
+    * pairwise_cluster_raw
+    	"""
+    if np.sum(a)==0 or np.sum(b) == 0:
+        return 0.0      
+    dot_product = np.dot(a, b)
+    norm_a = np.linalg.norm(a)
+    norm_b = np.linalg.norm(b)
+    return dot_product / (norm_a * norm_b)
+
+
+    
 
 
 
@@ -1191,7 +1199,8 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
         
         W= np.array_split(Wall, totalIterations, axis=1)
         H= np.array_split(Hall, totalIterations, axis=0)
-           
+        
+        
         
         loop_processclust, loop_exposerclust, loop_avgSilhouetteCoefficients, loop_clusterSilhouetteCoefficients= find_clusters_v1(W, H)
         
@@ -1202,18 +1211,18 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
             clusterSilhouetteCoefficients = loop_clusterSilhouetteCoefficients
             processclust = loop_processclust
             exposerclust = loop_exposerclust
-            finalWall = Wall
-            finalHall = Hall
+            finalWall = np.array(Wall)
+            finalHall = np.array(Hall)
             finalgenomeErrors = genomeErrors 
             finalgenomesReconstructed = genomesReconstructed
             
-       
+            
             
             
         
         #print(avgSilhouetteCoefficients)
     
-       
+    
     
     #meanGenomeErrors = np.mean(genomeErrors, axis=2)
     #meanGenomeReconstructed = np.mean(genomesReconstructed)    
@@ -1222,21 +1231,22 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     processes=i #renamed the i as "processes"
     processAvg = np.zeros((genomes.shape[0], processes))
     exposureAvg = np.zeros((processes, genomes.shape[1]))
-    processStd = np.zeros((genomes.shape[0], processes))
-    exposureStd = np.zeros((processes, genomes.shape[1]))
+    processSTE = np.zeros((genomes.shape[0], processes))
+    exposureSTE = np.zeros((processes, genomes.shape[1]))
     
     for j in range(0, processes):
         processAvg[:,j]=np.mean(processclust[j], axis=1)
-        processStd[:,j] = np.std(processclust[j], axis=1)
+        processSTE[:,j] = scipy.stats.sem(processclust[j], axis=1, ddof=1)
         exposureAvg[j,:] = np.mean(exposerclust[j], axis=1)
-        exposureStd[j,:] = np.std(exposerclust[j], axis=1)
+        exposureSTE[j,:] = scipy.stats.sem(exposerclust[j], axis=1, ddof=1)
+        
+   
 
 
 
+    
 
-
-
-    return  processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes
+    return  processAvg, exposureAvg, processSTE, exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes
 
 
 
@@ -1296,20 +1306,28 @@ def probabilities(W, H):
 
 def export_information(loopResults, mutation_context, output, index, colnames):
     
-    #print(colnames)
+  
+   
     
+    # get the number of processes
     i = loopResults[-1]
     
-        
+    
+   
+    
+    # get the mutationa contexts    
     #print ("The mutaion type is", mutation_type)    
     m = mutation_context
     if not (m=="DINUC"or m=="INDEL"):
-        mutation_type = "SNV"
-        
+        mutation_type = "SBS"+m
+            
     else:
-        mutation_type = m
+        if m == "DINUC":
+            mutation_type = "DBS78"
+        elif m== "INDEL":
+            mutation_type = "ID83"
     # Create the neccessary directories
-    subdirectory = output+"/All solutions/"+str(i)+" "+ mutation_type+ " Signature"
+    subdirectory = output+"/All_solutions/"+mutation_type+"_Signature_"+str(i)
     if not os.path.exists(subdirectory):
         os.makedirs(subdirectory)
     
@@ -1363,7 +1381,7 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     processes = processes.rename_axis("signatures", axis="columns")
     #print(processes)
     #print("process are ok", processes)
-    processes.to_csv(subdirectory+"/signatures.txt", "\t", index_label=[processes.columns.name]) 
+    processes.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", "\t", index_label=[processes.columns.name]) 
     
     #Second exporting the Average of the exposures
     exposureAvg = pd.DataFrame(exposureAvg)
@@ -1371,7 +1389,26 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     exposures.columns = colnames
     exposures = exposures.rename_axis("samples", axis="columns")
     #print("exposures are ok", exposures)
-    exposures.to_csv(subdirectory+"/exposures.txt", "\t", index_label=[exposures.columns.name]) 
+    exposures.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Sig_activities.txt", "\t", index_label=[exposures.columns.name]) 
+    
+    
+    # get the standard errors of the processes
+    processSTE = loopResults[3]      
+    #export the processStd file
+    processSTE = pd.DataFrame(processSTE)
+    processSTE = processSTE.set_index(index)
+    processSTE.columns = listOfSignatures
+    processSTE = processSTE.rename_axis("signatures", axis="columns")
+    processSTE.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_Error_"+".txt", "\t", index_label=[processes.columns.name]) 
+    
+    # get the standard errors of the exposures   
+    exposureSTE = loopResults[4] 
+    #export the exposureStd file
+    exposureSTE = pd.DataFrame(exposureSTE)
+    exposureSTE = exposureSTE.set_index(listOfSignatures)
+    exposureSTE.columns = colnames
+    exposureSTE = exposureSTE.rename_axis("samples", axis="columns")
+    exposureSTE.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Sig_activities_Error.txt", "\t", index_label=[exposures.columns.name]) 
        
     fh = open(output+"/results_stat.csv", "a") 
     print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
@@ -1383,18 +1420,20 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(subdirectory+"/signatures.txt", subdirectory+"/Signature_plot" , "", "78", True)
+        plot.plotDBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", subdirectory+"/Signature_plot" , "", "78", True)
     elif m=="INDEL" or m=="83":
-        plot.plotID(subdirectory+"/signatures.txt", subdirectory+"/Signature_plot" , "", "94", True)
+        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", subdirectory+"/Signature_plot" , "", "94", True)
     else:
-        plot.plotSBS(subdirectory+"/signatures.txt", subdirectory+"/Signature_plot", "", m, True)
+        plot.plotSBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", subdirectory+"/Signature_plot", "", m, True)
      
         
-    processAvg = pd.read_csv(subdirectory+"/signatures.txt", sep="\t", index_col=0)
-    exposureAvg = pd.read_csv(subdirectory+"/exposures.txt", sep="\t", index_col=0)
-    probability = probabilities(processAvg, exposureAvg)
-    probability=probability.set_index("Sample")
-    probability.to_csv(subdirectory+"/probabilities.txt", "\t") 
+# =============================================================================
+#     processAvg = pd.read_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", sep="\t", index_col=0)
+#     exposureAvg = pd.read_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Sig_activities.txt", sep="\t", index_col=0)
+#     probability = probabilities(processAvg, exposureAvg)
+#     probability=probability.set_index("Sample")
+#     probability.to_csv(subdirectory+"/mutation_probabilities.txt", "\t") 
+# =============================================================================
     
 
 
@@ -1462,7 +1501,7 @@ def stabVsRError(csvfile, outputfile, title):
 def dendrogram(data, threshold, layer_directory):
     colnames = data.columns
     data = np.array(data)
-    
+
     Z = hierarchy.linkage(data.T, 'single',  'cosine')
     plt.figure(figsize=(15, 9))
     dn = hierarchy.dendrogram(Z, labels = colnames, color_threshold=threshold)
@@ -1470,17 +1509,23 @@ def dendrogram(data, threshold, layer_directory):
     plt.ylabel("Cosine Distance")
     plt.xlabel("Sample IDs")
     #plt.ylim((0,1))
-    plt.savefig(layer_directory+'/dendrogram', format='png', dpi=300)
+    plt.savefig(layer_directory+'/dendrogram.pdf',figsize=(10, 8), dpi=300)
     # which datapoints goes to which cluster
     # The indices of the datapoints will be displayed as the ids 
-    Y = hierarchy.fcluster(Z, 0.03, criterion='distance', depth=6, R=None, monocrit=None)
-    return {"clusters":Y, "informations":dn}
+    Y = hierarchy.fcluster(Z, threshold, criterion='distance', R=None, monocrit=None)
+    dataframe = pd.DataFrame({"Cluster":Y, "Sample Names":list(colnames)})
+    dataframe = dataframe.set_index("Sample Names")
+    #print(dataframe)
+    dictionary = {"clusters":Y, "informations":dn}
+    
+    return dataframe 
 
 #############################################################################################################
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames):
-    
+    # Get the type of solution from the last part of the layer_directory name
+    solution_type = layer_directory.split("/")[-1]
     
     allgenomes = np.array(allgenomes)
     exposureAvg = np.zeros([processAvg.shape[1], allgenomes.shape[1]] )
@@ -1494,7 +1539,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     processes = processAvg.set_index(index)
     processes.columns = allsigids
     processes = processes.rename_axis("Signatures", axis="columns")
-    processes.to_csv(layer_directory+"/signatures.txt", "\t", index_label=[processes.columns.name]) 
+    processes.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", "\t", index_label=[processes.columns.name]) 
     
      
     exposureAvg = pd.DataFrame(exposureAvg)
@@ -1502,26 +1547,27 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     exposures = exposureAvg.set_index(allsigids)
     exposures.columns = allcolnames
     exposures = exposures.rename_axis("Samples", axis="columns")
-    exposures.to_csv(layer_directory+"/exposures.txt", "\t", index_label=[exposures.columns.name]) 
+    exposures.to_csv(layer_directory+"/"+solution_type+"_"+"Sig_activities.txt", "\t", index_label=[exposures.columns.name]) 
     
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot" , "", "78", True)
+        plot.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , "", "78", True)
     elif m=="INDEL" or m=="83":
-        plot.plotID(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot" , "", "94", True)
+        plot.plotID(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , "", "94", True)
     else:
-        plot.plotSBS(layer_directory+"/signatures.txt", layer_directory+"/Signature_plot", "", m, True)
+        plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot", "", m, True)
    
      
         
-    processAvg = pd.read_csv(layer_directory+"/signatures.txt", sep="\t", index_col=0)
-    exposureAvg = pd.read_csv(layer_directory+"/exposures.txt", sep="\t", index_col=0)
+    processAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", sep="\t", index_col=0)
+    exposureAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Sig_activities.txt", sep="\t", index_col=0)
     probability = probabilities(processAvg, exposureAvg)
     probability=probability.set_index("Sample")
-    probability.to_csv(layer_directory+"/probabilities.txt", "\t") 
+    probability.to_csv(layer_directory+"/mutaion_probabilities.txt", "\t") 
     
-    Y, dn = dendrogram(exposureAvg, 0.05, layer_directory)
+    clusters = dendrogram(exposureAvg, 0.05, layer_directory)
+    clusters.to_csv(layer_directory+"/Cluster_of_Samples.txt", "\t") 
     
 
 
@@ -1533,8 +1579,10 @@ def read_csv(filename, folder = False):
     
   
     if folder==False:
-        genomes = pd.read_csv(filename, sep=",")
-    
+        if type(filename) == str:
+            genomes = pd.read_csv(filename, sep=",").iloc[:, :]   
+        else:
+            genomes = filename
     else:
     
         count = 1
@@ -1584,7 +1632,7 @@ def read_csv(filename, folder = False):
     
         genomes = genomes.iloc[:,2:genomes.shape[1]]
     
-    
+        
     
         # set the index 
         genomes = genomes.set_index("index")
@@ -1596,8 +1644,11 @@ def read_csv(filename, folder = False):
     else:
         
         index = np.array(genomes.iloc[:,0])
-        colnames = genomes.columns
         genomes = genomes.iloc[:,1:]
+        genomes = genomes.loc[:, (genomes != 0).any(axis=0)]
+        colnames = genomes.columns
+       
+        
         
    
     

@@ -137,7 +137,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
     Solution" subfolder contains the records  where "De Novo Signatures" are further decomposed into the global signatures. 
     
     If the "hierarchy" parameter is true, inside of each mutational context subdirectory, there will be a subdirectory named
-    "Analysis" which will further contain the solutions  in the layer (L) subdirectories. Everything else will be similar to
+    "All_Solution_by_Layer" which will further contain the solutions  in the layer (L) subdirectories. Everything else will be similar to
     the previously deccribed directory structures. The structure of the result folder is synopsized below:
         
         If Hierarchy is False:
@@ -149,14 +149,14 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     -signature.txt file
                     -probabilities.txt file
                     -signature plot pdf file
-            -Final solution folder
-                -De Novo Solution folder
+            -Selected_Solution folder
+                -De_Novo_Solution folder
                     -exposure.txt file
                     -signature.txt file
                     -probabilities.txt file
                     -signature plot pdf file
                     -dendrogram plot file
-                -Decomposed Solution folder
+                -Decomposed_Solution folder
                     -comparison with global signature.csv file
                     -exposure.txt file
                     -signature.txt file
@@ -170,7 +170,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         If Hierarchy is True:
             
         -Mutational Context folder
-            -Analysis folder
+            -All Solution by Layer folder
                 -Layer folder (L)
                     -All solution folder
                         -Signature folder
@@ -178,21 +178,21 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                             -signature.txt file
                             -probabilities.txt file
                             -signature plot pdf file
-                    -Selected solution folder
+                    -L1_solution folder
                         -exposure.txt file
                         -signature.txt file
                         -probabilities.txt file
                         -signature plot pdf file
                     -results_stat.csv file
                     -stability plot pdf
-            -Final solution folder
-                -De Novo Solution folder
+            -Selected_Solution folder
+                -De_Novo_Solution folder
                     -exposure.txt file
                     -signature.txt file
                     -probabilities.txt file
                     -signature plot pdf file
                     -dendrogram plot file
-                -Decomposed Solution folder
+                -Decomposed_Solution folder
                     -comparison with global signature.csv file
                     -exposure.txt file
                     -signature.txt file
@@ -252,6 +252,10 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
         #creating list of mutational type to sync with the vcf type input
         mtypes = [str(genomes.shape[0])]
+        if mtypes[0] == "78":
+            mtypes = ["DBS78"]
+        elif mtypes[0] == "94":
+            mtypes = ["ID83"]
         
     ###############################################################################################################
     
@@ -268,6 +272,12 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         allcolnames = colnames.copy() 
         
         
+        # Define the mtypes
+        mtypes = [mtypes]
+        if mtypes[0] == "78":
+            mtypes = ["DBS78"]
+        elif mtypes[0] == "94":
+            mtypes = ["ID83"]
         
        
         
@@ -305,7 +315,10 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
         #creating list of mutational type to sync with the vcf type input
         mtypes = [str(genomes.shape[0])]
-        
+        if mtypes[0] == "78":
+            mtypes = ["DBS78"]
+        elif mtypes[0] == "94":
+            mtypes = ["ID83"]
         
         #################################################################################################################
         
@@ -324,12 +337,8 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
         
     
-        if project[-1] != "/":    
-            project_name = project.split("/")[-1]
-        else: 
-            project_name = project.split("/")[-2]
-        
-        
+            
+        project_name = project.split("/")[-1]
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
         
         
@@ -363,10 +372,14 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
         # Determine the types of mutation which will be needed for exporting and copying the files
         if not (m=="DINUC"or m=="INDEL"):
-            mutation_type = "SNV"
+            mutation_type = "SBS"+m
             
         else:
-            mutation_type = m
+            if m == "DINUC":
+                mutation_type = "DBS78"
+            elif m== "INDEL":
+                mutation_type = "ID83"
+                
         
         if input_type=="vcf":
             genomes = data[m]
@@ -379,7 +392,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
            
             
         #create output directories to store all the results 
-        output = out_put+"/"+m
+        output = out_put+"/"+mutation_type
         
         
         
@@ -391,9 +404,11 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         # While loop starts here
         while flag:
             genomes = np.array(genomes)
+            
+
             information =[] 
             if hierarchi is True:
-                layer_directory = output+"/Analysis/L"+str(H_iteration)
+                layer_directory = output+"/All_Solution_Layer/L"+str(H_iteration)
             elif hierarchi is False:
                 layer_directory = output
                 
@@ -439,7 +454,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 
     
                 # remove signatures only if the process stability is above a thresh-hold of 0.85
-                if  avgSilhouetteCoefficients>0.85:   
+                if  avgSilhouetteCoefficients> -0.85:   
                     stic = time.time() 
                     pool = mp.Pool()
                     results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
@@ -473,15 +488,29 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
             
             
             
-        
+            
             ################################### Hierarchical Extraction  #########################
             if hierarchi is True:
                 
-                if os.path.exists(layer_directory+"/Selected solution"):
-                    shutil.rmtree(layer_directory+"/Selected solution") 
+                # write the name of Samples participating in each Layer.
+                sample_record = open(output+"/Samples_Selected_by_Layers.text", "a")
+                sample_record.write("\nSamples participating in Layer"+str(H_iteration)+"\n"+"Total number of samples in this layer is: "+str(len(colnames))+"\n\n" )
+                for sn in colnames:
+                    # sn is the abbreviation of "Sample Name", used as a iterator variable
+                    sample_record.write(sn+" ,\n" )
+                sample_record.write("######################################################################################\n")   
+                sample_record.write("######################################################################################\n")   
+                sample_record.write("######################################################################################\n")   
+                sample_record.write("######################################################################################\n\n\n\n\n")                        
+                sample_record.close()
+                    
+                
+                
+                if os.path.exists(layer_directory+"/L"+str(H_iteration)+"_solution"):
+                    shutil.rmtree(layer_directory+"/L"+str(H_iteration)+"_solution") 
                 # Copy the best solution the "selected solution" folder
-                solutionFolderFrom= layer_directory+"/All solutions/"+str(solution)+" "+ mutation_type+ " Signature"
-                solutionFolderTo = layer_directory+"/Selected solution/"+str(solution)+" "+ mutation_type+ " Signature"
+                solutionFolderFrom= layer_directory+"/All_solutions/"+mutation_type+"_Signature_"+str(solution)
+                solutionFolderTo = layer_directory+"/L"+str(H_iteration)+"_Solution/"+mutation_type+"_Signature_"+str(solution)
                 shutil.copytree(solutionFolderFrom, solutionFolderTo)
                 
                 # load the best processAvg and exposureAvg based on the solution
@@ -498,7 +527,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     similarity = sub.cos_sim(genomes[:,i], est_genomes[:,i])
                     #print (similarity)
                     # The tresh-hold for hierarchy is 0.95 for now
-                    if similarity < 0.95:    
+                    if similarity < 0.90:    
                         low_similarity_idx.append(i)
                 
                 
@@ -509,9 +538,13 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 # Accumulated the signatures for the final results
                 listofsignatures.append(processAvg) 
                 
+                
+                
                 genomes = genomes[:,low_similarity_idx]
                 colnames=colnames[low_similarity_idx]
                 H_iteration = H_iteration + 1
+                
+                
                 
                 #########################################################################################################
                 # do the necessary operations and put the outputs in the "Final Solution" folder when the while loop ends
@@ -519,7 +552,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     flag = False #update the flag for the whileloop
                     
                     # create the folder for the final solution/ De Novo Solution
-                    layer_directory1 = output+"/Final Solution/De Novo Solution"
+                    layer_directory1 = output+"/Selected_Solution/De_Novo_Solution"
                     try:
                         if not os.path.exists(layer_directory1):
                             os.makedirs(layer_directory1)
@@ -542,7 +575,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     
                     try:
                         # create the folder for the final solution/ Decomposed Solution
-                        layer_directory2 = output+"/Final Solution/Decomposed Solution"
+                        layer_directory2 = output+"/Selected_Solution/Decomposed_Solution"
                         try:
                             if not os.path.exists(layer_directory2):
                                 os.makedirs(layer_directory2)
@@ -562,7 +595,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     except:
                         print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                     
-                    print("\n\n \nYour Job Is Successfully Terminated! Thank You For Using SigProfiler Extractor.\n ")
+                
                     
                 #######################################################################################################
             elif hierarchi is False:
@@ -571,7 +604,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 processAvg = information[solution-startProcess][0]
                
                 # create the folder for the final solution/ De Novo Solution
-                layer_directory1 = output+"/Final Solution/De Novo Solution"
+                layer_directory1 = output+"/Selected_Solution/De_Novo_Solution"
                 try:
                     if not os.path.exists(layer_directory1):
                         os.makedirs(layer_directory1)
@@ -584,7 +617,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                
                 try:
                    # create the folder for the final solution/ Decomposed Solution
-                    layer_directory2 = output+"/Final Solution/Decomposed Solution"
+                    layer_directory2 = output+"/Selected_Solution/Decomposed_Solution"
                     try:
                         if not os.path.exists(layer_directory2):
                             os.makedirs(layer_directory2)
@@ -605,9 +638,10 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 except:
                     print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                 
-                print("\n\nYour Job Is Successfully Terminated! Thank You For Using SigProfiler Extractor.\n ")
+                
                
                 break
+    print("\n\n \nYour Job Is Successfully Terminated! Thank You For Using SigProfiler Extractor.\n ")
              
                 
 
