@@ -1381,15 +1381,15 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     processes = processes.rename_axis("signatures", axis="columns")
     #print(processes)
     #print("process are ok", processes)
-    processes.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", "\t", index_label=[processes.columns.name]) 
+    processes.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", "\t", index_label=[processes.columns.name]) 
     
     #Second exporting the Average of the exposures
-    exposureAvg = pd.DataFrame(exposureAvg)
+    exposureAvg = pd.DataFrame(exposureAvg.astype(int))
     exposures = exposureAvg.set_index(listOfSignatures)
     exposures.columns = colnames
     exposures = exposures.rename_axis("samples", axis="columns")
     #print("exposures are ok", exposures)
-    exposures.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Sig_activities.txt", "\t", index_label=[exposures.columns.name]) 
+    exposures.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Activities.txt", "\t", index_label=[exposures.columns.name]) 
     
     
     # get the standard errors of the processes
@@ -1399,7 +1399,7 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     processSTE = processSTE.set_index(index)
     processSTE.columns = listOfSignatures
     processSTE = processSTE.rename_axis("signatures", axis="columns")
-    processSTE.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_Error_"+".txt", "\t", index_label=[processes.columns.name]) 
+    processSTE.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_STD_Error"+".txt", "\t", index_label=[processes.columns.name]) 
     
     # get the standard errors of the exposures   
     exposureSTE = loopResults[4] 
@@ -1408,7 +1408,7 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     exposureSTE = exposureSTE.set_index(listOfSignatures)
     exposureSTE.columns = colnames
     exposureSTE = exposureSTE.rename_axis("samples", axis="columns")
-    exposureSTE.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Sig_activities_Error.txt", "\t", index_label=[exposures.columns.name]) 
+    exposureSTE.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Activities_STD_Error.txt", "\t", index_label=[exposures.columns.name]) 
        
     fh = open(output+"/results_stat.csv", "a") 
     print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
@@ -1420,11 +1420,11 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", subdirectory+"/Signature_plot" , "", "78", True)
+        plot.plotDBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "", "78", True)
     elif m=="INDEL" or m=="83":
-        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", subdirectory+"/Signature_plot" , "", "94", True)
+        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "", "94", True)
     else:
-        plot.plotSBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", subdirectory+"/Signature_plot", "", m, True)
+        plot.plotSBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot", "", m, True)
      
         
 # =============================================================================
@@ -1523,7 +1523,7 @@ def dendrogram(data, threshold, layer_directory):
 #############################################################################################################
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
-def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames):
+def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none"):
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
     
@@ -1547,8 +1547,16 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     exposures = exposureAvg.set_index(allsigids)
     exposures.columns = allcolnames
     exposures = exposures.rename_axis("Samples", axis="columns")
-    exposures.to_csv(layer_directory+"/"+solution_type+"_"+"Sig_activities.txt", "\t", index_label=[exposures.columns.name]) 
+    exposures.to_csv(layer_directory+"/"+solution_type+"_"+"Activities.txt", "\t", index_label=[exposures.columns.name]) 
     
+    
+    if type(process_std_error) != str:
+        process_std_error= pd.DataFrame(process_std_error)
+        processSTE = process_std_error.set_index(index)
+        processSTE.columns = allsigids
+        processSTE = processSTE.rename_axis("Signatures", axis="columns")
+        processSTE.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_STD_Error.txt", "\t", index_label=[processes.columns.name]) 
+        
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
@@ -1561,13 +1569,16 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
      
         
     processAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", sep="\t", index_col=0)
-    exposureAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Sig_activities.txt", sep="\t", index_col=0)
+    exposureAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Activities.txt", sep="\t", index_col=0)
     probability = probabilities(processAvg, exposureAvg)
     probability=probability.set_index("Sample")
-    probability.to_csv(layer_directory+"/mutaion_probabilities.txt", "\t") 
+    probability.to_csv(layer_directory+"/Mutaion_Probabilities.txt", "\t") 
     
-    clusters = dendrogram(exposureAvg, 0.05, layer_directory)
-    clusters.to_csv(layer_directory+"/Cluster_of_Samples.txt", "\t") 
+    try:
+        clusters = dendrogram(exposureAvg, 0.05, layer_directory)
+        clusters.to_csv(layer_directory+"/Cluster_of_Samples.txt", "\t") 
+    except:
+        pass
     
 
 
