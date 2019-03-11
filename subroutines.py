@@ -38,7 +38,13 @@ def make_letter_ids(idlenth = 10):
     listOfSignatures = np.array(listOfSignatures)
     return listOfSignatures
     
-                    
+def signature_plotting_text(value, text):
+    name = text + ": "
+    name_list =[]
+    for i in value:
+        name_list.append(name + str(round(i,3)))
+    return(name_list)
+                        
 
 def extract_arrays(data, field, index=True):
     accumulator = list()
@@ -68,6 +74,21 @@ def nnmf(genomes, nfactors):
     W = nmf_fit.basis()
     H = nmf_fit.coef()
     return W, H
+
+
+def normalize_samples(genomes, normalize=True, all_samples=True, number=30000):
+    if normalize == True:
+        if all_samples==False:        
+            total_mutations = np.sum(genomes, axis=0)
+            indices = np.where(total_mutations>number)[0]
+            results = genomes[:,list(indices)]/total_mutations[list(indices)][:,np.newaxis].T*number
+            genomes[:,list(indices)] = results
+        else:    
+            total_mutations = np.sum(genomes, axis=0)
+            genomes = (genomes/total_mutations.T*number).astype(int)
+            
+    return genomes
+
 
 def BootstrapCancerGenomes(genomes):
     np.random.seed() # Every time initiate a random seed so that all processors don't get the same seed
@@ -198,6 +219,37 @@ def cos_sim(a, b):
 
 
     
+################################################################### FUNCTION ONE ###################################################################
+#function to calculate multiple similarities/distances
+def calculate_similarities(genomes, est_genomes, sample_names):
+    cosine_similarity_list = []
+    kl_divergence_list = []
+    l1_norm_list = []
+    l2_norm_list = []
+    total_mutations_list = []
+    relative_l1_list = []
+    relative_l2_list = []
+    for i in range(genomes.shape[1]):
+        p_i = genomes[:,i]
+        q_i = est_genomes[:, i]
+        cosine_similarity_list.append(round(cos_sim(p_i,q_i ),3))
+        kl_divergence_list.append(round(scipy.stats.entropy(p_i,q_i),3))
+        l1_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=1),3))
+        relative_l1_list.append(round((l1_norm_list[-1]/np.linalg.norm(p_i, ord=1))*100,3))
+        l2_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=2),3))
+        relative_l2_list.append(round((l2_norm_list[-1]/np.linalg.norm(p_i, ord=1))*100,3))
+        total_mutations_list.append(np.sum(p_i))
+    
+    similarities_dataframe = pd.DataFrame({"Sample Names": sample_names, \
+                                           "Total Mutations":total_mutations_list, \
+                                           "Cosine Similarity": cosine_similarity_list, \
+                                           "L1 Norm": l1_norm_list, \
+                                           "Relative L1 Norm":relative_l1_list, \
+                                           "L2 Norm": l2_norm_list, \
+                                           "Relative L2 Norm": relative_l2_list, \
+                                           "KL Divergence": kl_divergence_list})
+    similarities_dataframe = similarities_dataframe.set_index("Sample Names")
+    return [similarities_dataframe, cosine_similarity_list]
 
 
 
@@ -941,7 +993,6 @@ def remove_all_single_signatures_pool(indices, W, exposures, totoalgenomes):
     
     if len(successList[1])==0:
         successList = [0.0, oldExposures, originalSimilarity]
-    
     #print ("one sample completed")
     return successList[1]
 
@@ -1241,7 +1292,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
         exposureSTE[j,:] = scipy.stats.sem(exposerclust[j], axis=1, ddof=1)
         
    
-
+   
 
 
     
@@ -1418,13 +1469,17 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     
    
     ########################################### PLOT THE SIGNATURES ################################################
+    #prepare the texts lists:
+    stability_list = signature_plotting_text(loopResults[6], "Signature Stability")
+    total_mutation_list = signature_plotting_text(loopResults[7], "Total Mutations")
     
-    if m=="DINUC" or m=="78":
-        plot.plotDBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "", "78", True)
+    
+    if m=="DINUC" or m=="78":        
+        plot.plotDBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "", "78", True, custom_text_upper=stability_list, custom_text_bottom=total_mutation_list)
     elif m=="INDEL" or m=="83":
-        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "", "94", True)
+        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "", "94", True, custom_text_upper=stability_list, custom_text_bottom=total_mutation_list)
     else:
-        plot.plotSBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot", "", m, True)
+        plot.plotSBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot", "", m, True, custom_text_upper=stability_list, custom_text_bottom=total_mutation_list)
      
         
 # =============================================================================
@@ -1520,10 +1575,25 @@ def dendrogram(data, threshold, layer_directory):
     
     return dataframe 
 
+
+######################################## Plot Samples ####################################################
+def plot_csv_sbs_samples(filename, output_path, project, mtype="96", percentage=False, custom_text_upper=" " ):
+
+    
+    
+    data, index, colnames, _ = read_csv(filename, folder = False)
+    data.index.names= ["MutationType"]
+    data.to_csv("new_file.text", sep="\t")
+
+    plot.plotSBS("new_file.text", output_path, project, mtype, False, custom_text_upper=" ")
+    
+    os.remove("new_file.text")
+    
+#plot_csv_sbs_samples("CNS-Oligo.96.csv" , "/Users/mishugeb/Desktop/new_plot", "project", mtype="96", percentage=False, custom_text_upper=" " )
 #############################################################################################################
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
-def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none"):
+def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", signature_total_mutations= " "):
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
     
@@ -1560,11 +1630,11 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , "", "78", True)
+        plot.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , "", "78", True, custom_text_upper= signature_stabilities, custom_text_bottom = signature_total_mutations )
     elif m=="INDEL" or m=="83":
-        plot.plotID(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , "", "94", True)
+        plot.plotID(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , "", "94", True, custom_text_upper= signature_stabilities, custom_text_bottom = signature_total_mutations )
     else:
-        plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot", "", m, True)
+        plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot", "", m, True, custom_text_upper= signature_stabilities, custom_text_bottom = signature_total_mutations )
    
      
         
@@ -1572,7 +1642,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     exposureAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Activities.txt", sep="\t", index_col=0)
     probability = probabilities(processAvg, exposureAvg)
     probability=probability.set_index("Sample")
-    probability.to_csv(layer_directory+"/Mutaion_Probabilities.txt", "\t") 
+    probability.to_csv(layer_directory+"/Mutation_Probabilities.txt", "\t") 
     
     try:
         clusters = dendrogram(exposureAvg, 0.05, layer_directory)
