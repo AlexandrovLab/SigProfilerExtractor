@@ -23,7 +23,10 @@ os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1" 
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
+import scipy
 import scipy.io
+import sklearn
+import nimfa
 import numpy as np
 import pandas as pd
 import time
@@ -32,6 +35,20 @@ from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as
 import shutil
 import multiprocessing as mp
 import sigproextractor as cosmic
+import platform
+import datetime
+import psutil
+import resource
+def memory_usage():
+    pid = os.getpid()
+    py = psutil.Process(pid)
+    memoryUse1 = py.memory_info()[0]/2.**30  # memory use in GB...I think
+    memoryUse2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/2.**30
+    print('\n************** Reported Current Memory Use: '+ str(round(memoryUse1,2))+" GB *****************\n")
+    #print('\n************** Reported Current Memory Use: '+ str(round(memoryUse2,2))+" GB *****************\n")
+
+
+
 
 
 
@@ -81,8 +98,8 @@ def importdata(datatype="matobj"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90): 
-    
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.025, resample = True): 
+    memory_usage()
     """
     Extracts mutational signatures from an array of samples.
     
@@ -97,7 +114,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
     out_put: A string. The name of the output folder. The output folder will be generated in the current working directory. 
             
-    project: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "text" or "matobj" type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text" or "matobj" type projects have to be a file. "matobj" projects should have .mat extension.  
+    input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "text" or "matobj" type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text" or "matobj" type projects have to be a file. "matobj" projects should have .mat extension.  
             
     refgen: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
             
@@ -214,10 +231,49 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
     
     
     """
+    
+    
+    
+    #################################### At first create the system data file ####################################
+    if not os.path.exists(out_put):
+        os.makedirs(out_put)
+    sysdata = open(out_put+"/JOB_METADATA.txt", "w")
+    sysdata.write("THIS FILE CONTAINS THE METADATA ABOUT SYSTEM AND RUNTIME\n\n\n")
+    sysdata.write("-------System Info-------\n")
+    sysdata.write("Operating System Name: "+ os.uname()[0]+"\n"+"Nodename: "+os.uname()[1]+"\n"+"Release: "+os.uname()[2]+"\n"+"Version: "+os.uname()[3]+"\n")
+    sysdata.write("\n-------Python and Package Versions------- \n")
+    sysdata.write("Python Version: "+str(platform.sys.version_info.major)+"."+str(platform.sys.version_info.minor)+"."+str(platform.sys.version_info.micro)+"\n")
+    sysdata.write("Sigproextractor Version: "+cosmic.__version__+"\n")
+    sysdata.write("Pandas version: "+pd.__version__+"\n")
+    sysdata.write("Numpy version: "+np.__version__+"\n")
+    sysdata.write("Scipy version: "+scipy.__version__+"\n")
+    sysdata.write("Scikit-learn version: "+sklearn.__version__+"\n")
+    sysdata.write("Nimfa version: "+nimfa.__version__+"\n")
+    
+    
+    
+    sysdata.write("\n-------Vital Parameters Used for the execution -------\n")
+    #format the project_name first:
+    project = input_data  #will use this variable as the parameter for project argument in SigprofilerMatrixGenerator
+    if project[-1] != "/":
+        project_name = project.split("/")[-1]   #will use this variable as the parameter for project_name argument in SigprofilerMatrixGenerator
+    else:
+        project_name = project.split("/")[-2]
+    sysdata.write("input_type: {}\ninputdata: {}\nstartProcess: {}\nendProcess: {}\ntotalIterations: {}\ncpu: {}\nhierarchy: {}\n".format(input_type, project_name, startProcess, endProcess, totalIterations, cpu,  hierarchy))
+    
+    sysdata.write("\n-------Date and Time Data------- \n")
+    tic = datetime.datetime.now()
+    sysdata.write("Date and Clock time when the execution started: "+str(tic)+"\n")
+    sysdata.close()
+    
+    
+    
+    
+    
     ################################ take the inputs from the mandatory arguments ####################################
     input_type = input_type;
     out_put = out_put;  
-    project = project
+    #project = input_data   #the variable was already set above
         
     
     ################################ take the inputs from the general optional arguments ####################################
@@ -338,7 +394,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
         
     
             
-        project_name = project.split("/")[-1]
+        #project_name = project.split("/")[-1]
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
         
         
@@ -430,19 +486,20 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 print ("The {} folder could not be created".format("output"))
             
             
-            fh = open(layer_directory+"/results_stat.csv", "w")   
-            fh.write("Number of signature, Reconstruction Error, Process stability\n") 
+            fh = open(layer_directory+"/All_solutions_stat.csv", "w")   
+            fh.write("Total Signatures,Stability,Matrix Frobenius%\n") 
             fh.close()
             # The following for loop operates to extract data from each number of signature
             
             all_similirities_list = [] #this list is going to store the dataframes of different similirieties as items
+            minimum_stabilities = []
             similarity_dataframe = pd.DataFrame({"Sample Name": list(colnames)})
             
             
             #normatlize the genomes before running nmf
-            genomes = sub.normalize_samples(genomes, normalize=True, all_samples=True, number=30000)
+            genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
             for i in range(startProcess,endProcess+1):
-                    
+                #memory_usage()    
                 processAvg, \
                 exposureAvg, \
                 processStd, \
@@ -457,12 +514,14 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                                                     i = i, \
                                                     totalIterations=totalIterations, \
                                                     cpu=cpu, \
-                                                    mut_context=m) 
+                                                    mut_context=m, \
+                                                    resample = resample) 
                 
                 
+                    
                 ####################################################################### add sparsity in the exposureAvg #################################################################
                 
-    
+          
                 # remove signatures only if the process stability is above a thresh-hold of 0.85
                 if  avgSilhouetteCoefficients> -0.85:   
                     stic = time.time() 
@@ -478,36 +537,54 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                         exposureAvg[:,i]=pooloutput[i]
                     stoc = time.time()
                     print ("Optimization time is {} seconds".format(stoc-stic))    
+                    
+                #report progress to the system file:
+                current_time = datetime.datetime.now()
+                sysdata = open(out_put+"/JOB_METADATA.txt", "a")
+                if  hierarchi is True:
+                    sysdata.write("\nDate and Clock time when the extraction completed for {} signatures in layer {} for mutation type {}: {}\n".format(i, H_iteration, mutation_type, current_time))
+                else:
+                    sysdata.write("\nDate and Clock time when the extraction completed for {} signatures for mutation type {}: {}\n".format(processes,  mutation_type, current_time))
                 
                 #Get total mutationation for each signature
                 signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
-                #print(totalMutations)
-                ##########################################################################################################################################################################
-                # store the resutls of the loop.  Here,  processStd and exposureStd are standard Errors, NOT STANDARD DEVIATIONS.           
-                loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, signature_total_mutations, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
-                information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations]) #Will be used during hierarchical approach
                 
-                ################################# Export the results ###########################################################    
-                sub.export_information(loopResults, m, layer_directory, index, colnames)
                 
+                signature_stats = pd.DataFrame({"Stability": clusterSilhouetteCoefficients, "Total Mutations": signature_total_mutations})
+                minimum_stabilities.append(round(clusterSilhouetteCoefficients.min(),2))
                 # Compute the estimated genome from the processAvg and exposureAvg
                 est_genomes = np.dot(processAvg, exposureAvg) 
                 
                 #check the similarities between the original and estimated genome for each number of signatures
                 
                 all_similarities, cosine_similarities = sub.calculate_similarities(genomes, est_genomes, colnames)
+                #print(totalMutations)
+                ##########################################################################################################################################################################
+                # store the resutls of the loop.  Here,  processStd and exposureStd are standard Errors, NOT STANDARD DEVIATIONS.           
+                loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, round(avgSilhouetteCoefficients, 2), clusterSilhouetteCoefficients, signature_total_mutations, all_similarities, signature_stats, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
+                information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchical approach
+                
+                ################################# Export the results ###########################################################    
+                sub.export_information(loopResults, m, layer_directory, index, colnames)
+                
+              
+                
                 all_similirities_list.append(all_similarities)
                     #
                 similarity_dataframe["Total Signatures "+str(processes)] = cosine_similarities
                 
                 
-           
+                
                 
             ################################################################################################################
             ########################################## Plot Stabiltity vs Reconstruction Error #############################        
             ################################################################################################################    
             # Print the Stabiltity vs Reconstruction Error as get the solution as well
-            solution = sub.stabVsRError(layer_directory+"/results_stat.csv", layer_directory, title)
+            solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mutation_type)
+            all_stats.insert(1, "Minimum Stability", minimum_stabilities)
+            all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
+            # add more information to results_stat.csv
+             
             
             #Set index for the  the Similarity Dataframe
             similarity_dataframe = similarity_dataframe.set_index("Sample Name")
@@ -529,40 +606,46 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
             
             ################################### Hierarchical Extraction  #########################
             if hierarchi is True:
-                data_stat_folder = layer_directory+"/Data_Stats"
-                try:
-                    if not os.path.exists(data_stat_folder):
-                        os.makedirs(data_stat_folder)
-                except: 
-                        print ("The {} folder could not be created".format("Data_Stats"))
+                #data_stat_folder = layer_directory+"/Data_Stats"
+# =============================================================================
+#                 try:
+#                     if not os.path.exists(data_stat_folder):
+#                         os.makedirs(data_stat_folder)
+#                 except: 
+#                         print ("The {} folder could not be created".format("Data_Stats"))
+# =============================================================================
                 
-                layer_genome.to_csv(data_stat_folder+"/Samples_in_Layer_"+str(H_iteration)+".text", sep = "\t", index_label=[layer_genome.columns.name])
-                similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs"+str(H_iteration)+".text", sep = "\t")
+                layer_genome.to_csv(layer_directory+"/Samples_in_Layer_"+str(H_iteration)+".text", sep = "\t", index_label=[layer_genome.columns.name])
+                #similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs"+str(H_iteration)+".text", sep = "\t")
                 del layer_genome
                 
-                for i in range(startProcess,endProcess+1):
-                    all_similirities_list[i-startProcess].to_csv(data_stat_folder+"/Similatiry_Data_Sig"+str(i)+".text", sep="\t")
+# =============================================================================
+#                 for i in range(startProcess,endProcess+1):
+#                     all_similirities_list[i-startProcess].to_csv(data_stat_folder+"/Similatiry_Data_Sig"+str(i)+".text", sep="\t")
+# =============================================================================
                     
-                sample_record = open(output+"/Samples_Selected_by_Layers.text", "a")
-                sample_record.write("\nSamples participating in Layer"+str(H_iteration)+"\n"+"Total number of samples in this layer is: "+str(len(colnames))+"\n\n" )
-                
-                    
-                for sn in colnames:
-                    # sn is the abbreviation of "Sample Name", used as a iterator variable
-                    sample_record.write(sn+" ,\n" )
-                sample_record.write("######################################################################################\n")   
-                sample_record.write("######################################################################################\n")   
-                sample_record.write("######################################################################################\n")   
-                sample_record.write("######################################################################################\n\n\n\n\n")                        
-                sample_record.close()
+# =============================================================================
+#                 sample_record = open(output+"/Samples_Selected_by_Layers.text", "a")
+#                 sample_record.write("\nSamples participating in Layer"+str(H_iteration)+"\n"+"Total number of samples in this layer is: "+str(len(colnames))+"\n\n" )
+#                 
+#                     
+#                 for sn in colnames:
+#                     # sn is the abbreviation of "Sample Name", used as a iterator variable
+#                     sample_record.write(sn+" ,\n" )
+#                 sample_record.write("######################################################################################\n")   
+#                 sample_record.write("######################################################################################\n")   
+#                 sample_record.write("######################################################################################\n")   
+#                 sample_record.write("######################################################################################\n\n\n\n\n")                        
+#                 sample_record.close()
+# =============================================================================
                     
                 
                 
                 if os.path.exists(layer_directory+"/L"+str(H_iteration)+"_solution"):
                     shutil.rmtree(layer_directory+"/L"+str(H_iteration)+"_solution") 
                 # Copy the best solution the "selected solution" folder
-                solutionFolderFrom= layer_directory+"/All_solutions/"+mutation_type+"_Signature_"+str(solution)
-                solutionFolderTo = layer_directory+"/L"+str(H_iteration)+"_Solution/"+mutation_type+"_Signature_"+str(solution)
+                solutionFolderFrom= layer_directory+"/All_solutions/"+mutation_type+"_"+str(solution)+"_Signatures"
+                solutionFolderTo = layer_directory+"/L"+str(H_iteration)+"_Solution/"+mutation_type+"_"+str(solution)+"_Signatures"
                 shutil.copytree(solutionFolderFrom, solutionFolderTo)
                 
                 # load the best processAvg, exposureAvg and processSTE based on the solution
@@ -571,7 +654,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 processSTE = information[solution-startProcess][2]
                 list_of_signature_stabilities = list_of_signature_stabilities + list(information[solution-startProcess][4])
                 list_of_signature_total_mutations = list_of_signature_total_mutations + list(information[solution-startProcess][5])
-                
+                all_similarities = information[solution-startProcess][7]
                 
                 
                 #del information
@@ -611,7 +694,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     flag = False #update the flag for the whileloop
                     
                     # create the folder for the final solution/ De Novo Solution
-                    layer_directory1 = output+"/Selected_Solution/De_Novo_Solution"
+                    layer_directory1 = output+"/Suggested_Solution/De_Novo_Solution"
                     try:
                         if not os.path.exists(layer_directory1):
                             os.makedirs(layer_directory1)
@@ -631,16 +714,17 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                         count+=1
                     
                     # make the texts for signature plotting
-                    list_of_signature_stabilities = sub.signature_plotting_text(list_of_signature_stabilities, "Signature Stability")
-                    list_of_signature_total_mutations = sub.signature_plotting_text(list_of_signature_total_mutations, "Total Mutattions")
                     
+                    signature_stabilities = sub.signature_plotting_text(list_of_signature_stabilities, "Stability", "float")
+                    signature_total_mutations = sub.signature_plotting_text(list_of_signature_total_mutations, "Total Mutations", "integer")
+                    signature_stats = pd.DataFrame({"Stability": signature_stabilities, "Total Mutations": signature_total_mutations})
                     # make de novo solution(processAvg, allgenomes, layer_directory1)
                     listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
-                    sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = list_of_signature_stabilities, signature_total_mutations = list_of_signature_total_mutations)    
+                    sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, signature_total_mutations = signature_total_mutations, signature_stats=signature_stats, penalty=penalty)    
                     
                     try:
                         # create the folder for the final solution/ Decomposed Solution
-                        layer_directory2 = output+"/Selected_Solution/Decomposed_Solution"
+                        layer_directory2 = output+"/Suggested_Solution/Decomposed_Solution"
                         try:
                             if not os.path.exists(layer_directory2):
                                 os.makedirs(layer_directory2)
@@ -656,7 +740,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                         processAvg = np.hstack([globalsigs, newsigs])  
                         allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
                         
-                        sub.make_final_solution(processAvg, allgenomes, allsigids, layer_directory2, m, index, allcolnames)
+                        sub.make_final_solution(processAvg, allgenomes, allsigids, layer_directory2, m, index, allcolnames, penalty=penalty)
                     except:
                         print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                         shutil.rmtree(layer_directory2)
@@ -664,28 +748,35 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     
                 #######################################################################################################
             elif hierarchi is False:
-                data_stat_folder = output+"/Data_Stats"
-                try:
-                    if not os.path.exists(data_stat_folder):
-                        os.makedirs(data_stat_folder)
-                except: 
-                        print ("The {} folder could not be created".format("Data_Stats"))
-                
-                layer_genome.to_csv(data_stat_folder+"/Samples.text", sep = "\t", index_label=[layer_genome.columns.name])
-                similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs.text", sep = "\t")
+# =============================================================================
+#                 data_stat_folder = output+"/Data_Stats"
+#                 try:
+#                     if not os.path.exists(data_stat_folder):
+#                         os.makedirs(data_stat_folder)
+#                 except: 
+#                         print ("The {} folder could not be created".format("Data_Stats"))
+#                 
+#                 layer_genome.to_csv(data_stat_folder+"/Samples.text", sep = "\t", index_label=[layer_genome.columns.name])
+#                 similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs.text", sep = "\t")
+#                 del layer_genome
+#                 for i in range(startProcess,endProcess+1):
+#                     all_similirities_list[i-startProcess].to_csv(data_stat_folder+"/Similatiry_Data_Sig_"+str(i)+".text", sep="\t")
+# =============================================================================
+                # record the samples
+                layer_genome.to_csv(output+"/Samples.txt", sep = "\t", index_label=[layer_genome.columns.name])
+                #similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs"+str(H_iteration)+".text", sep = "\t")
                 del layer_genome
-                for i in range(startProcess,endProcess+1):
-                    all_similirities_list[i-startProcess].to_csv(data_stat_folder+"/Similatiry_Data_Sig_"+str(i)+".text", sep="\t")
-                
                 ################################### Decompose the new signatures into global signatures   #########################
                 processAvg = information[solution-startProcess][0]
                 processSTE = information[solution-startProcess][2]
                 signature_stabilities = information[solution-startProcess][4]
                 signature_total_mutations = information[solution-startProcess][5]  
+                signature_stats = information[solution-startProcess][6] 
+                all_similarities = information[solution-startProcess][7]
                 
                
                 # create the folder for the final solution/ De Novo Solution
-                layer_directory1 = output+"/Selected_Solution/De_Novo_Solution"
+                layer_directory1 = output+"/Suggested_Solution/De_Novo_Solution"
                 try:
                     if not os.path.exists(layer_directory1):
                         os.makedirs(layer_directory1)
@@ -693,15 +784,15 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     print ("The {} folder could not be created".format("output"))
                 
                 # make the texts for signature plotting
-                signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Signature Stability")
-                signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations")
+                signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Stability", "float")
+                signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
                 # make de novo solution(processAvg, allgenomes, layer_directory1)
                 listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
-                sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities,signature_total_mutations = signature_total_mutations)    
+                sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities,signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
                
                 try:
                    # create the folder for the final solution/ Decomposed Solution
-                    layer_directory2 = output+"/Selected_Solution/Decomposed_Solution"
+                    layer_directory2 = output+"/Suggested_Solution/Decomposed_Solution"
                     try:
                         if not os.path.exists(layer_directory2):
                             os.makedirs(layer_directory2)
@@ -717,7 +808,7 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                     processAvg = np.hstack([globalsigs, newsigs])  
                     allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
                     
-                    sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames)
+                    sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, penalty=penalty)
                 
                 except:
                     print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
@@ -726,6 +817,14 @@ def sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startPro
                 
                
                 break
+    sysdata = open(out_put+"/JOB_METADATA.txt", "a")
+    toc = datetime.datetime.now()
+    sysdata.write("\nDate and Clock time when the execution ended: "+str(toc)+"\n")
+    sysdata.write("\nTotal time taken to execute the experiment: "+str(toc-tic)+"\n\n")
+    sysdata.write("-------Job Status------- \n")
+    sysdata.write("CONGRATULATIONS! THE JOB IS SUCCESSFULLY TERMINATED. SOME EXCITING RESULTS MIGHT BE WAITING FOR YOU!!!!!!!!")
+    sysdata.close()
+
     print("\n\n \nYour Job Is Successfully Terminated! Thank You For Using SigProfiler Extractor.\n ")
              
                 
