@@ -15,9 +15,7 @@ from sklearn import metrics
 import time
 import multiprocessing
 from functools import partial
-from scipy.optimize import minimize
 from numpy import linalg as LA
-from random import shuffle
 import sigProfilerPlotting as plot
 import string 
 import os
@@ -26,9 +24,8 @@ os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1"
 import sigproextractor as cosmic
-
-
-
+from scipy.stats import  wilcoxon
+from sigproextractor import single_sample as ss
 
 """################################################################## Vivid Functions #############################"""
 
@@ -44,6 +41,56 @@ def make_letter_ids(idlenth = 10):
     listOfSignatures = np.array(listOfSignatures)
     return listOfSignatures
 
+def union(a, b):
+    """ return the union of two lists """
+    return list(set(a) | set(b))
+
+def get_indeces(a, b):
+    
+    """ 
+    Extracts the indices multiple items in a list.
+    
+    Parameters:
+        a: list. where we want to get the index of the items.
+        b; list. the items we want to get index of. 
+    """
+
+    indeces = []
+    for i in b:
+        try: 
+            idx = a.index(i)
+            indeces.append(idx)
+        except: 
+            next
+
+    return indeces 
+
+    """
+    #example: 
+    x = [1,3,5,8]
+    y = [3, 8]
+    get_indeces(x, y)
+    #result
+    >>> [1,3]
+    """
+    
+
+def get_items_from_index(x,y):
+    """ decipher the values of items in a list from their indices.
+    """
+    z = []
+    for i in y:
+        z.append(x[i])
+    return z
+
+    """
+    #example: 
+    x = [1,3,5,8]
+    y = [1, 3]
+    get_items_from_index(x, y)
+    #result
+    >>> [3,8]
+    """
 ############################################################## FUNCTION ONE ##########################################    
 def signature_plotting_text(value, text, Type):
     name = text + ": "
@@ -155,15 +202,6 @@ def denormalize_samples(genomes, original_totals, normalization_value=30000):
     results = results.astype(int)
     return results 
 ##################################################################################################################    
-
-
-
-
-    
-
-    
-
-
 
 """###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
 def nnmf(genomes, nfactors):
@@ -494,401 +532,20 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess):
         
     return processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
 
-"""
-#############################################################################################################
-#################################### Functions For Single Sample Algorithms #############################
-#############################################################################################################
-"""
-def parameterized_objective2_custom(x, signatures, samples):
-    rec = np.dot(signatures, x)
-    try:
-        y = LA.norm(samples-rec[:,np.newaxis])
-    except:
-        y = LA.norm(samples-rec)
-    return y
 
+# To select the best clustering converge of the cluster_converge_innerloop
+def cluster_converge_outerloop(Wall, Hall, totalprocess):
+    avgSilhouetteCoefficients = -1  # intial avgSilhouetteCoefficients 
+    for i in range(50):  # using 10 iterations to get the best clustering 
+        
+        temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients = cluster_converge_innerloop(Wall, Hall, totalprocess)
+        
+        if avgSilhouetteCoefficients < temp_avgSilhouetteCoefficients:
+              processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients =   temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients
+        
+      
+    return  processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
 
-def constraints1(x, samples):
-    sumOfSamples=np.sum(samples, axis=0)
-    #print(sumOfSamples)
-    #print(x)
-    result = sumOfSamples-(np.sum(x))
-    #print (result)
-    return result
-
-
-def create_bounds(idxOfZeros, samples, numOfSignatures):
-    total = np.sum(samples)
-    b = (0.0, float(total))
-    lst =[b]*numOfSignatures
-    
-    for i in idxOfZeros:
-        lst[i] = (0.0, 0.0) 
-    
-    return lst 
-
-
-
-
-
-# to do the calculation, we need: W, samples(one column), H for the specific sample, tolerence
-
-def remove_all_single_signatures(W, H, genomes):
-    # make the empty list of the successfull combinations
-    successList = [0,[],0] 
-    # get the cos_similarity with sample for the oringinal W and H[:,i]
-    originalSimilarity= cos_sim(genomes, np.dot(W, H))
-    # make the original exposures of specific sample round
-    oldExposures = np.round(H)
-    
-    # set the flag for the while loop
-    if len(oldExposures[np.nonzero(oldExposures)])>1:
-        Flag = True
-    else: 
-        Flag = False
-        return oldExposures
-    # The while loop starts here
-    while Flag: 
-        
-        # get the list of the indices those already have zero values
-        if len(successList[1]) == 0:
-            initialZerosIdx = list(np.where(oldExposures==0)[0]) 
-            #get the indices to be selected
-            selectableIdx = list(np.where(oldExposures>0)[0]) 
-        elif len(successList[1]) > 1: 
-            initialZerosIdx = list(np.where(successList[1]==0)[0]) 
-            #get the indices to be selected
-            selectableIdx = list(np.where(successList[1]>0)[0])
-        else:
-            print("iteration is completed")
-            #break
-        
-        
-        # get the total mutations for the given sample
-        maxmutation = round(np.sum(genomes))
-        
-        # new signature matrix omiting the column for zero
-        #Winit = np.delete(W, initialZerosIdx, 1)
-        Winit = W[:,selectableIdx]
-        
-        # set the initial cos_similarity
-        record  = [0.11, []] 
-        # get the number of current nonzeros
-        l= Winit.shape[1]
-        
-        for i in range(l):
-            #print(i)
-            loopSelection = list(range(l))
-            del loopSelection[i]
-            #print (loopSelection)
-            W1 = Winit[:,loopSelection]
-           
-            
-            #initialize the guess
-            x0 = np.random.rand(l-1, 1)*maxmutation
-            x0= x0/np.sum(x0)*maxmutation
-            
-            #set the bounds and constraints
-            bnds = create_bounds([], genomes, W1.shape[1]) 
-            cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genomes]} 
-            
-            #the optimization step
-            sol = minimize(parameterized_objective2_custom, x0, args=(W1, genomes),  bounds=bnds, constraints =cons1, tol=1e-15)
-            
-            #print (sol.success)
-            #print (sol.x)
-            
-            #convert the newExposure vector into list type structure
-            newExposure = list(sol.x)
-            
-            #insert the loopZeros in its actual position 
-            newExposure.insert(i, 0)
-            
-            #insert zeros in the required position the newExposure matrix
-            initialZerosIdx.sort()
-            for zeros in initialZerosIdx:
-                newExposure.insert(zeros, 0)
-            
-            # get the maximum value the new Exposure
-            maxcoef = max(newExposure)
-            idxmaxcoef = newExposure.index(maxcoef)
-            
-            newExposure = np.round(newExposure)
-            
-            
-            if np.sum(newExposure)!=maxmutation:
-                newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
-                
-            
-            newSample = np.dot(W, newExposure)
-            newSimilarity = cos_sim(genomes, newSample) 
-             
-            difference = originalSimilarity - newSimilarity
-            #print(originalSimilarity)
-            #print(newSample)
-            #print(newExposure)
-            #print(newSimilarity)
-            
-            #print(difference)
-            #print (newExposure)
-            #print (np.round(H))
-            #print ("\n\n")
-             
-            if difference<record[0]:
-                record = [difference, newExposure, newSimilarity]
-            
-            
-        #print ("This loop's selection is {}".format(record))
-        
-        if record[0]>0.01:   
-            Flag=False
-        elif len(record[1][np.nonzero(record[1])])==1:
-            successList = record 
-            Flag=False
-        else:
-            successList = record
-        #print("The loop selection is {}".format(successList))
-        
-        #print (Flag)
-        #print ("\n\n")
-    
-    #print ("The final selection is {}".format(successList))
-    
-    if len(successList[1])==0:
-        successList = [0.0, oldExposures, originalSimilarity]
-    
-    return successList[1]
-    
-
-
-def remove_all_single_signatures_pool(indices, W, exposures, totoalgenomes):
-    i = indices
-    H = exposures[:,i]
-    genomes= totoalgenomes[:,i]
-    # make the empty list of the successfull combinations
-    successList = [0,[],0] 
-    # get the cos_similarity with sample for the oringinal W and H[:,i]
-    originalSimilarity= cos_sim(genomes, np.dot(W, H))
-    # make the original exposures of specific sample round
-    oldExposures = np.round(H)
-    
-    # set the flag for the while loop
-    if len(oldExposures[np.nonzero(oldExposures)])>1:
-        Flag = True
-    else: 
-        Flag = False
-        return oldExposures
-    # The while loop starts here
-    while Flag: 
-        
-        # get the list of the indices those already have zero values
-        if len(successList[1]) == 0:
-            initialZerosIdx = list(np.where(oldExposures==0)[0]) 
-            #get the indices to be selected
-            selectableIdx = list(np.where(oldExposures>0)[0]) 
-        elif len(successList[1]) > 1: 
-            initialZerosIdx = list(np.where(successList[1]==0)[0]) 
-            #get the indices to be selected
-            selectableIdx = list(np.where(successList[1]>0)[0])
-        else:
-            print("iteration is completed")
-            #break
-        
-        
-        # get the total mutations for the given sample
-        maxmutation = round(np.sum(genomes))
-        
-        # new signature matrix omiting the column for zero
-        #Winit = np.delete(W, initialZerosIdx, 1)
-        Winit = W[:,selectableIdx]
-        
-        # set the initial cos_similarity
-        record  = [0.11, []] 
-        # get the number of current nonzeros
-        l= Winit.shape[1]
-        
-        for i in range(l):
-            #print(i)
-            loopSelection = list(range(l))
-            del loopSelection[i]
-            #print (loopSelection)
-            W1 = Winit[:,loopSelection]
-           
-            
-            #initialize the guess
-            x0 = np.random.rand(l-1, 1)*maxmutation
-            x0= x0/np.sum(x0)*maxmutation
-            
-            #set the bounds and constraints
-            bnds = create_bounds([], genomes, W1.shape[1]) 
-            cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genomes]} 
-            
-            #the optimization step
-            sol = minimize(parameterized_objective2_custom, x0, args=(W1, genomes),  bounds=bnds, constraints =cons1, tol=1e-15)
-            
-            #print (sol.success)
-            #print (sol.x)
-            
-            #convert the newExposure vector into list type structure
-            newExposure = list(sol.x)
-            
-            #insert the loopZeros in its actual position 
-            newExposure.insert(i, 0)
-            
-            #insert zeros in the required position the newExposure matrix
-            initialZerosIdx.sort()
-            for zeros in initialZerosIdx:
-                newExposure.insert(zeros, 0)
-            
-            # get the maximum value the new Exposure
-            maxcoef = max(newExposure)
-            idxmaxcoef = newExposure.index(maxcoef)
-            
-            newExposure = np.round(newExposure)
-            
-            
-            if np.sum(newExposure)!=maxmutation:
-                newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
-                
-            
-            newSample = np.dot(W, newExposure)
-            newSimilarity = cos_sim(genomes, newSample) 
-             
-            difference = originalSimilarity - newSimilarity
-            #print(originalSimilarity)
-            #print(newSample)
-            #print(newExposure)
-            #print(newSimilarity)
-            
-            #print(difference)
-            #print (newExposure)
-            #print (np.round(H))
-            #print ("\n\n")
-             
-            if difference<record[0]:
-                record = [difference, newExposure, newSimilarity]
-            
-            
-        #print ("This loop's selection is {}".format(record))
-        
-        if record[0]>0.01:   
-            Flag=False
-        elif len(record[1][np.nonzero(record[1])])==1:
-            successList = record 
-            Flag=False
-        else:
-            successList = record
-        #print("The loop selection is {}".format(successList))
-        
-        #print (Flag)
-        #print ("\n\n")
-    
-    #print ("The final selection is {}".format(successList))
-    
-    if len(successList[1])==0:
-        successList = [0.0, oldExposures, originalSimilarity]
-    #print ("one sample completed")
-    return successList[1]
-
-
-#################################################################### Function to add signatures to samples from database #############################
-def add_signatures(W, genome, cutoff=0.025):
-    
-    # This function takes an array of signature and a single genome as input, returns a dictionray of cosine similarity, exposures and presence 
-    # of signatures according to the indices of the original signature array
-    
-    originalSimilarity = -1 # it can be also written as oldsimilarity
-    maxmutation = round(np.sum(genome))
-    init_listed_idx = []
-    init_nonlisted_idx = list(range(W.shape[1]))
-    finalRecord = [["similarity place-holder" ], ["newExposure place-holder"], ["signatures place-holder"]] #for recording the cosine difference, similarity, the new exposure and the index of the best signauture
-    
-    
-    while True:
-        bestDifference = -1 
-        bestSimilarity = -1
-        loopRecord = [["newExposure place-holder"], ["signatures place-holder"], ["best loop signature place-holder"]]
-        for sig in init_nonlisted_idx:
-            
-            
-            if len(init_listed_idx)!=0:
-                loop_liststed_idx=init_listed_idx+[sig]
-                loop_liststed_idx.sort()
-                #print(loop_liststed_idx)
-                W1 = W[:,loop_liststed_idx]
-                #print (W1.shape)
-                #initialize the guess
-                x0 = np.random.rand(W1.shape[1], 1)*maxmutation
-                x0= x0/np.sum(x0)*maxmutation
-                
-                #set the bounds and constraints
-                bnds = create_bounds([], genome, W1.shape[1]) 
-                cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]} 
-            # for the first time addintion  
-            else:
-                W1 = W[:,sig][:,np.newaxis]
-                #print (W1.shape)        
-                #initialize the guess
-                x0 = np.ones((1,1))*maxmutation    
-            
-                #set the bounds and constraints
-                bnds = create_bounds([], genome, 1) 
-                cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]} 
-            
-            #the optimization step
-            sol = minimize(parameterized_objective2_custom, x0, args=(W1, genome),  bounds=bnds, constraints =cons1, tol=1e-30)
-            
-            #print(W1)
-            #convert the newExposure vector into list type structure
-            newExposure = list(sol.x)
-            
-            # get the maximum value of the new Exposure
-            maxcoef = max(newExposure)
-            idxmaxcoef = newExposure.index(maxcoef)
-            
-            newExposure = np.round(newExposure)
-            
-            # We may need to tweak the maximum value of the new exposure to keep the total number of mutation equal to the original mutations in a genome
-            if np.sum(newExposure)!=maxmutation:
-                newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
-             
-            # compute the estimated genome
-            est_genome = np.dot(W1, newExposure)
-            newSimilarity = cos_sim(genome[:,0], est_genome)
-            
-            difference = newSimilarity - originalSimilarity 
-            
-            # record the best values so far
-            if difference>bestDifference:
-                bestDifference = difference
-                bestSimilarity = newSimilarity
-                loopRecord = [newExposure, W1, sig]  #recording the cosine difference, the new exposure and the index of the best signauture
-                #print(newSimilarity)
-        
-        # 0.01 is the thresh-hold for now 
-        if bestSimilarity-originalSimilarity>cutoff:
-            originalSimilarity = bestSimilarity
-            init_listed_idx.append(loopRecord[2])
-            init_nonlisted_idx.remove(loopRecord[2])
-            init_listed_idx.sort()
-            #print(originalSimilarity)
-            finalRecord = [originalSimilarity, loopRecord[0], init_listed_idx, loopRecord[1], genome]
-            #print (finalRecord)
-            
-            if len(init_nonlisted_idx)!= 0:
-                
-                continue
-            else:
-                break
-        else:
-            break
-        
-    #print(finalRecord)
-    dictExposure= {"similarity":finalRecord[0], "exposures":finalRecord[1], "signatures": finalRecord[2]}  
-    addExposure = np.zeros([W.shape[1]])
-    addExposure[dictExposure["signatures"]]=dictExposure["exposures"]
-    
-    return  addExposure, finalRecord[0]
 
 
 
@@ -933,37 +590,47 @@ def signature_decomposition(signatures, mtype, directory):
     fh = open(directory+"/comparison_with_gobal_ID_signatures.csv", "w")
     fh.write("De novo extracted, Global NMF Signatures, Similarity\n")
     fh.close()
-    
+    dictionary = {}
     for i in range(signatures.shape[1]):
         
-        
-        exposures, similarity = add_signatures(sigDatabase, signatures[:,i][:,np.newaxis])
+        if signatures.shape[0]==96:
+            
+            exposures, similarity = ss.add_signatures(sigDatabase, signatures[:,i][:,np.newaxis], presentSignatures=[0,4], solver = "nnls", metric = "l2")
+       
         #print(signames[np.nonzero(exposures)], similarity)
         #print(exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100)
         exposure_percentages = exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100
         listofinformation = list("0"*len(np.nonzero(exposures)[0])*3)
         
         count =0
+        decomposed_signatures = []
         for j in np.nonzero(exposures)[0]:
             listofinformation[count*3] = signames[j]
             listofinformation[count*3+1] = round(exposure_percentages[count],2)
             listofinformation[count*3+2]="%"
+            decomposed_signatures.append(signames[j])
             count+=1
         ListToTumple = tuple([mtype, letters[i]]+listofinformation+ [similarity])
+        
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f\n" 
+        
         #print(strings%(ListToTumple))
-        if len(np.nonzero(exposures)[0])<4:
+        if len(np.nonzero(exposures)[0])<5: ########### minimum signtatures needs to be fitted to become a unique signature 
             allsignatures = np.append(allsignatures, np.nonzero(exposures))
             fh = open(directory+"/comparison_with_gobal_ID_signatures.csv", "a")
             fh.write(strings%(ListToTumple))
             fh.close()
+            
+            dictionary.update({"Signature {}".format(letters[i]):decomposed_signatures}) 
+            
         else:
             newsig.append("Signature "+letters[i])
             newsigmatrixidx.append(i)
             fh = open(directory+"/comparison_with_gobal_ID_signatures.csv", "a")
             fh.write("Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 ))
             fh.close()
-            
+            dictionary.update({"Signature {}".format(letters[i]):["Signature {}".format(letters[i])]}) 
+            #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
        
     
     different_signatures = np.unique(allsignatures)
@@ -973,9 +640,10 @@ def signature_decomposition(signatures, mtype, directory):
     globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
     newsigsmats=signatures[:,newsigmatrixidx]
     
+    #for k, v in dictionary.items():
+        #print('{}: {}'.format(k, v))
     
-    
-    return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000} 
+    return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary} 
 
 
 
@@ -1030,11 +698,11 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     
     
     processes=i #renamed the i as "processes"    
-    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_innerloop(Wall, Hall, processes)
-       
+    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes)
+    reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
     
 
-    return  processAvg, exposureAvg, processSTE, exposureSTE, avgSilhouetteCoefficients, np.round(clusterSilhouetteCoefficients,3), finalgenomeErrors, finalgenomesReconstructed, Wall, Hall, processes
+    return  processAvg, exposureAvg, processSTE, exposureSTE, avgSilhouetteCoefficients, np.round(clusterSilhouetteCoefficients,3), finalgenomeErrors, finalgenomesReconstructed, Wall, Hall, reconstruction_error, processes
 
 
 
@@ -1051,13 +719,12 @@ def probabilities(W, H, index, allsigids, allcolnames):
     W = np.array(W)
     H= np.array(H)
     # rebuild the original matrix from the estimated W and H 
-    
     genomes = np.dot(W,H)
     
     
     result = 0
     for i in range(H.shape[1]): #here H.shape is the number of sample
-       
+        
         M = genomes[:,i][np.newaxis]
         #print (M.shape)
         
@@ -1260,12 +927,13 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     #print ("genomes are ok", genome)
     processAvg= (loopResults[1])
     exposureAvg= (loopResults[2])
-    processStabityAvg= (loopResults[5])
+    process_stabililities = np.array(loopResults[6])
+    meanProcessStabity= round(np.min(process_stabililities), 2) # here meanProcess stability is the minimum stability !!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
     #print ("processStabityAvg is ok", processStabityAvg)
     
     # Calculating and listing the reconstruction error, process stability and signares to make a csv file at the end
     reconstruction_error = round(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genome, 'fro'), 2)
-    
     
     #print ("reconstruction_error is ok", reconstruction_error)
     #print (' Initial reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
@@ -1321,8 +989,8 @@ def export_information(loopResults, mutation_context, output, index, colnames):
     signature_stats.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_"+"Signatures_stats.txt", "\t", index_label=[exposures.columns.name]) 
     
     fh = open(output+"/All_solutions_stat.csv", "a") 
-    print ('The reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,2), i))
-    fh.write('{}, {}, {}\n'.format(i, round(processStabityAvg, 2), round(reconstruction_error, 2)))
+    print ('The reconstruction error is {} and the minimum process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(meanProcessStabity,2), i))
+    fh.write('{}, {}, {}\n'.format(i, round(meanProcessStabity, 2), round(reconstruction_error, 2)))
     fh.close()
     
     
@@ -1353,16 +1021,63 @@ def export_information(loopResults, mutation_context, output, index, colnames):
 #############################################################################################################
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
-def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", signature_total_mutations= " ", signature_stats = "none", penalty=0.025):
+def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
+                        signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = 0, penalty=0.05):
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
     
     allgenomes = np.array(allgenomes)
-    exposureAvg = np.zeros([processAvg.shape[1], allgenomes.shape[1]] )
-    for g in range(allgenomes.shape[1]):
+    
+    exposureAvg = np.zeros([processAvg.shape[1], allgenomes.shape[1]] )  
+    if remove_sigs==True:
+        denovo_exposureAvg = denovo_exposureAvg.T
         
-        exposures, similarity = add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], cutoff=penalty)
-        exposureAvg[:,g] = exposures
+        #print("\n")
+        for r in range(allgenomes.shape[1]):
+            #print("\n\n\n\n\n                                        ################ Sample "+str(r+1)+ " #################")
+            sample_exposure = np.array(denovo_exposureAvg.iloc[:,r])
+            #print(sample_exposure)
+            init_sig_idx = np.nonzero(sample_exposure)[0]
+            init_sigs = denovo_exposureAvg.index[init_sig_idx]
+            
+            init_decomposed_sigs = []
+            for de_novo_sig in init_sigs:
+                
+                init_decomposed_sigs = union(init_decomposed_sigs, list(attribution[de_novo_sig]))
+                
+            #print(init_decomposed_sigs) 
+            init_decomposed_sigs_idx = get_indeces(allsigids, init_decomposed_sigs)
+            init_decomposed_sigs_idx.sort()
+            fit_signatures = processAvg[:,init_decomposed_sigs_idx]
+            
+            #fit signatures
+            newExposure, newSimilarity = ss.fit_signatures(fit_signatures, allgenomes[:,r])
+            
+            #create the exposureAvg vector
+            #print(init_decomposed_sigs_idx)
+            #print(newExposure)
+            for nonzero_idx, nozero_exp in zip(init_decomposed_sigs_idx, newExposure):
+                exposureAvg[nonzero_idx, r] = nozero_exp
+            #print("################################################################# Original :", exposureAvg[:, r])    
+            #remove signatures 
+            exposureAvg[:,r] = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="cosine", solver = "nnls", cutoff=0.01)
+            #print("################################################################# After Remove :", exposureAvg[:, r])
+            
+            init_add_sig_idx = list(np.nonzero(exposureAvg[:, r])[0])
+            #print(init_add_sig_idx)
+            
+            # add signatures
+            exposureAvg[:, r], similarity = ss.add_signatures(processAvg, allgenomes[:,r][:,np.newaxis], presentSignatures=init_add_sig_idx,cutoff=penalty, metric="l2", solver = "nnls")
+            #print(exposureAvg[:, r])
+            #print("\n")
+            
+            
+            
+    else:      
+        for g in range(allgenomes.shape[1]):
+            
+            exposures, similarity = ss.add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], presentSignatures=[],cutoff=penalty)
+            exposureAvg[:,g] = exposures
         
     
     processAvg= pd.DataFrame(processAvg.astype(float))
@@ -1427,7 +1142,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     except:
         pass
     
-    
+    return exposures
 """
 #############################################################################################################
 ######################################### PLOTTING FUNCTIONS ##############################################
@@ -1465,70 +1180,74 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     data = pd.read_csv(csvfile, sep=",")
     
     #exracting and preparing other similiry matrices from the all_similarities_list
-    median_l1 = []; maximum_l1 = []; median_l2 = []; maximum_l2 = []; median_kl = []; maximum_kl = [];
-    for values in range(len(all_similarities_list)):
+    mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; all_mean_l2=[];
+    #median_l1= Median L1 , maximum _l1 = Maximum L1, median_l2= Median L2 , maximum _l2 = Maximum L2, median_kl= Median KL , maximum _kl = Maximum KL, wilcoxontest = Wilcoxontest significance (True or False); all_med_l2=[] = list of all Median L2
+    
+    
+    #statistical test we need to set a previous L2 (pre_l2) which have a same length as the sample number
+    pre_l2_dist = np.zeros([all_similarities_list[0].shape[0]])
+    pre_mean = np.inf  
+    
+    for values in range(len(all_similarities_list)): # loop through the opposite direction
       all_similarities = all_similarities_list[values].iloc[:,[3,5,6]]
       
+      #record the statistical test between the l2_of the current and previous signatures first
+      cur_l2_dist = all_similarities["L2_Norm_%"]
+      cur_mean = all_similarities["L2_Norm_%"].mean()
+      wiltest = wilcoxon(np.array(cur_l2_dist), np.array(pre_l2_dist))[1]
       
-      median_l1.append(all_similarities["L1_Norm_%"].median())
-      maximum_l1.append(all_similarities["L1_Norm_%"].max())
-      median_l2.append(all_similarities["L2_Norm_%"].median())
-      maximum_l2.append(all_similarities["L2_Norm_%"].max())
-      median_kl.append(all_similarities["KL Divergence"].median())
-      maximum_kl.append(all_similarities["KL Divergence"].max())
-    
-    medl1 = np.array(median_l1)/100
-    medl1 = np.round(medl1, 3)
-    
-    # we will use the median_l1 and stability to select the optimal number of signatures
-#---------------------------- calculation of solution starts -------------------------------------------------#
-    def change_scale(x, cul = 1, cll = 0.0, nul = 1, nll = 0.0):
-        
-        current_upper_limit = cul
-        current_lower_limit = cll
-        new_upper_limit = nul
-        new_lower_limit = nll
-                
-        slope = (new_upper_limit-new_lower_limit)/(current_upper_limit-current_lower_limit)
-        y = slope*(x - current_upper_limit) + new_upper_limit
-            
-            
-        return y  
-    
-    new_data=data
-    new_data = new_data.set_index("Total Signatures")
-    x = np.array(new_data)
+      
+      if (wiltest<0.05) and (pre_mean-cur_mean>0):
+          wilcoxontest.append("True")
+          all_mean_l2.append(cur_mean)
+          pre_l2_dist = cur_l2_dist
+          pre_mean = cur_mean
+      else:
+          wilcoxontest.append("False")
+          all_mean_l2.append(pre_mean)
+          pre_l2_dist = cur_l2_dist
+          
+      
+      mean_l1.append(round(all_similarities["L1_Norm_%"].mean(),2))
+      maximum_l1.append(round(all_similarities["L1_Norm_%"].max(),2))
+      mean_l2.append(round(all_similarities["L2_Norm_%"].mean(),2))
+      maximum_l2.append(round(all_similarities["L2_Norm_%"].max(),2))
+      mean_kl.append(round(all_similarities["KL Divergence"].mean(), 2))
+      maximum_kl.append(round(all_similarities["KL Divergence"].max(),2))
+      
+      
+    data.iloc[:,2] = data.iloc[:,2]*100
+    data = data.assign(**{'Mean Sample L1%': mean_l1, 'Maximum Sample L1%': maximum_l1, 'Mean Sample L2%': mean_l2, 'Maximum Sample L2%': maximum_l2, 'Significant Decrease of L2':wilcoxontest, 'Mean Sample KL': mean_kl, 'Maximum Sample KL': maximum_kl})  
+    data=data.rename(columns = {'Stability': 'Minimum Stability'})
+    data = data.set_index("Total Signatures")
     
     
-
-    scaledRE = medl1    
-        
-    scaledStability = np.zeros(len(x[:,0]))
-    for i in range(len(x[:,0])):
-        #print(x[i,0])
-        if x[i,0]>=0.8:
-            scaledStability[i] = change_scale(x[i,0], cul = 1, cll = 0.8, nul = 0.5, nll = 0.2)
-        elif x[i,0]<0.8:
-            scaledStability[i] = change_scale(x[i,0], cul = 0.8, cll = -1.0, nul = 0.05, nll = 0.001)
+    #get the solution
+    probable_solutions = data.copy()
+    probable_solutions["Significant Decrease of L2"] = probable_solutions["Significant Decrease of L2"].astype(str)
+    probable_solutions = probable_solutions[probable_solutions["Significant Decrease of L2"]=="True"]
+    probable_solutions = probable_solutions[probable_solutions["Minimum Stability"]>0.70]
     
     
+    try: 
+        alternative_solution = int(probable_solutions.index[-1])
+    except:
+        alternative_solution = int(data.index[0])
+        print("There is no solution over the thresh-hold minimum stability. We are selecting the minimum number of signature which could be wrong.")
+#---------------------------- alternative solution end -------------------------------------------------#
     
     
-    results  = np.round(scaledStability/scaledRE,2)  
+    # Create some mock data
     
-
-    alternative_solution  = np.argmax(results)
-#---------------------------- calculation of solution ends -------------------------------------------------#   
-
+    t = np.array(data.index)
     
-    t = np.array(data.iloc[:,0])
-    
-    data1 = np.array(data.iloc[:,2])  #reconstruction error
-    data2 = np.array(data.iloc[:,1])  #process stability
+    #data1 = np.array(data.iloc[:,2])  #reconstruction error
+    data1 = np.array(mean_l2)/100
+    data2 = np.array(data.iloc[:,0])  #process stability
     
 
     
-    alternative_solution = t[alternative_solution]
+    
     shadow_alternative_start = alternative_solution-0.2
     shadow_alternative_end=alternative_solution+0.2
     
@@ -1537,39 +1256,38 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     color = 'tab:red'
     ax1.set_xlabel('Total Signatures')
-    ax1.set_ylabel('Matrix Frobenius%', color=color)
+    ax1.set_ylabel('Mean L2 %', color=color)
     ax1.set_title(title)
-    ax1.plot(t, data1, marker='o', color=color)
+    lns1 = ax1.plot(t, data1, marker='o', linestyle=":", color=color, label = 'Mean L2 %')
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
     #ax1.axvspan(shadow_start, shadow_end, alpha=0.20, color='#ADD8E6')
-    ax1.axvspan(shadow_alternative_start,  shadow_alternative_end, alpha=0.20, color='#0EF91E')         
+    ax1.axvspan(shadow_alternative_start,  shadow_alternative_end, alpha=0.20, color='#696969')         
     # manipulate the y-axis values into percentage 
     vals = ax1.get_yticks()
     ax1.set_yticklabels(['{:,.0%}'.format(x) for x in vals])
     
+    #ax1.legend(loc=0)
+    
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:blue'
-    ax2.set_ylabel('Signature Stability', color=color)  # we already handled the x-label with ax1
-    ax2.plot(t, data2, marker='o', color=color)
+    ax2.set_ylabel('Minimum Stability', color=color)  # we already handled the x-label with ax1
+    lns2 = ax2.plot(t, data2, marker='s', linestyle="-.", color=color, label = 'Minimum Stability')
     ax2.tick_params(axis='y', labelcolor=color)
-    
+    #ax2.legend(loc=1)
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     #plt.show()
+    
+    # added these three lines
+    lns = lns1+lns2
+    labs = [l.get_label() for l in lns]
+    ax1.legend(lns, labs, loc=0)
+    
     plt.savefig(output+'/'+mtype+'_selection_plot.pdf')    
     
     plt.close()
     
-    
-    
-   
-    
- 
-    data.iloc[:,2] = data.iloc[:,2]*100
-    data = data.assign(**{'Median Sample L1%': median_l1, 'Maximum Sample L1%': maximum_l1, 'Median Sample L2%': median_l2, 'Maximum Sample L2%': maximum_l2, 'Median Sample KL': median_kl, 'Maximum Sample KL': maximum_kl})  
-    data=data.rename(columns = {'Stability':'Stability (AVG Silhouette)'})
-    data = data.set_index("Total Signatures")
-    #put percentage sign after the values from column 3 to 7 
+
     data.iloc[:,1:6] = data.iloc[:,1:6].astype(str) + '%'
     return alternative_solution, data
 ######################################## Plot Samples ####################################################

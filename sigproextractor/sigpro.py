@@ -31,6 +31,7 @@ import numpy as np
 import pandas as pd
 import time
 from sigproextractor import subroutines as sub
+import SigProfilerMatrixGenerator
 from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as datadump   
 import shutil
 import multiprocessing as mp
@@ -39,6 +40,8 @@ import platform
 import datetime
 import psutil
 import resource
+import sigProfilerPlotting 
+from sigproextractor import single_sample as ss
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -98,7 +101,7 @@ def importdata(datatype="matobj"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.025, resample = True): 
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True): 
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -126,13 +129,19 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
             
     cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. 
     
-    hierarchy: boolean, optional. Defines if the signature will be extracted in a hierarchical fashion. The default value is "False".
+    hierarchy: Boolean, optional. Defines if the signature will be extracted in a hierarchical fashion. The default value is "False".
     
-    mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "INDEL"].
+    par_h = Float, optional. Ranges from 0 t0 1. Default is 0.90. Active only if the "hierarchy" is True. Sets the cutoff to select the unexplained samples in a hierarchical layer based on the cosine similarity 
+    between the original and reconstructed samples.  
+    
+    mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
+    is the DINULEOTIDE context and ID is INDEL context. 
             
-    exome: boolean, optional. Defines if the exomes will be extracted. The default value is "False".
+    exome: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
+    penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to asaign signatures to a sample.    
     
+    resample: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
     
     
     Returns
@@ -244,6 +253,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
     sysdata.write("\n-------Python and Package Versions------- \n")
     sysdata.write("Python Version: "+str(platform.sys.version_info.major)+"."+str(platform.sys.version_info.minor)+"."+str(platform.sys.version_info.micro)+"\n")
     sysdata.write("Sigproextractor Version: "+cosmic.__version__+"\n")
+    sysdata.write("SigprofilerPlotting Version: "+sigProfilerPlotting.__version__+"\n")
+    sysdata.write("SigprofilerMatrixGenerator Version: "+SigProfilerMatrixGenerator.__version__+"\n")
     sysdata.write("Pandas version: "+pd.__version__+"\n")
     sysdata.write("Numpy version: "+np.__version__+"\n")
     sysdata.write("Scipy version: "+scipy.__version__+"\n")
@@ -311,7 +322,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
         if mtypes[0] == "78":
             mtypes = ["DINUC"]
         elif mtypes[0] == "94":
-            mtypes = ["INDEL"]
+            mtypes = ["ID"]
         
     ###############################################################################################################
     
@@ -333,7 +344,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
         if mtypes[0] == "78":
             mtypes = ["DINUC"]
         elif mtypes[0] == "94":
-            mtypes = ["INDEL"]
+            mtypes = ["ID"]
         
        
         
@@ -374,7 +385,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
         if mtypes[0] == "78":
             mtypes = ["DINUC"]
         elif mtypes[0] == "94":
-            mtypes = ["INDEL"]
+            mtypes = ["ID"]
         
         #################################################################################################################
         
@@ -410,35 +421,40 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 
                  
         else:
-            if set(["96", "DINUC", "INDEL"]).issubset(data):            
-                mtypes = ["96", "DINUC", "INDEL"] 
+            if set(["96", "DINUC", "ID"]).issubset(data):            
+                mtypes = ["96", "DINUC", "ID"] 
             elif set(["96", "DINUC"]).issubset(data): 
                 mtypes = ["96", "DINUC"]
-            elif set(["INDEL"]).issubset(data):            
-                mtypes = ["INDEL"] 
+            elif set(["ID"]).issubset(data):            
+                mtypes = ["ID"] 
         #print (mtypes)
         #change working directory 
         
         
     else:
         raise ValueError("Please provide a correct input_type. Check help for more details")
+        
           
     ###########################################################################################################################################################################################                  
     for m in mtypes:
         
         # Determine the types of mutation which will be needed for exporting and copying the files
-        if not (m=="DINUC"or m=="INDEL"):
+        if not (m=="DINUC"or m=="ID"):
             mutation_type = "SBS"+m
             
         else:
             if m == "DINUC":
                 mutation_type = "DBS78"
-            elif m== "INDEL":
+            elif m== "ID":
                 mutation_type = "ID83"
                 
         
         if input_type=="vcf":
-            genomes = data[m]
+            genomes = pd.DataFrame(data[m])
+            #in the plotting funciton "ID" is used as "INDEL"
+            if m=="ID":
+                m="INDEL" #for plotting 
+                
             genomes = genomes.loc[:, (genomes != 0).any(axis=0)]
             allgenomes = genomes.copy()  # save the allgenomes for the final results 
             index = genomes.index.values
@@ -493,7 +509,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
             
             all_similirities_list = [] #this list is going to store the dataframes of different similirieties as items
             minimum_stabilities = []
-            similarity_dataframe = pd.DataFrame({"Sample Name": list(colnames)})
+            #similarity_dataframe = pd.DataFrame({"Sample Name": list(colnames)})
             
             
             #normatlize the genomes before running nmf
@@ -510,6 +526,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 finalgenomesReconstructed, \
                 finalWall, \
                 finalHall, \
+                reconstruction_error, \
                 processes = sub.decipher_signatures(genomes= genomes, \
                                                     i = i, \
                                                     totalIterations=totalIterations, \
@@ -523,18 +540,34 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 
           
                 # remove signatures only if the process stability is above a thresh-hold of 0.85
-                if  avgSilhouetteCoefficients> -0.85:   
+                if  avgSilhouetteCoefficients> -1.0:   
                     stic = time.time() 
+                    
+                    #removing signatures:
+# =============================================================================
+#                     pool = mp.Pool()
+#                     results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
+#                     pooloutput = [p.get() for p in results]
+#                     
+#                     #print(results)
+#                     pool.close()
+#                     
+#                     for i in range(len(pooloutput)):
+#                         #print(results[i])
+#                         exposureAvg[:,i]=pooloutput[i]
+# =============================================================================
+                        
+                    #refitting signatures:
+                    #removing signatures:
                     pool = mp.Pool()
-                    results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
+                    results = [pool.apply_async(ss.fit_signatures_pool, args=(genomes,processAvg,x,)) for x in range(genomes.shape[1])]
                     pooloutput = [p.get() for p in results]
-                    
-                    #print(results)
                     pool.close()
-                    
+                                        
                     for i in range(len(pooloutput)):
-                        #print(results[i])
-                        exposureAvg[:,i]=pooloutput[i]
+                        
+                        exposureAvg[:,i]=pooloutput[i][0] 
+                        
                     stoc = time.time()
                     print ("Optimization time is {} seconds".format(stoc-stic))    
                     
@@ -551,7 +584,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 
                 
                 signature_stats = pd.DataFrame({"Stability": clusterSilhouetteCoefficients, "Total Mutations": signature_total_mutations})
-                minimum_stabilities.append(round(clusterSilhouetteCoefficients.min(),2))
+                minimum_stabilities.append(round(np.mean(clusterSilhouetteCoefficients),2)) #here minimum stability is the average stability !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                 # Compute the estimated genome from the processAvg and exposureAvg
                 est_genomes = np.dot(processAvg, exposureAvg) 
                 
@@ -561,7 +594,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 #print(totalMutations)
                 ##########################################################################################################################################################################
                 # store the resutls of the loop.  Here,  processStd and exposureStd are standard Errors, NOT STANDARD DEVIATIONS.           
-                loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, round(avgSilhouetteCoefficients, 2), clusterSilhouetteCoefficients, signature_total_mutations, all_similarities, signature_stats, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
+                loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, signature_total_mutations, all_similarities, signature_stats, reconstruction_error, finalgenomeErrors, finalgenomesReconstructed, finalWall, finalHall, processes]    
                 information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchical approach
                 
                 ################################# Export the results ###########################################################    
@@ -571,7 +604,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 
                 all_similirities_list.append(all_similarities)
                     #
-                similarity_dataframe["Total Signatures "+str(processes)] = cosine_similarities
+                #similarity_dataframe["Total Signatures "+str(processes)] = cosine_similarities
                 
                 
                 
@@ -581,18 +614,18 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
             ################################################################################################################    
             # Print the Stabiltity vs Reconstruction Error as get the solution as well
             solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mutation_type)
-            all_stats.insert(1, "Minimum Stability", minimum_stabilities)
+            all_stats.insert(0, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
             all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
             # add more information to results_stat.csv
              
             
             #Set index for the  the Similarity Dataframe
-            similarity_dataframe = similarity_dataframe.set_index("Sample Name")
+            #similarity_dataframe = similarity_dataframe.set_index("Sample Name")
             
             #Add the total mutations of each sample
-            sample_total_mutations = list(np.sum(genomes, axis =0))
+            #sample_total_mutations = list(np.sum(genomes, axis =0))
            
-            similarity_dataframe.insert(loc=0, column = "Total Mutations", value = sample_total_mutations)
+            #similarity_dataframe.insert(loc=0, column = "Total Mutations", value = sample_total_mutations)
             
             
             
@@ -720,7 +753,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                     signature_stats = pd.DataFrame({"Stability": signature_stabilities, "Total Mutations": signature_total_mutations})
                     # make de novo solution(processAvg, allgenomes, layer_directory1)
                     listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
-                    sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, signature_total_mutations = signature_total_mutations, signature_stats=signature_stats, penalty=penalty)    
+                    exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, signature_total_mutations = signature_total_mutations, signature_stats=signature_stats, penalty=penalty)    
                     
                     try:
                         # create the folder for the final solution/ Decomposed Solution
@@ -739,8 +772,10 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                         newsigs = final_signatures["newsigs"]
                         processAvg = np.hstack([globalsigs, newsigs])  
                         allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+                        attribution = final_signatures["dictionary"]
                         
-                        sub.make_final_solution(processAvg, allgenomes, allsigids, layer_directory2, m, index, allcolnames, penalty=penalty)
+                        exposureAvg = sub.make_final_solution(processAvg, allgenomes, allsigids, layer_directory2, m, index, allcolnames, \
+                                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , penalty=penalty)
                     except:
                         print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                         shutil.rmtree(layer_directory2)
@@ -788,10 +823,12 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                 signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
                 # make de novo solution(processAvg, allgenomes, layer_directory1)
                 listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
-                sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities,signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
+                exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
+                               allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
+                               signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
                
                 try:
-                   # create the folder for the final solution/ Decomposed Solution
+                    # create the folder for the final solution/ Decomposed Solution
                     layer_directory2 = output+"/Suggested_Solution/Decomposed_Solution"
                     try:
                         if not os.path.exists(layer_directory2):
@@ -807,9 +844,11 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                     newsigs = final_signatures["newsigs"]
                     processAvg = np.hstack([globalsigs, newsigs])  
                     allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+                    attribution = final_signatures["dictionary"]
                     
-                    sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, penalty=penalty)
-                
+                    
+                    exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
+                                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , penalty=penalty)
                 except:
                     print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                     shutil.rmtree(layer_directory2)

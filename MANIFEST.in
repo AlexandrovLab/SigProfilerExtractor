@@ -1,0 +1,5 @@
+include README.rst
+include sigproextractor/data/sigProfiler_DBS_signatures.csv
+include sigproextractor/data/vcftest/breast_genomes_all_indels.txt
+include sigproextractor/data/vcftest/breast_genomes_all_subs_simple_2.txt
+include sigproextractor/data/csvexample.csv
