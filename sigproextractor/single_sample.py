@@ -9,7 +9,8 @@ import numpy as np
 from numpy import linalg as LA
 from scipy.optimize import nnls
 from scipy.optimize import minimize
-
+from sigproextractor import subroutines as sub
+import copy 
 """
 #############################################################################################################
 #################################### Functions For Single Sample Algorithms #############################
@@ -66,6 +67,21 @@ def create_bounds(idxOfZeros, samples, numOfSignatures):
         lst[i] = (0.0, 0.0) 
     
     return lst 
+
+# required for removing signatures with background
+def get_changed_background_sig_idx(exposures, background_sigs):
+    
+    background_sigs_values = sub.get_items_from_index(exposures,background_sigs)
+    temp_exposures = exposures[:]
+    temp_exposures[:] = (value for value in temp_exposures if value != 0)
+    
+    # remove the background signatures with zero values
+    background_sigs[:] = (value for value in background_sigs_values if value != 0)
+    
+    # get the new indices of the background signatures 
+    background_sigs = sub.get_indeces(temp_exposures, background_sigs_values)
+    
+    return background_sigs
 
 
 # Fit signatures 
@@ -350,14 +366,15 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
 
 
 
-def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls", cutoff=0.01):
+def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls", cutoff=0.01, background_sigs = [-1], verbose=False):
     # make the empty list of the successfull combinations
     successList = [0,[],0] 
-    
+    background_sig = copy.deepcopy(background_sigs)
     if metric == "cosine":
         # get the cos_similarity with sample for the oringinal W and H[:,i]
         originalSimilarity= 1-cos_sim(genomes, np.dot(W, H))
-        #print("originalSimilarity", 1-originalSimilarity)
+        if verbose==True:
+            print("originalSimilarity", 1-originalSimilarity)
     elif metric == "l2":
         originalSimilarity = np.linalg.norm(genomes-np.dot(W, H) , ord=2)/np.linalg.norm(genomes, ord=2)
         #print("originalSimilarity", originalSimilarity)
@@ -369,7 +386,7 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
         Flag = True
     else: 
         Flag = False
-        return oldExposures
+        return oldExposures, 1-originalSimilarity
     # The while loop starts here
     while Flag: 
         
@@ -399,8 +416,13 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
         # get the number of current nonzeros
         l= Winit.shape[1]
         
+        background_sig = get_changed_background_sig_idx(list(oldExposures), background_sig)
+        
         for i in range(l):
-            #print(i)
+            
+            if i in background_sig:
+                continue
+            
             loopSelection = list(range(l))
             del loopSelection[i]
             #print (loopSelection)
@@ -452,22 +474,34 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
                 
             
             newSample = np.dot(W, newExposure)
-            #print(newExposure)
+            if verbose==True:
+                print(newExposure)
             
             if metric == "cosine":
-                newSimilarity = cos_sim(genomes, newSample) 
+                newSimilarity = 1-cos_sim(genomes, newSample) 
+                if verbose==True:
+                    print("newSimilarity",1-newSimilarity) 
             elif metric == "l2":
                 newSimilarity = np.linalg.norm(genomes-newSample, ord=2)/np.linalg.norm(genomes, ord=2)
-            #print("newSimilarity",newSimilarity) 
+                if verbose==True:
+                    print("newSimilarity",newSimilarity) 
             difference =  newSimilarity -originalSimilarity 
             
-            #print("difference", difference) 
+            if verbose==True:
+                print("difference", difference) 
             if difference<record[0]:
                 record = [difference, newExposure, newSimilarity]
+                
                 #print("difference", difference)
-        #print("New Similarity", (record[0]+originalSimilarity))  
-        #print("\n")
-        #print ("This loop's selection is {}".format(record))
+            if verbose==True:
+                print("--------------------------------------")
+        if verbose==True:    
+            print("\n") 
+            print("Selected Exposure")
+            print(record[1])
+            print("New Similarity", 1-record[2])
+            print("****************************")
+            #print ("This loop's selection is {}".format(record))
         
         if record[0]>cutoff:   
             Flag=False
@@ -476,6 +510,7 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
             Flag=False
         else:
             successList = record
+            background_sig = get_changed_background_sig_idx(list(record[1]), background_sig)
         #print("The loop selection is {}".format(successList))
         
         #print (Flag)
@@ -486,7 +521,7 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
     if len(successList[1])==0:
         successList = [0.0, oldExposures, originalSimilarity]
     
-    return successList[1]
+    return successList[1], 1-successList[2]
     
 
 

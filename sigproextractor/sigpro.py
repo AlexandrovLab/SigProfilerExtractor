@@ -515,6 +515,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
             #normatlize the genomes before running nmf
             genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
             for i in range(startProcess,endProcess+1):
+                current_time_start = datetime.datetime.now()
+                
                 #memory_usage()    
                 processAvg, \
                 exposureAvg, \
@@ -572,12 +574,12 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                     print ("Optimization time is {} seconds".format(stoc-stic))    
                     
                 #report progress to the system file:
-                current_time = datetime.datetime.now()
+                current_time_end = datetime.datetime.now()
                 sysdata = open(out_put+"/JOB_METADATA.txt", "a")
                 if  hierarchi is True:
-                    sysdata.write("\nDate and Clock time when the extraction completed for {} signatures in layer {} for mutation type {}: {}\n".format(i, H_iteration, mutation_type, current_time))
+                    sysdata.write("\nSignature extraction for {} completed for layer {} {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  H_iteration, processes,  current_time_end-current_time_start, current_time_end))
                 else:
-                    sysdata.write("\nDate and Clock time when the extraction completed for {} signatures for mutation type {}: {}\n".format(processes,  mutation_type, current_time))
+                    sysdata.write("\nSignature extraction for {} completed for {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  processes,  current_time_end-current_time_start, current_time_end))
                 
                 #Get total mutationation for each signature
                 signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
@@ -773,9 +775,10 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                         processAvg = np.hstack([globalsigs, newsigs])  
                         allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
                         attribution = final_signatures["dictionary"]
+                        background_sigs= final_signatures["background_sigs"]
                         
                         exposureAvg = sub.make_final_solution(processAvg, allgenomes, allsigids, layer_directory2, m, index, allcolnames, \
-                                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , penalty=penalty)
+                                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg ,  background_sigs=background_sigs, penalty=penalty)
                     except:
                         print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                         shutil.rmtree(layer_directory2)
@@ -845,10 +848,13 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
                     processAvg = np.hstack([globalsigs, newsigs])  
                     allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
                     attribution = final_signatures["dictionary"]
+                    background_sigs= final_signatures["background_sigs"]
+                    
+                    
                     
                     
                     exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , penalty=penalty)
+                                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty)
                 except:
                     print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
                     shutil.rmtree(layer_directory2)
@@ -859,9 +865,9 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", start
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
     toc = datetime.datetime.now()
     sysdata.write("\nDate and Clock time when the execution ended: "+str(toc)+"\n")
-    sysdata.write("\nTotal time taken to execute the experiment: "+str(toc-tic)+"\n\n")
+    
     sysdata.write("-------Job Status------- \n")
-    sysdata.write("CONGRATULATIONS! THE JOB IS SUCCESSFULLY TERMINATED. SOME EXCITING RESULTS MIGHT BE WAITING FOR YOU!!!!!!!!")
+    sysdata.write("Analysis of mutational signatures completed successfully! Total execution time: "+str(toc-tic)+". Results can be found in: ["+out_put+"] folder")
     sysdata.close()
 
     print("\n\n \nYour Job Is Successfully Terminated! Thank You For Using SigProfiler Extractor.\n ")
