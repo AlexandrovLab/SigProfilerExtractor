@@ -185,7 +185,7 @@ def fit_signatures_pool(total_genome, W, index):
     return (newExposure, newSimilarity)
 
 
-def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all", metric="l2", solver="nnls"):
+def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all", metric="l2", solver="nnls", check_rule_negatives=[], check_rule_penalty=1.0, verbose = False):
      # This function takes an array of signature and a single genome as input, returns a dictionray of cosine similarity, exposures and presence 
      # of signatures according to the indices of the original signature array
     
@@ -195,6 +195,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
         #print(len(list(range(W.shape[1]))))
         #print(len(toBeAdded))
         notToBeAdded = list(set(list(range(W.shape[1])))-set(toBeAdded)) # get the indices of the signatures to be excluded
+        
         #print(len(notToBeAdded))
     originalSimilarity = 100 # it can be also written as oldsimilarity. wanted to put a big number
     maxmutation = round(np.sum(genome))
@@ -205,6 +206,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
     
     # get the initial original similarity if some signatures are already given to be present
     if len(init_listed_idx)!=0:
+        
         loop_liststed_idx=init_listed_idx
         loop_liststed_idx.sort()
         #print(loop_liststed_idx)
@@ -254,14 +256,18 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
         elif metric=="l2":    
             originalSimilarity = np.linalg.norm(genome[:,0]-est_genome , ord=2)/np.linalg.norm(genome[:,0], ord=2)
         
+            
         finalRecord = [originalSimilarity, newExposure, init_listed_idx]
         
         
     while True:
+        
         bestDifference = -100  #### wanted to put a big initila number
         bestSimilarity = 100 #### actually bestdistance
         loopRecord = [["newExposure place-holder"], ["signatures place-holder"], ["best loop signature place-holder"]]
+        
         for sig in init_nonlisted_idx:
+            
             
             
             if len(init_listed_idx)!=0:
@@ -321,17 +327,21 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
             elif metric=='l2':
                 newSimilarity = np.linalg.norm(genome[:,0]-est_genome , ord=2)/np.linalg.norm(genome[:,0], ord=2)
             
+            if sig in check_rule_negatives:
+                newSimilarity = newSimilarity*check_rule_penalty
+                
             difference = originalSimilarity -  newSimilarity 
             
             # record the best values so far that creates the best difference
+           
             if difference>bestDifference:
                 bestDifference = difference
                 bestSimilarity = newSimilarity
                 loopRecord = [newExposure, W1, sig]  #recording the cosine difference, the new exposure and the index of the best signauture
                 
         
-        # 0.01 is the thresh-hold for now 
-        
+         
+         
         if originalSimilarity - bestSimilarity>cutoff: 
             
             
@@ -341,8 +351,13 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
             init_listed_idx.sort()
             #print(originalSimilarity)
             finalRecord = [originalSimilarity, loopRecord[0], init_listed_idx, loopRecord[1], genome]
-            #print (finalRecord)
-           
+            if verbose==True:
+                print("Current signaure indices: ", init_listed_idx)
+                if metric == "cosine":
+                    print("Cosine similarity: ", 1-originalSimilarity)
+                elif metric == "l2":
+                    print("L2 norm: ", originalSimilarity)
+                print("\n")
             if len(init_nonlisted_idx)!= 0:
                 
                 continue
@@ -357,6 +372,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
     dictExposure= {"similarity":finalRecord[0], "exposures":finalRecord[1], "signatures": finalRecord[2]}  
     addExposure = np.zeros([W.shape[1]])
     addExposure[dictExposure["signatures"]]=dictExposure["exposures"]
+    #print(cos_sim(genome[:,0], np.dot(W,addExposure)))
     
     return  addExposure, cos_sim(genome[:,0], np.dot(W,addExposure))
 
@@ -377,7 +393,8 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
             print("originalSimilarity", 1-originalSimilarity)
     elif metric == "l2":
         originalSimilarity = np.linalg.norm(genomes-np.dot(W, H) , ord=2)/np.linalg.norm(genomes, ord=2)
-        #print("originalSimilarity", originalSimilarity)
+        if verbose==True:
+            print("originalSimilarity", originalSimilarity)
     # make the original exposures of specific sample round
     oldExposures = np.round(H)
     
@@ -412,7 +429,7 @@ def remove_all_single_signatures(W, H, genomes, metric="cosine", solver = "nnls"
         Winit = W[:,selectableIdx]
         
         # set the initial cos_similarity or other similarity distance
-        record  = [100, []]   #
+        record  = [100, [], 1]   #
         # get the number of current nonzeros
         l= Winit.shape[1]
         
