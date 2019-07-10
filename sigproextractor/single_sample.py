@@ -694,10 +694,10 @@ def remove_all_single_signatures_pool(indices, W, exposures, totoalgenomes):
 
 
 
-def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives =[],checkrule_penalty = 1.00, verbose=False):
+def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs = [], permanent_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives =[],checkrule_penalty = 1.00, verbose=False):
     
     
-    always_background = copy.deepcopy(background_sigs)
+    always_background = copy.deepcopy(permanent_sigs)
     M = sample   
     if candidate_sigs == "all":
         candidate_sigs = list(range(W.shape[1]))
@@ -722,7 +722,7 @@ def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs 
             add_exposures, add_distance, _ = add_signatures(W, M[:,np.newaxis], presentSignatures=copy.deepcopy(background_sigs), toBeAdded=loop_sig, 
                                                   metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=penalty) 
             if verbose:
-                print("\n\n\n################## Add ########################") 
+                print("\n\n\n################## Add Index {} ########################".format(i)) 
                 print(np.nonzero(add_exposures)[0])
                 print(sigsToBeAdded)
                 print(add_distance)
