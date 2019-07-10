@@ -623,16 +623,19 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
                 check_rule_negatives = []
                 check_rule_penalty=1.0
             
-            exposures, _, similarity = ss.add_signatures(sigDatabase, signatures[:,i][:,np.newaxis], presentSignatures=[0,4], solver = "nnls", metric = "l2",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
+            #exposures, _, similarity = ss.add_signatures(sigDatabase, signatures[:,i][:,np.newaxis], presentSignatures=[], solver = "nnls", metric = "l2",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
             #print("Exposure after adding", exposures)
-            exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
+            #exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
+            #print(exposures)
+            _, exposures,_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, signatures[:,i], metric="l2", solver="nnls", background_sigs = [0,4], candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
+            #print(exposures)
+            #print("######################################################################")
             #ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="cosine", solver = "nnls", cutoff=0.05, background_sigs= [0,4], verbose=True)
             #print("Expousre after remove", exposures)
             #print("\n\n\n\n\n\n\n\n")
         # for other contexts     
         else:
-            exposures, _, similarity = ss.add_signatures(sigDatabase, signatures[:,i][:,np.newaxis], presentSignatures=[], solver = "nnls", metric = "l2",check_rule_negatives=[], check_rule_penalty=1.0)
-            exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="cosine", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
+            _, exposures,_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, signatures[:,i], metric="l2", solver="nnls", background_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives = [], checkrule_penalty = [], verbose=False)
         #print(signames[np.nonzero(exposures)], similarity)
         #print(exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100)
         exposure_percentages = exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100
@@ -649,12 +652,13 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
         ListToTumple = tuple([mtype, letters[i]]+listofinformation+ [similarity])
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f\n" 
-        
+        #print(strings%(ListToTumple))
         ##print(np.nonzero(exposures)[0])
         ##print(similarity)
         ##print("\n")
         #print(strings%(ListToTumple))
-        if len(np.nonzero(exposures)[0])<5 and similarity>0.8: ########### minimum signtatures and cosine similarity needs to be fitted to become a unique signature 
+        new_signature_thresh_hold = 0.8
+        if  similarity>new_signature_thresh_hold and cosine_similarity_with_four_signatures > new_signature_thresh_hold: ########### minimum signtatures and cosine similarity needs to be fitted to become a unique signature 
             allsignatures = np.append(allsignatures, np.nonzero(exposures))
             fh = open(directory+"/comparison_with_global_ID_signatures.csv", "a")
             fh.write(strings%(ListToTumple))

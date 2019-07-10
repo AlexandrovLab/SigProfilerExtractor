@@ -690,3 +690,82 @@ def remove_all_single_signatures_pool(indices, W, exposures, totoalgenomes):
         successList = [0.0, oldExposures, originalSimilarity]
     #print ("one sample completed")
     return successList[1]
+
+
+
+
+def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives =[],checkrule_penalty = 1.00, verbose=False):
+    
+    
+    always_background = copy.deepcopy(background_sigs)
+    M = sample   
+    if candidate_sigs == "all":
+        candidate_sigs = list(range(W.shape[1]))
+    #first add each signatures
+    original_distance = 100
+    layer = 0
+    
+    # check the cosine_similarity with 4 signatures (highest)
+    cosine_similarity_with_four_signatures = 1.0 # a value that will allow the signature not be reported as novel signature
+    while True:
+        if verbose:
+            print("\n\n\n\n!!!!!!!!!!!!!!!!!!STARTING LAYER: ", layer)
+        layer=layer+1
+        layer_original_distance = 100
+        sigsToBeAdded = list(set(candidate_sigs)-set(background_sigs))
+        
+        for i in sigsToBeAdded:
+            loop_sig = [i] 
+            
+            background_sigs = list(set(background_sigs).union(set(always_background)))
+            #print(background_sigs)
+            add_exposures, add_distance, _ = add_signatures(W, M[:,np.newaxis], presentSignatures=copy.deepcopy(background_sigs), toBeAdded=loop_sig, 
+                                                  metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=penalty) 
+            if verbose:
+                print("\n\n\n################## Add ########################") 
+                print(np.nonzero(add_exposures)[0])
+                print(sigsToBeAdded)
+                print(add_distance)
+                
+                
+            remove_exposures, remove_distance, _ = remove_all_single_signatures(W, add_exposures, M, background_sigs = always_background, metric="l2", verbose = False, cutoff=0.01)
+            if verbose:
+                print("\n################## Remove ########################")
+                print(np.nonzero(remove_exposures)[0])
+                print(remove_distance)
+            # check if there is any change between the add and remove signatures and assign the distance and exposure accoridingly    
+            if (np.nonzero(add_exposures)[0].all()==np.nonzero(remove_exposures)[0].all()) and np.nonzero(add_exposures)[0].shape == np.nonzero(remove_exposures)[0].shape:
+                distance = add_distance
+                exposures = add_exposures
+            else:
+                distance = remove_distance
+                exposures = remove_exposures
+                
+            if distance < layer_original_distance:
+                selected_signatures = np.nonzero(exposures)[0]
+                layer_original_distance = distance 
+                activities = exposures
+        if verbose:
+            print("\n\n#################### After Add-Remove #################################")
+            print(selected_signatures)
+            print(layer_original_distance)
+        if layer_original_distance < original_distance:
+            original_distance = layer_original_distance
+            background_sigs = list(selected_signatures)
+            finalactivities = activities
+            if len(background_sigs)==4:
+                cosine_similarity_with_four_signatures = cos_sim(M, np.dot(W,finalactivities))
+                #print(cosine_similarity_with_four_signatures)
+        else:
+            cosine_similarity = cos_sim(M, np.dot(W,finalactivities))
+            break
+        
+    if verbose:
+        print("\n########################## Final ###########################")        
+        print(background_sigs)
+        print(original_distance)
+        print(finalactivities)
+    
+    #newExposure, newSimilarity = fit_signatures(W[:,list(background_sigs)], M, metric="l2")
+    #print(newExposure, newSimilarity)
+    return (background_sigs, finalactivities, original_distance, cosine_similarity, cosine_similarity_with_four_signatures)
