@@ -7,5 +7,5 @@ Created on Wed Jul 10 11:45:38 2019
 """
 
 from sigproextractor import sigpro as sig
-data = sig.importdata("vcf")
-sig.sigProfilerExtractor("vcf", "example_output", data, startProcess=1, endProcess=2, totalIterations=3)
+data = sig.importdata("text")
+sig.sigProfilerExtractor("text", "example_output", data, startProcess=1, endProcess=2, totalIterations=3)
