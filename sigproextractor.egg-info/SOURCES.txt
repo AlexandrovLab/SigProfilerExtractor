@@ -1,0 +1,17 @@
+MANIFEST.in
+README.md
+setup.py
+sigproextractor/__init__.py
+sigproextractor/sigpro.py
+sigproextractor/single_sample.py
+sigproextractor/subroutines.py
+sigproextractor/version.py
+sigproextractor.egg-info/PKG-INFO
+sigproextractor.egg-info/SOURCES.txt
+sigproextractor.egg-info/dependency_links.txt
+sigproextractor.egg-info/not-zip-safe
+sigproextractor.egg-info/requires.txt
+sigproextractor.egg-info/top_level.txt
+sigproextractor/data/DBS_signatures_genome_builds.xlsx
+sigproextractor/data/SBS_signatures_genome_builds.xlsx
+sigproextractor/data/csvexample.csv
