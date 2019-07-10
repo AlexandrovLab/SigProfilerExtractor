@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/AlexandrovLab/SigProfilerExtractor.svg?branch=master)](https://travis-ci.com/AlexandrovLab/SigProfilerExtractor)
+
 # SigProfilerExtractor
 SigProfilerExtractor allows de novo extraction of mutational signatures from data generated in a matrix format. 
 The tool identifies the number of operative mutational signatures, their activities in each sample, and the probability 
