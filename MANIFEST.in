@@ -1,5 +1,2 @@
 include README.rst
-include sigproextractor/data/vcftest/breast_genomes_all_indels.txt
-include sigproextractor/data/csvexample.csv
-include sigproextractor/data/SBS_signatures_genome_builds.xlsx
-include sigproextractor/data/DBS_signatures_genome_builds.xlsx
+include sigproextractor/data/*
