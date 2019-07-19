@@ -90,9 +90,10 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     
     resample: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
     
+```    
     Examples
     --------
-```
+
     >>> from sigproextractor import sigpro as sig
     
     # to get input from vcf files
