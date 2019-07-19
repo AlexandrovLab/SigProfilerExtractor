@@ -6,7 +6,7 @@ import os
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '0.0.5.61'
+VERSION = '0.0.5.66'
 
 
 with open('README.md') as f:
@@ -41,7 +41,7 @@ setup(name='sigproextractor',
           'numpy>=1.14.4', 
           'pandas>=0.23.4', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.0.7', 
+          'SigProfilerMatrixGenerator>=1.0.14', 
           'sigProfilerPlotting>=1.0.1', 
           'pillow',
           'statsmodels>=0.9.0',

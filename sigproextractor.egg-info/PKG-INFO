@@ -1,12 +1,15 @@
 Metadata-Version: 2.1
 Name: sigproextractor
-Version: 0.0.5.61
+Version: 0.0.5.66
 Summary: Extracts mutational signatures from mutational catalogues
 Home-page: https://github.com/AlexandrovLab/SigProfilerExtractor.git
 Author: S Mishu Ashiqul Islam
 Author-email: m0islam@ucsd.edu
 License: UCSD
-Description: # SigProfilerExtractor
+Description: [![License](https://img.shields.io/badge/License-BSD\%202--Clause-orange.svg)](https://opensource.org/licenses/BSD-2-Clause)
+        [![Build Status](https://travis-ci.com/AlexandrovLab/SigProfilerExtractor.svg?branch=master)](https://travis-ci.com/AlexandrovLab/SigProfilerExtractor)
+        
+        # SigProfilerExtractor
         SigProfilerExtractor allows de novo extraction of mutational signatures from data generated in a matrix format. 
         The tool identifies the number of operative mutational signatures, their activities in each sample, and the probability 
         for each signature to cause a specific mutation type in a cancer sample. The tool makes use of SigProfilerMatrixGenerator 
@@ -39,7 +42,8 @@ Description: # SigProfilerExtractor
             Example: 
             -------
             >>> from sigproextractor import sigpro as sig
-            >>> data = sig.importdata("text")
+            >>> path_to_example_table = sig.importdata("table")
+            >>> data = path_to_example_table 
             This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function.
             
             To get help on the parameters and outputs of the "importdata" function, please write down the following line:
@@ -52,20 +56,65 @@ Description: # SigProfilerExtractor
             
             Extracts mutational signatures from an array of samples.
             
-            sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", startProcess=1, endProcess=10, totalIterations=8, 
-            cpu=-1, hierarchy = False, mtype = ["default"],exome = False, indel_extended = False)
+            sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", genome_build = "GRCh37", startProcess=1, endProcess=10, totalIterations=8, 
+            cpu=-1, hierarchy = False, mtype = ["default"],exome = False)
             
             
+            Parameters
+            ----------
+            
+            input_type: A string. Type of input. The type of input should be one of the following:
+                    - "vcf": used for vcf format inputs.
+                    - "table": used for table format inputs using a tab seperated file.
+                     
+                
+            out_put: A string. The name of the output folder. The output folder will be generated in the current working directory. 
+                    
+            input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
+                    
+            refgen: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
+            
+            genome_build: A string, optional. The build or version of the reference signatures for the refgen. The default genome build is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input refgen value.        
+            
+            startProcess: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1. 
+            
+            endProcess: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10.
+            
+            totalIterations: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 8. However, we STRONGLY RECOMMEND TO USE 1000 iterations to get valid results. 
+                    
+            cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. 
+            
+            hierarchy: Boolean, optional. Defines if the signature will be extracted in a hierarchical fashion. The default value is "False".
+            
+            par_h = Float, optional. Ranges from 0 t0 1. Default is 0.90. Active only if the "hierarchy" is True. Sets the cutoff to select the unexplained samples in a hierarchical layer based on the cosine similarity 
+            between the original and reconstructed samples.  
+            
+            mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
+            is the DINULEOTIDE context and ID is INDEL context. Other options are: '6144', '384', '1536', '6', '24' .
+                    
+            exome: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
+            
+            penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to asaign signatures to a sample.    
+            
+            resample: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
             
             Examples
             --------
             
             >>> from sigproextractor import sigpro as sig
-            >>> data = sig.importdata("vcf")
+            
+            # to get input from vcf files
+            >>> path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
+            >>> data = path_to_example_folder_containing_vcf_files # you can put the path to your folder containing the vcf samples
             >>> sig.sigProfilerExtractor("vcf", "example_output", data, startProcess=1, endProcess=3)
             
             Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
             Check the current working directory for the "example_output" folder.
+            
+            # to get input from table format (mutation catalog matrix)
+            >>> path_to_example_table = sig.importdata("table")
+            >>> data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog matrix/table
+            >>> sig.sigProfilerExtractor("table", "example_output", data, genome_build="GRCh38", startProcess=1, endProcess=3)
             
             To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
             

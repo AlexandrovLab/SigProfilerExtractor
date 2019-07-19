@@ -39,14 +39,12 @@ import sigproextractor as cosmic
 import platform
 import datetime
 import psutil
-import resource
 import sigProfilerPlotting 
 from sigproextractor import single_sample as ss
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
     memoryUse1 = py.memory_info()[0]/2.**30  # memory use in GB...I think
-    memoryUse2 = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/2.**30
     print('\n************** Reported Current Memory Use: '+ str(round(memoryUse1,2))+" GB *****************\n")
     #print('\n************** Reported Current Memory Use: '+ str(round(memoryUse2,2))+" GB *****************\n")
 
@@ -65,7 +63,7 @@ def importdata(datatype="matobj"):
     
     datatype: A string. Type of data. The type of data should be one of the following:
             - "vcf": used for vcf format data.
-            - "text": used for text format data.
+            - "table": used for text format data. This format represents the catalog of mutations seperated by tab. 
             - "matobj": used for matlab object format data.
     
     
@@ -77,7 +75,7 @@ def importdata(datatype="matobj"):
     Example: 
     -------
     >>> from sigproextractor import sigpro as sig
-    >>> data = sig.importdata("text")
+    >>> data = sig.importdata("table")
     
     This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function
         
@@ -86,7 +84,7 @@ def importdata(datatype="matobj"):
     paths = cosmic.__path__[0]
     if datatype=="matobj":
         data = paths+"/data/21_breast_WGS_substitutions.mat"
-    elif datatype=="text":
+    elif datatype=="text" or datatype=="table":
         data = paths+"/data/all_mice_silvio.txt"
     elif datatype=="csv":
         data = paths+"/data/csvexample.csv"
@@ -112,12 +110,12 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     input_type: A string. Type of input. The type of input should be one of the following:
             - "vcf": used for vcf format inputs.
-            - "text": used for text format inputs.
-            - "matobj": used for matlab object format of inputs. 
+            - "table": used for table format inputs using a tab seperated file.
+             
         
     out_put: A string. The name of the output folder. The output folder will be generated in the current working directory. 
             
-    input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "text" or "matobj" type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text" or "matobj" type projects have to be a file. "matobj" projects should have .mat extension.  
+    input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
             
     refgen: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
             
@@ -249,7 +247,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     sysdata = open(out_put+"/JOB_METADATA.txt", "w")
     sysdata.write("THIS FILE CONTAINS THE METADATA ABOUT SYSTEM AND RUNTIME\n\n\n")
     sysdata.write("-------System Info-------\n")
-    sysdata.write("Operating System Name: "+ os.uname()[0]+"\n"+"Nodename: "+os.uname()[1]+"\n"+"Release: "+os.uname()[2]+"\n"+"Version: "+os.uname()[3]+"\n")
+    sysdata.write("Operating System Name: "+ platform.uname()[0]+"\n"+"Nodename: "+platform.uname()[1]+"\n"+"Release: "+platform.uname()[2]+"\n"+"Version: "+platform.uname()[3]+"\n")
     sysdata.write("\n-------Python and Package Versions------- \n")
     sysdata.write("Python Version: "+str(platform.sys.version_info.major)+"."+str(platform.sys.version_info.minor)+"."+str(platform.sys.version_info.micro)+"\n")
     sysdata.write("Sigproextractor Version: "+cosmic.__version__+"\n")
@@ -270,7 +268,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         project_name = project.split("/")[-1]   #will use this variable as the parameter for project_name argument in SigprofilerMatrixGenerator
     else:
         project_name = project.split("/")[-2]
-    sysdata.write("input_type: {}\ninputdata: {}\nstartProcess: {}\nendProcess: {}\ntotalIterations: {}\ncpu: {}\nhierarchy: {}\n".format(input_type, project_name, startProcess, endProcess, totalIterations, cpu,  hierarchy))
+    sysdata.write("input_type: {}\ninputdata: {}\nstartProcess: {}\nendProcess: {}\ntotalIterations: {}\ncpu: {}\nhierarchy: {}\nrefgen: {}\ngenome_build: {}\nmtype: {}\n".format(input_type, project_name, startProcess, endProcess, totalIterations, cpu,  hierarchy, refgen, genome_build, mtype))
     
     sysdata.write("\n-------Date and Time Data------- \n")
     tic = datetime.datetime.now()
@@ -297,7 +295,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
    
     
-    if input_type=="text":
+    if input_type=="text" or input_type =="table":
         
         ################################### For text input files ######################################################
         
@@ -894,7 +892,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     sysdata.write("Analysis of mutational signatures completed successfully! Total execution time: "+str(toc-tic)+". Results can be found in: ["+out_put+"] folder")
     sysdata.close()
 
-    print("\n\n \nYour Job Is Successfully Terminated! Thank You For Using SigProfiler Extractor.\n ")
+    print("\n\n \nYour Job Is Successfully Completed! Thank You For Using SigProfiler Extractor.\n ")
              
                 
 

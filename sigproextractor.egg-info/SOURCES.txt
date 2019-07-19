@@ -12,6 +12,12 @@ sigproextractor.egg-info/dependency_links.txt
 sigproextractor.egg-info/not-zip-safe
 sigproextractor.egg-info/requires.txt
 sigproextractor.egg-info/top_level.txt
+sigproextractor/data/.DS_Store
+sigproextractor/data/21_breast_WGS_substitutions.mat
 sigproextractor/data/DBS_signatures_genome_builds.xlsx
 sigproextractor/data/SBS_signatures_genome_builds.xlsx
+sigproextractor/data/all_mice_silvio.txt
 sigproextractor/data/csvexample.csv
+sigproextractor/data/sigProfiler_DBS_signatures.csv
+sigproextractor/data/sigProfiler_ID_signatures.csv
+sigproextractor/data/sigProfiler_SBS_signatures_2018_03_28.csv

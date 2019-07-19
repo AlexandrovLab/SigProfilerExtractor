@@ -1143,10 +1143,16 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             init_add_sig_idx = list(set().union(list(np.nonzero(exposureAvg[:, r])[0]), background_sigs))
             #print(init_add_sig_idx)
             #print(background_sig_idx)
-            _, exposureAvg[:, r],_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, allgenomes[:,r], metric="l2", solver="nnls", background_sigs = init_add_sig_idx, permanent_sigs = background_sig_idx, candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
-            if verbose==True:
-                print("############################################################# After Add-Remove :") 
-                print(exposureAvg[:, r])
+            
+            # if the there is no other signatures to be added on top the existing signatures
+            try:
+                
+                _, exposureAvg[:, r],_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, allgenomes[:,r], metric="l2", solver="nnls", background_sigs = init_add_sig_idx, permanent_sigs = background_sig_idx, candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
+                if verbose==True:
+                    print("############################################################# After Add-Remove :") 
+                    print(exposureAvg[:, r])
+            except:
+                pass
             """
             # add signatures
             exposureAvg[:, r], _, similarity = ss.add_signatures(processAvg, allgenomes[:,r][:,np.newaxis], presentSignatures=copy.deepcopy(init_add_sig_idx),cutoff=penalty, metric="l2", solver = "nnls",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)

@@ -235,7 +235,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
             reg = nnls(W1, genome[:,0])
             weights = reg[0]
             normalised_weights = weights/sum(weights)
-            solution = normalised_weights*sum(genome)
+            solution = normalised_weights*sum(np.sum(genome, axis=0))
             newExposure = list(solution)
         #print(W1)
         #convert the newExposure vector into list type structure
