@@ -92,7 +92,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     
     Examples
     --------
-    
+```
     >>> from sigproextractor import sigpro as sig
     
     # to get input from vcf files
@@ -111,7 +111,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
     
     >>> help(sig.sigProfilerExtractor)
-    
+```
     
 ## COPYRIGHT
 This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
