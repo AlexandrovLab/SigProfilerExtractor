@@ -46,7 +46,8 @@ setup(name='sigproextractor',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.20.2',
-	  'psutil>=5.6.1'
+	  'psutil>=5.6.1',
+      'xlrd>=1.0.0'
            ],
       include_package_data=True,      
       zip_safe=False)
