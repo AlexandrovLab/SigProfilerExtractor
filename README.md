@@ -60,11 +60,11 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
             - "table": used for table format inputs using a tab seperated file.
              
         
-    out_put: A string. The name of the output folder. The output folder will be generated in the current working directory. 
+    out_put: A string. The name of the output folder. The output folder will be generated in \nthe current working directory. 
             
-    input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
+    input_data: A string. Name of the input folder (in case of "vcf" type input) or the input \nfile (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
             
-    refgen: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
+    refgen: A string, optional. The name of the reference genome. The default reference genome \nis "GRCh37". This parameter is applicable only if the input_type is "vcf".
     
     genome_build: A string, optional. The build or version of the reference signatures for the refgen. The default genome build is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input refgen value.        
     
