@@ -63,7 +63,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     out_put: A string. The name of the output folder. The output folder will be generated in 
     the current working directory. 
             
-    input_data: A string. Name of the input folder (in case of "vcf" type input) or the 
+#    input_data: A string. Name of the input folder (in case of "vcf" type input) or the 
     input file (in case of "table"  type input). The project file or folder should be inside the 
     current working directory. For the "vcf" type input,the project has to be a folder which will 
     contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
