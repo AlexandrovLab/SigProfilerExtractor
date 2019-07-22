@@ -1082,9 +1082,19 @@ def export_information(loopResults, mutation_context, output, index, colnames):
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = 0, penalty=0.05, \
                         background_sigs=0, genome_build="GRCh37", verbose=False):
-    
+   
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
+    
+    #Get the type of Signatures
+    if m == 83:
+        signature_type = "INDEL"
+    elif m==78:
+        signature_type = "DINUC"
+    else:
+        signature_type = "SBS"+str(m)
+    
+    
     
     allgenomes = np.array(allgenomes)
     if (m=="96" or m=="1536") and (genome_build=="mm9" or genome_build=="mm10"):
@@ -1189,7 +1199,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     processes = processAvg.set_index(index)
     processes.columns = allsigids
     processes = processes.rename_axis("MutationsType", axis="columns")
-    processes.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
+    processes.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
     
      
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
@@ -1198,13 +1208,13 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     exposures.columns = allcolnames
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
-    exposures.to_csv(layer_directory+"/"+solution_type+"_"+"Activities.txt", "\t", index_label=[exposures.columns.name]) 
+    exposures.to_csv(layer_directory+"/"+solution_type+"_"+"Activities_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
     
     # Calcutlate the similarity matrices
     est_genomes = np.dot(processAvg, exposureAvg)
     all_similarities, cosine_similarities = calculate_similarities(allgenomes, est_genomes, allcolnames)
     all_similarities.iloc[:,[3,5]] = all_similarities.iloc[:,[3,5]].astype(str) + '%'
-    all_similarities.to_csv(layer_directory+"/"+solution_type+"_Samples_stats.txt", sep="\t")
+    all_similarities.to_csv(layer_directory+"/"+solution_type+"_Samples_stats_"+signature_type+".txt", sep="\t")
     
     
     if type(process_std_error) != str:
@@ -1212,12 +1222,12 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         processSTE = process_std_error.set_index(index)
         processSTE.columns = allsigids
         processSTE = processSTE.rename_axis("MutationType", axis="columns")
-        processSTE.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_SEM_Error.txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
+        processSTE.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_SEM_Error_"+signature_type+".txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
     
     if type(signature_stats)!=str:
         signature_stats = signature_stats.set_index(allsigids)
         signature_stats = signature_stats.rename_axis("Signatures", axis="columns")
-        signature_stats.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_stats.txt", "\t", index_label=[exposures.columns.name]) 
+        signature_stats.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_stats_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
@@ -1227,11 +1237,11 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , solution_type, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        plot.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     elif m=="INDEL" or m=="83":
-        plot.plotID(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        plot.plotID(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     else:
-        plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures.txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
    
      
         

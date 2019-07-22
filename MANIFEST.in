@@ -1,2 +1,3 @@
 include README.rst
 include sigproextractor/data/*
+include sigproextractor/data/vcftest/*
