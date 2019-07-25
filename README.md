@@ -130,6 +130,17 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     >>> help(sig.sigProfilerExtractor)
 ```
     
+### GPU support
+
+Sigprofilerextractor is GPU-enabled and can run on single or multi-GPU systems for significantly increased performance in most circumstances.
+
+To use this feature set the GPU flag to True:
+```
+    sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", genome_build = "GRCh37", startProcess=1, endProcess=10, totalIterations=8, 
+    cpu=-1, hierarchy = False, mtype = ["default"],exome = False, gpu=True)
+```
+If CUDA out of memory exceptions occur, it will be necessary to reduce the number of CPU processes used (the `cpu` parameter).
+
 ## COPYRIGHT
 This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 

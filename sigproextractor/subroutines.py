@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn import metrics
 import time
 import multiprocessing
+from multiprocessing import current_process
 from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
@@ -26,7 +27,11 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import sigproextractor as cosmic
 from scipy.stats import  wilcoxon
 from sigproextractor import single_sample as ss
-import copy 
+import copy
+import torch
+from . import nmf_gpu
+
+multiprocessing.set_start_method('spawn', force=True)
 """################################################################## Vivid Functions #############################"""
 
 ############################################################## FUNCTION ONE ##########################################
@@ -204,6 +209,17 @@ def denormalize_samples(genomes, original_totals, normalization_value=30000):
 ##################################################################################################################    
 
 """###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
+def nnmf_gpu(genomes, nfactors):
+    p = current_process()
+    identity = p._identity[0]
+    gpu_id = identity % torch.cuda.device_count()
+    genomes = torch.from_numpy(genomes.values).float().cuda(gpu_id)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=100000,test_conv=2000, gpu_id=gpu_id, seed=None)
+    net.fit()
+    H = np.matrix(net.H.detach().cpu().numpy())
+    W = np.matrix(net.W.detach().cpu().numpy())
+    return W, H
+
 def nnmf(genomes, nfactors):
     genomes = np.array(genomes)
     nmf = nimfa.Nmf(genomes, max_iter=100000, rank=nfactors, update='divergence', objective='div', test_conv= 30)
@@ -236,15 +252,21 @@ def BootstrapCancerGenomes(genomes):
     return dataframe
 
 
-def nmf(genomes=1, totalProcesses=1, resample=True):   
+def nmf(genomes=1, totalProcesses=1, resample=True, gpu=False):   
     #tic = time.time()
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
+
+    if gpu:
+        nmf_fn = nnmf_gpu
+    else:
+        nmf_fn = nnmf
+        
     if resample == True:
         bootstrapGenomes= BootstrapCancerGenomes(genomes)
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-        W, H = nnmf(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
     else:
-        W, H = nnmf(genomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
     #print ("initital W: ", W); print("\n");
     #print ("initial H: ", H); print("\n");
     W = np.array(W)
@@ -258,15 +280,21 @@ def nmf(genomes=1, totalProcesses=1, resample=True):
     
     return W, H
 # NMF version for the multiprocessing library
-def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True):
+def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
     tic = time.time()
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
+
+    if gpu:
+        nmf_fn = nnmf_gpu
+    else:
+        nmf_fn = nnmf
+
     if resample == True:
         bootstrapGenomes= BootstrapCancerGenomes(genomes)
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-        W, H = nnmf(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
     else:
-        W, H = nnmf(genomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
     #print ("initital W: ", W); print("\n");
     #print ("initial H: ", H); print("\n");
     W = np.array(W)
@@ -280,7 +308,7 @@ def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True):
     return W, H
 
 
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True):
+def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, gpu=False):
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
@@ -289,7 +317,7 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose 
         pool = multiprocessing.Pool(processes=n_cpu)
         
   
-    pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample)
+    pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, gpu=gpu)
     result_list = pool.map(pool_nmf, range(iterations)) 
     pool.close()
     pool.join()
@@ -366,7 +394,7 @@ def calculate_similarities(genomes, est_genomes, sample_names):
 # function to calculate the centroids
 
 ################################################################### FUNCTION  ###################################################################
-def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0])):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
+def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), gpu=False):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
     
     """ Takes a pair of matrices mat1 and mat2 as arguments. Both of the matrices should have the 
     equal shapes. The function makes a partition based clustering (the number of clusters is equal 
@@ -384,14 +412,20 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0])):  # t
     
     
     """
+
+    if gpu:
+        mat1_t = torch.from_numpy(mat1).float().cuda()
+        mat2_t = torch.from_numpy(mat2).float().cuda()
+        
+        mat1_t_norm = mat1_t / mat1_t.norm(dim=0)[None, :]
+        mat2_t_norm = mat2_t / mat2_t.norm(dim=0)[None, :]
     
-    
-    con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
-    for i in range(0, mat1.shape[1]):
-        for j in range(0,mat2.shape[1]):
-            con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
-    
-    
+        con_mat = torch.mm(mat1_t_norm.transpose(0,1), mat2_t_norm).cpu().numpy()
+    else:
+        con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
+        for i in range(0, mat1.shape[1]):
+            for j in range(0,mat2.shape[1]):
+                con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
     
     maximums = np.argmax(con_mat, axis = 1) #the indices of maximums
     uniques = np.unique(maximums) #unique indices having the maximums
@@ -444,7 +478,7 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0])):  # t
 
 
 ################################################################### FUNCTION  ###################################################################
-def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0):
+def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, gpu=False):
     # exposureAvg is not important here. It can be any matrix with the same size of a single exposure matrix
     iterations = int(tempWall.shape[1]/processAvg.shape[1])
     processes =  processAvg.shape[1]
@@ -459,7 +493,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0):
         #print(i)
         statidx = idxIter[iteration_number]
         loopidx = list(range(statidx, statidx+processes))
-        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:])
+        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],gpu=gpu)
         
         for cluster_items in idxPair:
             cluster_number = cluster_items[0]
@@ -512,7 +546,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0):
 
 
 
-def cluster_converge_innerloop(Wall, Hall, totalprocess):
+def cluster_converge_innerloop(Wall, Hall, totalprocess, gpu=False):
     
     processAvg = np.random.rand(Wall.shape[0],totalprocess)
     exposureAvg = np.random.rand(totalprocess, Hall.shape[1])
@@ -520,7 +554,7 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess):
     result = 0
     convergence_count = 0
     while True:
-        processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = reclustering(Wall, Hall, processAvg, exposureAvg)
+        processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = reclustering(Wall, Hall, processAvg, exposureAvg, gpu=gpu)
         
         if result == avgSilhouetteCoefficients:
             break
@@ -534,11 +568,11 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess):
 
 
 # To select the best clustering converge of the cluster_converge_innerloop
-def cluster_converge_outerloop(Wall, Hall, totalprocess):
+def cluster_converge_outerloop(Wall, Hall, totalprocess, gpu=False):
     avgSilhouetteCoefficients = -1  # intial avgSilhouetteCoefficients 
     for i in range(50):  # using 10 iterations to get the best clustering 
         
-        temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients = cluster_converge_innerloop(Wall, Hall, totalprocess)
+        temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients = cluster_converge_innerloop(Wall, Hall, totalprocess, gpu=gpu)
         
         if avgSilhouetteCoefficients < temp_avgSilhouetteCoefficients:
               processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients =   temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients
@@ -712,7 +746,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
 #################################### Decipher Signatures ###################################################
 #############################################################################################################
 """
-def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True):
+def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, gpu=False):
     m = mut_context
     
     tic = time.time()
@@ -728,7 +762,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     ##############################################################################################################################################################################         
     ############################################################# The parallel processing takes place here #######################################################################  
     ##############################################################################################################################################################################         
-    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample)
+    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, gpu=gpu)
         
     toc = time.time()
     print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
@@ -756,7 +790,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     
     
     processes=i #renamed the i as "processes"    
-    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes)
+    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes, gpu=gpu)
     reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
     
 
