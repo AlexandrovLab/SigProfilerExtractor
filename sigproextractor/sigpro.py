@@ -18,6 +18,7 @@ Created on Mon Aug 27 13:39:29 2018
 
 """
 import os
+import torch
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1" 
@@ -99,7 +100,7 @@ def importdata(datatype="matobj"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True): 
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True, gpu=False): 
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -238,8 +239,10 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     
     """
-    
-    
+
+    if gpu and (torch.cuda.device_count() == 0):
+        raise RuntimeError("GPU not available!")
+
     
     #################################### At first create the system data file ####################################
     if not os.path.exists(out_put):
@@ -545,7 +548,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                     totalIterations=totalIterations, \
                                                     cpu=cpu, \
                                                     mut_context=m, \
-                                                    resample = resample) 
+                                                    resample = resample,
+                                                    gpu=gpu)
                 
                 
                     
