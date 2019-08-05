@@ -12,7 +12,8 @@ from torch import nn
 
 
 class NMF:
-    def __init__(self, V, rank, max_iterations=100000, tolerance=1e-6, test_conv=1000, gpu_id=0, seed=None, init_method='random'):
+    def __init__(self, V, rank, max_iterations=100000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
+                 init_method='random'):
 
         """
         Run non-negative matrix factorisation using GPU. Uses beta-divergence.
@@ -21,7 +22,7 @@ class NMF:
           V: Matrix to be factorised
           rank: (int) number of latent dimensnions to use in factorisation
           max_iterations: (int) Maximum number of update iterations to use during fitting
-          tolerance: (float) tolerance to use in convergence tests. Lower numbers give longer times to convergence
+          tolerance: tolerance to use in convergence tests. Lower numbers give longer times to convergence
           test_conv: (int) How often to test for convergnce
           gpu_id: (int) Which GPU device to use
           seed: random seed, if None (default) datetime is used
@@ -41,7 +42,7 @@ class NMF:
 
         self.max_iterations = max_iterations
 
-        self._V = V
+        self._V = V.double()
         self._fix_neg = nn.Threshold(0., 1e-8)
         self._tolerance = tolerance
         self._prev_loss = None
@@ -53,11 +54,11 @@ class NMF:
 
     def _initialise_wh(self, init_method):
         """
-        Initialise baseis and coefficient matrices according to 
+        Initialise baseis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
-            W = torch.rand(self._V.shape[0], self._rank).cuda(self._gpu_id)
-            H = torch.rand(self._rank, self._V.shape[1]).cuda(self._gpu_id)
+            W = torch.rand(self._V.shape[0], self._rank).double().cuda(self._gpu_id)
+            H = torch.rand(self._rank, self._V.shape[1]).double().cuda(self._gpu_id)
             return W, H
 
         elif init_method == 'NNDSVD':
@@ -75,10 +76,10 @@ class NMF:
             vin = np.mat(self._V.cpu().numpy())
             W, H = nv.initialize(vin, self._rank, options={'flag': 2})
 
-        W = torch.from_numpy(W).float().cuda(self._gpu_id)
-        H = torch.from_numpy(H).float().cuda(self._gpu_id)
+        W = torch.from_numpy(W).double().cuda(self._gpu_id)
+        H = torch.from_numpy(H).double().cuda(self._gpu_id)
         return W, H
-            
+
     @property
     def reconstruction(self):
         return self.W @ self.H
@@ -110,7 +111,8 @@ class NMF:
 
     def fit(self, beta=1):
         """
-        Fit the basis (W) and coefficient (H) matrices to the input matrix (V) using multiplicative updates and beta divergence
+        Fit the basis (W) and coefficient (H) matrices to the input matrix (V) using multiplicative updates and
+            beta divergence
         Args:
           beta: value to use for generalised beta divergence. Default is 1 for KL divergence
             beta == 2 => Euclidean updates
@@ -125,17 +127,17 @@ class NMF:
                     break
 
         elif beta == 1:
-            ones = torch.ones(self._V.shape).cuda(self._gpu_id)
+            ones = torch.ones(self._V.shape).double().cuda(self._gpu_id)
             for self._iter in range(self.max_iterations):
-                wt = self.W.t()
-                numerator = wt @ (self._V / (self.W @ self.H))
-                denomenator = wt @ ones
-                self._H *= numerator / denomenator
-
                 ht = self.H.t()
                 numerator = (self._V / (self.W @ self.H)) @ ht
                 denomenator = ones @ ht
                 self._W *= numerator / denomenator
+
+                wt = self.W.t()
+                numerator = wt @ (self._V / (self.W @ self.H))
+                denomenator = wt @ ones
+                self._H *= numerator / denomenator
 
                 if (self._iter % self._test_conv == 0) and self._loss_converged:
                     break
