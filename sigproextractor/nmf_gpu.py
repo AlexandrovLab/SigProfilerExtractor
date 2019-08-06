@@ -13,7 +13,7 @@ from torch import nn
 
 class NMF:
     def __init__(self, V, rank, max_iterations=100000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
-                 init_method='random'):
+                 init_method='random', floating_point_precision='double', min_iterations=2000):
 
         """
         Run non-negative matrix factorisation using GPU. Uses beta-divergence.
@@ -31,18 +31,30 @@ class NMF:
             - NNDSVD
             - NNDSVDa (fill in the zero elements with the average),
             - NNDSVDar (fill in the zero elements with random values in the space [0:average/100]).
+          floating_point_precision: (string or type). Can be `double`, `float` or any type/string which
+              torch can interpret.
+          min_iterations: the minimum number of iterations to execute before termination. Useful when using
+              fp32 tensors as convergence can happen too early.
         """
         torch.cuda.set_device(gpu_id)
 
         if seed is None:
             seed = datetime.now().timestamp()
 
+        if floating_point_precision == 'float':
+            self._tensor_type = torch.FloatTensor
+        elif floating_point_precision == 'double':
+            self._tensor_type = torch.DoubleTensor
+        else:
+            self._tensor_type = floating_point_precision
+
         torch.manual_seed(seed)
         torch.cuda.manual_seed(seed)
 
         self.max_iterations = max_iterations
+        self.min_iterations = min_iterations
 
-        self._V = V.double()
+        self._V = V.type(self._tensor_type).cuda()
         self._fix_neg = nn.Threshold(0., 1e-8)
         self._tolerance = tolerance
         self._prev_loss = None
@@ -57,8 +69,8 @@ class NMF:
         Initialise baseis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
-            W = torch.rand(self._V.shape[0], self._rank).double().cuda(self._gpu_id)
-            H = torch.rand(self._rank, self._V.shape[1]).double().cuda(self._gpu_id)
+            W = torch.rand(self._V.shape[0], self._rank).type(self._tensor_type).cuda(self._gpu_id)
+            H = torch.rand(self._rank, self._V.shape[1]).type(self._tensor_type).cuda(self._gpu_id)
             return W, H
 
         elif init_method == 'NNDSVD':
@@ -76,8 +88,8 @@ class NMF:
             vin = np.mat(self._V.cpu().numpy())
             W, H = nv.initialize(vin, self._rank, options={'flag': 2})
 
-        W = torch.from_numpy(W).double().cuda(self._gpu_id)
-        H = torch.from_numpy(H).double().cuda(self._gpu_id)
+        W = torch.from_numpy(W).type(self._tensor_type).cuda(self._gpu_id)
+        H = torch.from_numpy(H).type(self._tensor_type).cuda(self._gpu_id)
         return W, H
 
     @property
@@ -119,15 +131,20 @@ class NMF:
             beta == 1 => Generalised Kullback-Leibler updates
             beta == 0 => Itakura-Saito updates
         """
+
+        def stop_iterations():
+            return (self._iter % self._test_conv == 0) and self._loss_converged and (self._iter > self.min_iterations)
+
         if beta == 2:
             for self._iter in range(self.max_iterations):
                 self.H = self.H * (self.W.transpose(0, 1) @ self._V) / (self.W.transpose(0, 1) @ (self.W @ self.H))
                 self.W = self.W * (self._V @ self.H.transpose(0, 1)) / (self.W @ (self.H @ self.H.transpose(0, 1)))
-                if self._test_conv(self._iter):
+                if stop_iterations():
                     break
 
+        # Optimisations for the (common) beta=1 (KL) case.
         elif beta == 1:
-            ones = torch.ones(self._V.shape).double().cuda(self._gpu_id)
+            ones = torch.ones(self._V.shape).type(self._tensor_type).cuda(self._gpu_id)
             for self._iter in range(self.max_iterations):
                 ht = self.H.t()
                 numerator = (self._V / (self.W @ self.H)) @ ht
@@ -138,8 +155,7 @@ class NMF:
                 numerator = wt @ (self._V / (self.W @ self.H))
                 denomenator = wt @ ones
                 self._H *= numerator / denomenator
-
-                if (self._iter % self._test_conv == 0) and self._loss_converged:
+                if stop_iterations():
                     break
 
         else:
@@ -148,6 +164,5 @@ class NMF:
                                    (self.W.transpose(0, 1) @ ((self.W @ self.H)**(beta-1))))
                 self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(0, 1)) /
                                    (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(0, 1)))
-
-                if self._test_conv(self._iter):
+                if stop_iterations():
                     break
