@@ -116,7 +116,6 @@ class NMF:
         if not self._iter:
             self._loss_init = self._kl_loss
         elif ((self._prev_loss - self._kl_loss) / self._loss_init) < self._tolerance:
-            print("loss converged with {} iterations".format(self._iter))
             return True
         self._prev_loss = self._kl_loss
         return False
@@ -131,38 +130,41 @@ class NMF:
             beta == 1 => Generalised Kullback-Leibler updates
             beta == 0 => Itakura-Saito updates
         """
-
-        def stop_iterations():
-            return (self._iter % self._test_conv == 0) and self._loss_converged and (self._iter > self.min_iterations)
-
-        if beta == 2:
-            for self._iter in range(self.max_iterations):
-                self.H = self.H * (self.W.transpose(0, 1) @ self._V) / (self.W.transpose(0, 1) @ (self.W @ self.H))
-                self.W = self.W * (self._V @ self.H.transpose(0, 1)) / (self.W @ (self.H @ self.H.transpose(0, 1)))
-                if stop_iterations():
-                    break
-
-        # Optimisations for the (common) beta=1 (KL) case.
-        elif beta == 1:
-            ones = torch.ones(self._V.shape).type(self._tensor_type).cuda(self._gpu_id)
-            for self._iter in range(self.max_iterations):
-                ht = self.H.t()
-                numerator = (self._V / (self.W @ self.H)) @ ht
-                denomenator = ones @ ht
-                self._W *= numerator / denomenator
-
-                wt = self.W.t()
-                numerator = wt @ (self._V / (self.W @ self.H))
-                denomenator = wt @ ones
-                self._H *= numerator / denomenator
-                if stop_iterations():
-                    break
-
-        else:
-            for self._iter in range(self.max_iterations):
-                self.H = self.H * ((self.W.t() @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
-                                   (self.W.transpose(0, 1) @ ((self.W @ self.H)**(beta-1))))
-                self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(0, 1)) /
-                                   (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(0, 1)))
-                if stop_iterations():
-                    break
+        with torch.no_grad():
+            def stop_iterations():
+                stop = (self._iter % self._test_conv == 0) and self._loss_converged and (self._iter > self.min_iterations)
+                if stop:
+                    print("loss converged with {} iterations".format(self._iter))
+                return stop
+    
+            if beta == 2:
+                for self._iter in range(self.max_iterations):
+                    self.H = self.H * (self.W.transpose(0, 1) @ self._V) / (self.W.transpose(0, 1) @ (self.W @ self.H))
+                    self.W = self.W * (self._V @ self.H.transpose(0, 1)) / (self.W @ (self.H @ self.H.transpose(0, 1)))
+                    if stop_iterations():
+                        break
+    
+            # Optimisations for the (common) beta=1 (KL) case.
+            elif beta == 1:
+                ones = torch.ones(self._V.shape).type(self._tensor_type).cuda(self._gpu_id)
+                for self._iter in range(self.max_iterations):
+                    ht = self.H.t()
+                    numerator = (self._V / (self.W @ self.H)) @ ht
+                    denomenator = ones @ ht
+                    self._W *= numerator / denomenator
+    
+                    wt = self.W.t()
+                    numerator = wt @ (self._V / (self.W @ self.H))
+                    denomenator = wt @ ones
+                    self._H *= numerator / denomenator
+                    if stop_iterations():
+                        break
+    
+            else:
+                for self._iter in range(self.max_iterations):
+                    self.H = self.H * ((self.W.t() @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
+                                       (self.W.transpose(0, 1) @ ((self.W @ self.H)**(beta-1))))
+                    self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(0, 1)) /
+                                       (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(0, 1)))
+                    if stop_iterations():
+                        break
