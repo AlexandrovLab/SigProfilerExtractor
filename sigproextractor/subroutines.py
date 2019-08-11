@@ -210,15 +210,21 @@ def denormalize_samples(genomes, original_totals, normalization_value=30000):
 
 """###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
 def nnmf_gpu(genomes, nfactors):
-    p = current_process()
-    identity = p._identity[0]
-    gpu_id = identity % torch.cuda.device_count()
-    genomes = torch.from_numpy(genomes.values).float().cuda(gpu_id)
+    #p = current_process()
+    #identity = p._identity[0]
+
+    gpu_id = 0#identity % torch.cuda.device_count()
+    genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
     net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=100000,test_conv=2000, gpu_id=gpu_id, seed=None)
     net.fit()
-    H = np.matrix(net.H.detach().cpu().numpy())
-    W = np.matrix(net.W.detach().cpu().numpy())
-    return W, H
+    Ws = []
+    Hs = []
+    for H in net.H.detach().cpu().numpy():
+        Hs.append(np.matrix(H))
+    for W in net.W.detach().cpu().numpy():
+        Ws.append(np.matrix(W))
+
+    return Ws, Hs
 
 def nnmf(genomes, nfactors):
     genomes = np.array(genomes)
@@ -279,50 +285,92 @@ def nmf(genomes=1, totalProcesses=1, resample=True, gpu=False):
     #print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))    
     
     return W, H
+
 # NMF version for the multiprocessing library
-def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
+def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
     tic = time.time()
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
 
+    gpu=True
+
     if gpu:
         nmf_fn = nnmf_gpu
+        results = []
+        genome_list = []
+
+        for b in range(batch_size):
+            if resample == True:
+                bootstrapGenomes= BootstrapCancerGenomes(genomes)
+                bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+                genome_list.append(bootstrapGenomes.values)
+                #print(type(bootstrapGenomes))
+            else:
+                genome_list.append(genomes)
+
+        g = np.array(genome_list)
+        W, H = nmf_fn(g, totalProcesses)
+        for i in range(len(W)):
+            _W = np.array(W[i])
+            _H = np.array(H[i])
+            total = _W.sum(axis=0)[np.newaxis]
+            #print ("total: ", total); print("\n");
+            _W = _W/total
+            _H = _H*total.T
+            results.append((_W, _H))
+        return results
+
+
     else:
         nmf_fn = nnmf
+        results = []
+        for i in range(batch_size):
+            print('Running iteration ', i, 'of batch')
+            if resample == True:
+                bootstrapGenomes= BootstrapCancerGenomes(genomes)
+                bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+                W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
+            else:
+                W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
+            #print ("initital W: ", W); print("\n");
+            #print ("initial H: ", H); print("\n");
+            W = np.array(W)
+            H = np.array(H)
+            total = W.sum(axis=0)[np.newaxis]
+            #print ("total: ", total); print("\n");
+            W = W/total
+            H = H*total.T
+            results.append((W,H))
+            #print ("process " +str(totalProcesses)+" continues please wait... ")
+            #print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
+        return results
 
-    if resample == True:
-        bootstrapGenomes= BootstrapCancerGenomes(genomes)
-        bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-        W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
-    else:
-        W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
-    #print ("initital W: ", W); print("\n");
-    #print ("initial H: ", H); print("\n");
-    W = np.array(W)
-    H = np.array(H)
-    total = W.sum(axis=0)[np.newaxis]
-    #print ("total: ", total); print("\n");
-    W = W/total
-    H = H*total.T
-    print ("process " +str(totalProcesses)+" continues please wait... ")
-    print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
-    return W, H
 
-
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, gpu=False):
+def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, gpu=False, batch_size=10):
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
         pool = multiprocessing.Pool()
     else:
         pool = multiprocessing.Pool(processes=n_cpu)
-        
-  
+
+    num_full_batches = iterations // batch_size
+    last_batch_size = iterations % batch_size
+
+    batches = [batch_size for _ in range(num_full_batches)]
+    if last_batch_size != 0:
+        batches.append(last_batch_size)
+
+    #print("Running with the following batches: ", batches)
+    #for batch_size in batches:
+    #    pnmf(batch_size=batch_size, genomes=genomes, totalProcesses=totalProcesses, resample=resample, gpu=gpu)
     pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, gpu=gpu)
-    result_list = pool.map(pool_nmf, range(iterations)) 
+    result_list = pool.map(pool_nmf, batches) 
     pool.close()
     pool.join()
     
-    return result_list
+    #result_list_flattened = [s for sublist for sublist in result_list]
+    flat_list = [item for sublist in result_list for item in sublist]
+    return flat_list#result_list
 ####################################################################################################################
 
 
