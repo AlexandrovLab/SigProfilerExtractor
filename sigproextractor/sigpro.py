@@ -842,6 +842,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                 signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
                 # make de novo solution(processAvg, allgenomes, layer_directory1)
                 listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
+                allgenomes = pd.DataFrame(allgenomes)
                 exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                                allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                                signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
@@ -874,7 +875,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                     allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
                     attribution = final_signatures["dictionary"]
                     background_sigs= final_signatures["background_sigs"]
-                    
+                    genomes = pd.DataFrame(genomes)
                     
                     
                     

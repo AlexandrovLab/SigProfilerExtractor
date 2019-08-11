@@ -50,6 +50,7 @@ def union(a, b):
     """ return the union of two lists """
     return list(set(a) | set(b))
 
+
 def get_indeces(a, b):
     
     """ 
@@ -85,7 +86,10 @@ def get_items_from_index(x,y):
     """
     z = []
     for i in y:
-        z.append(x[i])
+        try:
+            z.append(x[i])
+        except:
+            pass
     return z
 
     """
@@ -96,6 +100,7 @@ def get_items_from_index(x,y):
     #result
     >>> [3,8]
     """
+
 ############################################################## FUNCTION ONE ##########################################    
 def signature_plotting_text(value, text, Type):
     name = text + ": "
@@ -586,6 +591,12 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, gpu=False):
 ################################### Dicompose the new signatures into global signatures   #########################
 def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37"):
     
+    # open the log file for signature decomposition 
+    lognote = open(directory+"/decomposition_logfile.txt", "w") 
+    lognote.write("############################ Signature Decomposition Details ################################\n\n\n")
+    lognote.write("Context Type: {}\n".format(mtype))
+    lognote.write("Genome Build: {}\n".format(genome_build))
+    
     paths = cosmic.__path__[0]
     
     if signatures.shape[0]==96:
@@ -640,16 +651,20 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
     newsig = list() # will create the letter based id of newsignatures
     newsigmatrixidx = list() # will create the original id of newsignature to help to record the original matrix
     fh = open(directory+"/comparison_with_global_ID_signatures.csv", "w")
-    fh.write("De novo extracted, Global NMF Signatures, Similarity\n")
+    fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, Cosine Similarity\n")
     fh.close()
     dictionary = {}
     
-    for i in range(signatures.shape[1]):
+    # get the names of denovo signatures
+    denovo_signature_names = make_letter_ids(signatures.shape[1])
+    #lognote.write("\n********** Starting Signature Decomposition **********\n\n")
+    for i, j in zip(range(signatures.shape[1]), denovo_signature_names):
         
         # Only for context SBS96
         if signatures.shape[0]==96:
-            
-            #print("\n\n\n\n######################## Signature "+str(i+1)+" ########################"  )
+            lognote = open(directory+"/decomposition_logfile.txt", "a")  
+            lognote.write("\n\n\n\n######################## Decomposing "+j+" ########################\n"  )
+            lognote.close()
             if genome_build=="mm9" or genome_build=="mm10":
                 check_rule_negatives = [1,16]
                 check_rule_penalty=1.50
@@ -661,7 +676,19 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             #print("Exposure after adding", exposures)
             #exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
             #print(exposures)
-            _, exposures,_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, signatures[:,i], metric="l2", solver="nnls", background_sigs = [0,4], permanent_sigs = [0,4], candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
+            _, exposures,L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
+                                                                                                         signatures[:,i], 
+                                                                                                         metric="l2", 
+                                                                                                         solver="nnls", 
+                                                                                                         background_sigs = [0,4], 
+                                                                                                         permanent_sigs = [0,4], 
+                                                                                                         candidate_sigs="all", 
+                                                                                                         allsigids = signames, 
+                                                                                                         penalty = 0.05, 
+                                                                                                         check_rule_negatives = check_rule_negatives, 
+                                                                                                         checkrule_penalty = check_rule_penalty, 
+                                                                                                         directory = directory+"/decomposition_logfile.txt", 
+                                                                                                         verbose=False)
             #print(exposures)
             #print("######################################################################")
             #ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="cosine", solver = "nnls", cutoff=0.05, background_sigs= [0,4], verbose=True)
@@ -669,8 +696,22 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             #print("\n\n\n\n\n\n\n\n")
         # for other contexts     
         else:
-            _, exposures,_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, signatures[:,i], metric="l2", solver="nnls", background_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives = [], checkrule_penalty = [], verbose=False)
+            _, exposures,L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
+                                                                                                         signatures[:,i], 
+                                                                                                         metric="l2", 
+                                                                                                         solver="nnls", 
+                                                                                                         background_sigs = [], 
+                                                                                                         candidate_sigs="all", 
+                                                                                                         penalty = 0.05, 
+                                                                                                         check_rule_negatives = [], 
+                                                                                                         checkrule_penalty = [], 
+                                                                                                         directory = directory+"/decomposition_logfile.txt", 
+                                                                                                         verbose=False)
         #print(signames[np.nonzero(exposures)], similarity)
+        
+        # calculate the L1 Error %
+        L1dist = np.linalg.norm(signatures[:,i]-np.dot(sigDatabase,exposures) , ord=1)/np.linalg.norm(signatures[:,i], ord=1)
+        
         #print(exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100)
         exposure_percentages = exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100
         listofinformation = list("0"*len(np.nonzero(exposures)[0])*3)
@@ -683,9 +724,9 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             listofinformation[count*3+2]="%"
             decomposed_signatures.append(signames[j])
             count+=1
-        ListToTumple = tuple([mtype, letters[i]]+listofinformation+ [similarity])
+        ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist]+[L2dist]+[similarity])
         
-        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f\n" 
+        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
         ##print(np.nonzero(exposures)[0])
         ##print(similarity)
@@ -704,7 +745,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             newsig.append("Signature "+letters[i])
             newsigmatrixidx.append(i)
             fh = open(directory+"/comparison_with_global_ID_signatures.csv", "a")
-            fh.write("Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 ))
+            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 1))
             fh.close()
             dictionary.update({"Signature {}".format(letters[i]):["Signature {}".format(letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
@@ -732,8 +773,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
     else:
         background_sigs = []
         
-   
+    # close the lognote
+    lognote.close()
     
+    #return values
     return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary, 
             "background_sigs": background_sigs} 
 
@@ -1120,6 +1163,12 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
     
+    # Create the lognote file
+    lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "w")
+    lognote.write("************************ Stepwise Description of Signature Assaignment to Samples ************************")
+    lognote.close()
+    
+    
     #Get the type of Signatures
     if m == 83:
         signature_type = "INDEL"
@@ -1145,6 +1194,11 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         for r in range(allgenomes.shape[1]):
             if verbose==True:
                 print("\n\n\n\n\n                                        ################ Sample "+str(r+1)+ " #################")
+                     
+            # Record information to lognote
+            lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
+            lognote.write("\n\n\n\n\n                    ################ Sample "+str(r+1)+ " #################\n") 
+            
             sample_exposure = np.array(denovo_exposureAvg.iloc[:,r])
             init_sig_idx = np.nonzero(sample_exposure)[0]
             init_sigs = denovo_exposureAvg.index[init_sig_idx]
@@ -1175,28 +1229,68 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             for nonzero_idx, nozero_exp in zip(init_decomposed_sigs_idx, newExposure):
                 exposureAvg[nonzero_idx, r] = nozero_exp
             if verbose==True:
-                print("################################################################# Original :") 
-                print( exposureAvg[:, r])    
+                print("############################# Initial Composition #################################### ") 
+                print(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)   
+                print("L2%: ", newSimilarity)  
+                
+            lognote.write("############################# Initial Composition ####################################\n")
+            lognote.write("{}\n".format(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T))  
+            lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(newSimilarity,2), round(cos_sim(allgenomes[:,r], np.dot(processAvg, exposureAvg[:, r] )),2)))
             #remove signatures 
-            exposureAvg[:,r],_,_ = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
-                       solver = "nnls", cutoff=0.05, background_sigs= background_sig_idx, verbose=False)
+            exposureAvg[:,r],L2dist,cosine_sim = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
+                       solver = "nnls", cutoff=0.05, background_sigs= [], verbose=False)
             if verbose==True:
-                print("############################################################# After Initial Remove :")
-                print (exposureAvg[:, r])
+                print("############################## Composition After Initial Remove ############################### ")
+                print(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)  
+                print("L2%: ", L2dist)
+            lognote.write("############################## Composition After Initial Remove ###############################\n")
+            lognote.write("{}\n".format(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T))  
+            lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(cosine_sim,2)))
+            lognote.write("\n############################## Performing Add-Remove Step ##############################\n")
+            #Close the Lognote file
+            lognote.close()
             
             init_add_sig_idx = list(set().union(list(np.nonzero(exposureAvg[:, r])[0]), background_sigs))
             #print(init_add_sig_idx)
-            #print(background_sig_idx)
+            
+            #get the background_sig_idx for the add_remove function only for the decomposed solution:
+            if background_sigs != 0:  # in the decomposed solution only 
+                background_sig_idx = get_indeces(allsigids, ["SBS1", "SBS5"])
+                #print(background_sig_idx)
+            
+             
+            
             
             # if the there is no other signatures to be added on top the existing signatures
             try:
                 
-                _, exposureAvg[:, r],_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, allgenomes[:,r], metric="l2", solver="nnls", background_sigs = init_add_sig_idx, permanent_sigs = background_sig_idx, candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
+                _, exposureAvg[:, r],L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, 
+                                                                                                  allgenomes[:,r], 
+                                                                                                  metric="l2", 
+                                                                                                  solver="nnls", 
+                                                                                                  background_sigs = init_add_sig_idx, 
+                                                                                                  permanent_sigs = background_sig_idx, 
+                                                                                                  candidate_sigs="all", 
+                                                                                                  allsigids = allsigids, 
+                                                                                                  penalty = 0.05, 
+                                                                                                  check_rule_negatives = check_rule_negatives, 
+                                                                                                  checkrule_penalty = check_rule_penalty, 
+                                                                                                  directory = layer_directory+"/Signature_assaignment_logfile.txt", 
+                                                                                                  verbose=False)
                 if verbose==True:
-                    print("############################################################# After Add-Remove :") 
+                    print("####################################### Composition After Add-Remove #######################################\n") 
                     print(exposureAvg[:, r])
+                    print("L2%: ", L2dist)
+                # Recond the information in the log file
+                lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
+                lognote.write("####################################### Composition After Add-Remove #######################################\n")
+                lognote.write("{}\n".format(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)) 
+                lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(similarity,2)))
+                lognote.close()
             except:
                 pass
+            
+            
             """
             # add signatures
             exposureAvg[:, r], _, similarity = ss.add_signatures(processAvg, allgenomes[:,r][:,np.newaxis], presentSignatures=copy.deepcopy(init_add_sig_idx),cutoff=penalty, metric="l2", solver = "nnls",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
@@ -1225,7 +1319,12 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else:      
         for g in range(allgenomes.shape[1]):
             
-            exposures, _, similarity = ss.add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], presentSignatures=[],cutoff=penalty,check_rule_negatives=[], check_rule_penalty=1.0)
+            exposures, _, similarity = ss.add_signatures(processAvg, 
+                                                         allgenomes[:,g][:,np.newaxis], 
+                                                         presentSignatures=[],
+                                                         cutoff=penalty,
+                                                         check_rule_negatives=[], 
+                                                         check_rule_penalty=1.0)
             exposureAvg[:,g] = exposures
         
     
