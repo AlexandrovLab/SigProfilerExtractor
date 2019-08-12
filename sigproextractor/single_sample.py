@@ -11,6 +11,7 @@ from scipy.optimize import nnls
 from scipy.optimize import minimize
 from sigproextractor import subroutines as sub
 import copy 
+import os
 """
 #############################################################################################################
 #################################### Functions For Single Sample Algorithms #############################
@@ -694,8 +695,21 @@ def remove_all_single_signatures_pool(indices, W, exposures, totoalgenomes):
 
 
 
-def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs = [], permanent_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives =[],checkrule_penalty = 1.00, verbose=False):
+def add_remove_signatures(W,
+                          sample, 
+                          metric="l2", 
+                          solver="nnls", 
+                          background_sigs = [], 
+                          permanent_sigs = [], 
+                          candidate_sigs="all", 
+                          penalty = 0.05, 
+                          check_rule_negatives =[],
+                          checkrule_penalty = 1.00, 
+                          allsigids = False, 
+                          directory = os.getcwd()+"/Signature_assaignment_logfile.txt", 
+                          verbose=False):
     
+    lognote = open(directory, 'a')
     
     always_background = copy.deepcopy(permanent_sigs)
     M = sample   
@@ -707,14 +721,28 @@ def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs 
     
     # check the cosine_similarity with 4 signatures (highest)
     cosine_similarity_with_four_signatures = 1.0 # a value that will allow the signature not be reported as novel signature
+    
+    #set the signature's name 
+    if type(allsigids) != bool:
+        allsigids = sub.get_items_from_index(allsigids,candidate_sigs)
+    else:
+        allsigids = candidate_sigs
+        
+        
     while True:
         if verbose:
             print("\n\n\n\n!!!!!!!!!!!!!!!!!!STARTING LAYER: ", layer)
+        lognote.write("\n\n!!!!!!!!!!!!!!!!!!!!!!!!! LAYER: {} !!!!!!!!!!!!!!!!!!!!!!!!!\n".format(layer))
         layer=layer+1
         layer_original_distance = 100
         sigsToBeAdded = list(set(candidate_sigs)-set(background_sigs))
+         #set the signature's name 
+        if type(allsigids) != bool:
+            allsigidsToBeAdded = sub.get_items_from_index(allsigids,sigsToBeAdded)
+        else:
+            allsigidsToBeAdded = sigsToBeAdded
         
-        for i in sigsToBeAdded:
+        for i,j in zip(sigsToBeAdded, allsigidsToBeAdded):
             loop_sig = [i] 
             
             background_sigs = list(set(background_sigs).union(set(always_background)))
@@ -722,7 +750,7 @@ def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs 
             add_exposures, add_distance, _ = add_signatures(W, M[:,np.newaxis], presentSignatures=copy.deepcopy(background_sigs), toBeAdded=loop_sig, 
                                                   metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=penalty) 
             if verbose:
-                print("\n\n\n################## Add Index {} ########################".format(i)) 
+                print("\n\n\n################## Add Index {} ########################".format(j)) 
                 print(np.nonzero(add_exposures)[0])
                 print(sigsToBeAdded)
                 print(add_distance)
@@ -749,6 +777,10 @@ def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs 
             print("\n\n#################### After Add-Remove #################################")
             print(selected_signatures)
             print(layer_original_distance)
+        
+        lognote.write("Best Signature Composition {}\n".format(sub.get_items_from_index(allsigids,selected_signatures)))    
+        lognote.write("L2 Error % {}\n".format(round(layer_original_distance, 2))) 
+        lognote.write("Cosine Similarity {}\n".format(round(cos_sim(M, np.dot(W,activities)),2)))         
         if layer_original_distance < original_distance:
             original_distance = layer_original_distance
             background_sigs = list(selected_signatures)
@@ -765,7 +797,12 @@ def add_remove_signatures(W,sample, metric="l2", solver="nnls", background_sigs 
         print(background_sigs)
         print(original_distance)
         print(finalactivities)
-    
+    lognote.write("\n#################### Final Composition #################################\n")
+    lognote.write("{}\n".format(sub.get_items_from_index(allsigids,selected_signatures)))    
+    lognote.write("L2 Error % {}\n".format(round(original_distance, 2))) 
+    lognote.write("Cosine Similarity {}\n".format(round(cos_sim(M, np.dot(W,finalactivities)),2)))        
+    #close lognote
+    lognote.close()
     #newExposure, newSimilarity = fit_signatures(W[:,list(background_sigs)], M, metric="l2")
     #print(newExposure, newSimilarity)
     return (background_sigs, finalactivities, original_distance, cosine_similarity, cosine_similarity_with_four_signatures)

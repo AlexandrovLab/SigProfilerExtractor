@@ -1234,7 +1234,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 print("L2%: ", newSimilarity)  
                 
             lognote.write("############################# Initial Composition ####################################\n")
-            lognote.write("{}\n".format(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T))  
+            exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
+            lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
             lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(newSimilarity,2), round(cos_sim(allgenomes[:,r], np.dot(processAvg, exposureAvg[:, r] )),2)))
             #remove signatures 
             exposureAvg[:,r],L2dist,cosine_sim = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
@@ -1244,7 +1245,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 print(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)  
                 print("L2%: ", L2dist)
             lognote.write("############################## Composition After Initial Remove ###############################\n")
-            lognote.write("{}\n".format(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T))  
+            exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
+            lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
             lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(cosine_sim,2)))
             lognote.write("\n############################## Performing Add-Remove Step ##############################\n")
             #Close the Lognote file
@@ -1284,7 +1286,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 # Recond the information in the log file
                 lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
                 lognote.write("####################################### Composition After Add-Remove #######################################\n")
-                lognote.write("{}\n".format(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)) 
+                exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
+                lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
                 lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(similarity,2)))
                 lognote.close()
             except:
