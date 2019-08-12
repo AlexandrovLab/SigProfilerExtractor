@@ -847,44 +847,44 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                                signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
                
+                #try:
+                # create the folder for the final solution/ Decomposed Solution
+                layer_directory2 = output+"/Suggested_Solution/Decomposed_Solution"
                 try:
-                    # create the folder for the final solution/ Decomposed Solution
-                    layer_directory2 = output+"/Suggested_Solution/Decomposed_Solution"
-                    try:
-                        if not os.path.exists(layer_directory2):
-                            os.makedirs(layer_directory2)
-                    except: 
-                        print ("The {} folder could not be created".format("output"))
+                    if not os.path.exists(layer_directory2):
+                        os.makedirs(layer_directory2)
+                except: 
+                    print ("The {} folder could not be created".format("output"))
+            
+                if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
+                    processAvg = pd.DataFrame(processAvg, index=index)
+                    processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
+                    genomes = pd.DataFrame(genomes, index=index)
+                    genomes = genomes.groupby(genomes.index.str[1:8]).sum()
+                    index = genomes.index
+                    processAvg = np.array(processAvg)
+                    genomes = np.array(genomes)
+                    
+                    
+                final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
+                # extract the global signatures and new signatures from the final_signatures dictionary
+                globalsigs = final_signatures["globalsigs"]
+                globalsigs = np.array(globalsigs)
+                newsigs = final_signatures["newsigs"]
+                processAvg = np.hstack([globalsigs, newsigs])  
+                allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+                attribution = final_signatures["dictionary"]
+                background_sigs= final_signatures["background_sigs"]
+                genomes = pd.DataFrame(genomes)
                 
-                    if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
-                        processAvg = pd.DataFrame(processAvg, index=index)
-                        processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
-                        genomes = pd.DataFrame(genomes, index=index)
-                        genomes = genomes.groupby(genomes.index.str[1:8]).sum()
-                        index = genomes.index
-                        processAvg = np.array(processAvg)
-                        genomes = np.array(genomes)
-                        
-                        
-                    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
-                    # extract the global signatures and new signatures from the final_signatures dictionary
-                    globalsigs = final_signatures["globalsigs"]
-                    globalsigs = np.array(globalsigs)
-                    newsigs = final_signatures["newsigs"]
-                    processAvg = np.hstack([globalsigs, newsigs])  
-                    allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
-                    attribution = final_signatures["dictionary"]
-                    background_sigs= final_signatures["background_sigs"]
-                    genomes = pd.DataFrame(genomes)
-                    
-                    
-                    
-                    exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
-                    
-                except:
-                    print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
-                    shutil.rmtree(layer_directory2)
+                
+                
+                exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
+                                        remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
+                
+                #except:
+                print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
+                shutil.rmtree(layer_directory2)
                     
                 
                
