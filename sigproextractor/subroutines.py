@@ -28,10 +28,7 @@ import sigproextractor as cosmic
 from scipy.stats import  wilcoxon
 from sigproextractor import single_sample as ss
 import copy
-import torch
-from . import nmf_gpu
 
-multiprocessing.set_start_method('spawn', force=True)
 """################################################################## Vivid Functions #############################"""
 
 ############################################################## FUNCTION ONE ##########################################
@@ -214,6 +211,7 @@ def denormalize_samples(genomes, original_totals, normalization_value=30000):
 ##################################################################################################################    
 
 """###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
+
 def nnmf_gpu(genomes, nfactors):
     p = current_process()
     identity = p._identity[0]
@@ -756,9 +754,16 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
     if mtype == "96":
         different_signatures = list(set().union(different_signatures, [0,4]))
         different_signatures.sort()
+    
+    
+        
+    # add connected signatures   
+    different_signatures = ss.add_connected_sigs(different_signatures, list(signames))
+    
+    #get the name of the signatures
     detected_signatures = signames[different_signatures]
     
-   
+    
     globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
     newsigsmats=signatures[:,newsigmatrixidx]
     
@@ -790,6 +795,13 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
 #############################################################################################################
 """
 def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, gpu=False):
+    
+    if gpu:
+        import torch
+        from . import nmf_gpu
+
+        multiprocessing.set_start_method('spawn', force=True)
+        
     m = mut_context
     
     tic = time.time()

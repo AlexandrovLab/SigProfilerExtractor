@@ -39,7 +39,22 @@ def cos_sim(a, b):
     norm_b = np.linalg.norm(b)
     return dot_product / (norm_a * norm_b)
 
-
+def add_connected_sigs(background_sigs, allsigids): 
+    connected_sigs = [["SBS2", "SBS13"],
+                  ["SBS7a", "SBS7b", "SBS7c", "SBS7d"],
+                  ["SBS10a", "SBS10b"],
+                  ["SBS17a", "SBS17b"]]
+    
+    backround_sig_names = sub.get_items_from_index(allsigids,background_sigs )
+    connect_the_sigs = []
+    for i in range(len(connected_sigs)):
+        if len(set(connected_sigs[i]).intersection(set(backround_sig_names)))>0:
+            connect_the_sigs = connect_the_sigs+connected_sigs[i]
+    
+    backround_sig_names = list(set(backround_sig_names).union(set(connect_the_sigs)))    
+    background_sigs = sub.get_indeces(allsigids, backround_sig_names)
+    background_sigs.sort()
+    return background_sigs
 
 def parameterized_objective2_custom(x, signatures, samples):
     rec = np.dot(signatures, x)
@@ -710,6 +725,8 @@ def add_remove_signatures(W,
                           verbose=False):
     
     lognote = open(directory, 'a')
+ 
+    
     
     always_background = copy.deepcopy(permanent_sigs)
     M = sample   
@@ -736,7 +753,7 @@ def add_remove_signatures(W,
         layer=layer+1
         layer_original_distance = 100
         sigsToBeAdded = list(set(candidate_sigs)-set(background_sigs))
-         #set the signature's name 
+        #set the signature's name 
         if type(allsigids) != bool:
             allsigidsToBeAdded = sub.get_items_from_index(allsigids,sigsToBeAdded)
         else:
@@ -746,7 +763,8 @@ def add_remove_signatures(W,
             loop_sig = [i] 
             
             background_sigs = list(set(background_sigs).union(set(always_background)))
-            #print(background_sigs)
+            background_sigs = add_connected_sigs(background_sigs, list(allsigids))
+            
             add_exposures, add_distance, _ = add_signatures(W, M[:,np.newaxis], presentSignatures=copy.deepcopy(background_sigs), toBeAdded=loop_sig, 
                                                   metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=penalty) 
             if verbose:

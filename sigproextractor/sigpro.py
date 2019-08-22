@@ -86,7 +86,7 @@ def importdata(datatype="matobj"):
     if datatype=="matobj":
         data = paths+"/data/21_breast_WGS_substitutions.mat"
     elif datatype=="text" or datatype=="table":
-        data = paths+"/data/all_mice_silvio.txt"
+        data = paths+"/data/Samples.txt"
     elif datatype=="csv":
         data = paths+"/data/csvexample.csv"
     elif datatype=="vcf":
