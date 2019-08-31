@@ -2,6 +2,7 @@ MANIFEST.in
 README.md
 setup.py
 sigproextractor/__init__.py
+sigproextractor/decomposition.py
 sigproextractor/nmf_gpu.py
 sigproextractor/sigpro.py
 sigproextractor/single_sample.py

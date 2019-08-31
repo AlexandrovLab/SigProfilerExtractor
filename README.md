@@ -130,7 +130,44 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     
     >>> help(sig.sigProfilerExtractor)
 ```
+
+### decompose
+    Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples.
     
+    decompose(signatures, activities, samples, output, mutation_type="96", genome_build="GRCh37", verbose=False)
+    
+    Parameters: 
+        
+        signatures: A string. Path to a  tab delimited file that contains the signaure table where the rows are mutation types and colunms are signature IDs. 
+        activities: A string. Path to a tab delimilted file that contains the activity table where the rows are sample IDs and colunms are signature IDs.
+        samples: A string. Path to a tab delimilted file that contains the activity table where the rows are mutation types and colunms are sample IDs.
+        output: A string. Path to the output folder.
+        mutation_type = A string. The context type. Example: "96", "192", "1536", "6144", "INDEL", "DINUC". The default value is "96".
+        genome_build = A string. The genome type. Example: "GRCh37", "GRCh38", "mm9", "mm10". The default value is "GRCh37"
+        verbose = Boolean. Prints statements. Default value is False. 
+    
+    Values:
+    
+         Produces an output folder with resulting files.  
+```         
+    Examples
+    --------
+
+    >>> from sigproextractor import decomposition as decomp
+    >>> signatures = "path/to/signatures.txt"
+    >>> activities = "path/to/activities.txt"
+    >>> samples = "path/to/samples.txt"
+    >>> results = "path/to/output/directory"
+    >>> decomp.decompose(signatures, activities, samples, results, mutation_type="96", genome_build="GRCh37", verbose=False)
+    
+    To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
+    
+    >>> help(decomp.decompose)
+```
+    
+    
+    
+
 ### GPU support
 
 Sigprofilerextractor is GPU-enabled and can run on single or multi-GPU systems for significantly increased performance in most circumstances.
