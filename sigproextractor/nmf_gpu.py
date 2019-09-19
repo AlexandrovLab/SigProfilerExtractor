@@ -13,7 +13,7 @@ from torch import nn
 
 class NMF:
     def __init__(self, V, rank, max_iterations=100000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
-                 init_method='random', floating_point_precision='float', min_iterations=2000):
+                 init_method='random', floating_point_precision='double', min_iterations=2000):
 
         """
         Run non-negative matrix factorisation using GPU. Uses beta-divergence.
@@ -70,7 +70,7 @@ class NMF:
 
     def _initialise_wh(self, init_method):
         """
-        Initialise baseis and coefficient matrices according to `init_method`
+        Initialise basis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
             W = torch.rand(self._V.shape[0], self._V.shape[1], self._rank).type(self._tensor_type).cuda()
