@@ -18,6 +18,7 @@ Created on Mon Aug 27 13:39:29 2018
 
 """
 import os
+import torch
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1" 
@@ -85,7 +86,7 @@ def importdata(datatype="matobj"):
     if datatype=="matobj":
         data = paths+"/data/21_breast_WGS_substitutions.mat"
     elif datatype=="text" or datatype=="table":
-        data = paths+"/data/all_mice_silvio.txt"
+        data = paths+"/data/Samples.txt"
     elif datatype=="csv":
         data = paths+"/data/csvexample.csv"
     elif datatype=="vcf":
@@ -99,7 +100,7 @@ def importdata(datatype="matobj"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True): 
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True, gpu=False): 
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -238,8 +239,10 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     
     """
-    
-    
+
+    if gpu and (torch.cuda.device_count() == 0):
+        raise RuntimeError("GPU not available!")
+
     
     #################################### At first create the system data file ####################################
     if not os.path.exists(out_put):
@@ -545,7 +548,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                     totalIterations=totalIterations, \
                                                     cpu=cpu, \
                                                     mut_context=m, \
-                                                    resample = resample) 
+                                                    resample = resample,
+                                                    gpu=gpu)
                 
                 
                     
@@ -838,6 +842,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                 signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
                 # make de novo solution(processAvg, allgenomes, layer_directory1)
                 listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1])
+                allgenomes = pd.DataFrame(allgenomes)
                 exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                                allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                                signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
@@ -870,7 +875,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                     allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
                     attribution = final_signatures["dictionary"]
                     background_sigs= final_signatures["background_sigs"]
-                    
+                    genomes = pd.DataFrame(genomes)
                     
                     
                     

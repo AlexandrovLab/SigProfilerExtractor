@@ -14,6 +14,7 @@ import pandas as pd
 from sklearn import metrics
 import time
 import multiprocessing
+from multiprocessing import current_process
 from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
@@ -26,7 +27,8 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import sigproextractor as cosmic
 from scipy.stats import  wilcoxon
 from sigproextractor import single_sample as ss
-import copy 
+import copy
+
 """################################################################## Vivid Functions #############################"""
 
 ############################################################## FUNCTION ONE ##########################################
@@ -44,6 +46,7 @@ def make_letter_ids(idlenth = 10):
 def union(a, b):
     """ return the union of two lists """
     return list(set(a) | set(b))
+
 
 def get_indeces(a, b):
     
@@ -80,7 +83,10 @@ def get_items_from_index(x,y):
     """
     z = []
     for i in y:
-        z.append(x[i])
+        try:
+            z.append(x[i])
+        except:
+            pass
     return z
 
     """
@@ -91,6 +97,7 @@ def get_items_from_index(x,y):
     #result
     >>> [3,8]
     """
+
 ############################################################## FUNCTION ONE ##########################################    
 def signature_plotting_text(value, text, Type):
     name = text + ": "
@@ -204,6 +211,18 @@ def denormalize_samples(genomes, original_totals, normalization_value=30000):
 ##################################################################################################################    
 
 """###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
+
+def nnmf_gpu(genomes, nfactors):
+    p = current_process()
+    identity = p._identity[0]
+    gpu_id = identity % torch.cuda.device_count()
+    genomes = torch.from_numpy(genomes.values).float().cuda(gpu_id)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=100000,test_conv=2000, gpu_id=gpu_id, seed=None)
+    net.fit()
+    H = np.matrix(net.H.detach().cpu().numpy())
+    W = np.matrix(net.W.detach().cpu().numpy())
+    return W, H
+
 def nnmf(genomes, nfactors):
     genomes = np.array(genomes)
     nmf = nimfa.Nmf(genomes, max_iter=100000, rank=nfactors, update='divergence', objective='div', test_conv= 30)
@@ -236,15 +255,21 @@ def BootstrapCancerGenomes(genomes):
     return dataframe
 
 
-def nmf(genomes=1, totalProcesses=1, resample=True):   
+def nmf(genomes=1, totalProcesses=1, resample=True, gpu=False):   
     #tic = time.time()
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
+
+    if gpu:
+        nmf_fn = nnmf_gpu
+    else:
+        nmf_fn = nnmf
+        
     if resample == True:
         bootstrapGenomes= BootstrapCancerGenomes(genomes)
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-        W, H = nnmf(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
     else:
-        W, H = nnmf(genomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
     #print ("initital W: ", W); print("\n");
     #print ("initial H: ", H); print("\n");
     W = np.array(W)
@@ -258,15 +283,21 @@ def nmf(genomes=1, totalProcesses=1, resample=True):
     
     return W, H
 # NMF version for the multiprocessing library
-def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True):
+def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
     tic = time.time()
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
+
+    if gpu:
+        nmf_fn = nnmf_gpu
+    else:
+        nmf_fn = nnmf
+
     if resample == True:
         bootstrapGenomes= BootstrapCancerGenomes(genomes)
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-        W, H = nnmf(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
     else:
-        W, H = nnmf(genomes,totalProcesses)  #uses custom function nnmf
+        W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
     #print ("initital W: ", W); print("\n");
     #print ("initial H: ", H); print("\n");
     W = np.array(W)
@@ -280,7 +311,7 @@ def pnmf(pool_constant=1, genomes=1, totalProcesses=1, resample=True):
     return W, H
 
 
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True):
+def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, gpu=False):
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
@@ -289,7 +320,7 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose 
         pool = multiprocessing.Pool(processes=n_cpu)
         
   
-    pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample)
+    pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, gpu=gpu)
     result_list = pool.map(pool_nmf, range(iterations)) 
     pool.close()
     pool.join()
@@ -366,7 +397,7 @@ def calculate_similarities(genomes, est_genomes, sample_names):
 # function to calculate the centroids
 
 ################################################################### FUNCTION  ###################################################################
-def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0])):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
+def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), gpu=False):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
     
     """ Takes a pair of matrices mat1 and mat2 as arguments. Both of the matrices should have the 
     equal shapes. The function makes a partition based clustering (the number of clusters is equal 
@@ -384,14 +415,20 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0])):  # t
     
     
     """
+
+    if gpu:
+        mat1_t = torch.from_numpy(mat1).float().cuda()
+        mat2_t = torch.from_numpy(mat2).float().cuda()
+        
+        mat1_t_norm = mat1_t / mat1_t.norm(dim=0)[None, :]
+        mat2_t_norm = mat2_t / mat2_t.norm(dim=0)[None, :]
     
-    
-    con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
-    for i in range(0, mat1.shape[1]):
-        for j in range(0,mat2.shape[1]):
-            con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
-    
-    
+        con_mat = torch.mm(mat1_t_norm.transpose(0,1), mat2_t_norm).cpu().numpy()
+    else:
+        con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
+        for i in range(0, mat1.shape[1]):
+            for j in range(0,mat2.shape[1]):
+                con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
     
     maximums = np.argmax(con_mat, axis = 1) #the indices of maximums
     uniques = np.unique(maximums) #unique indices having the maximums
@@ -444,7 +481,7 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0])):  # t
 
 
 ################################################################### FUNCTION  ###################################################################
-def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0):
+def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, gpu=False):
     # exposureAvg is not important here. It can be any matrix with the same size of a single exposure matrix
     iterations = int(tempWall.shape[1]/processAvg.shape[1])
     processes =  processAvg.shape[1]
@@ -459,7 +496,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0):
         #print(i)
         statidx = idxIter[iteration_number]
         loopidx = list(range(statidx, statidx+processes))
-        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:])
+        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],gpu=gpu)
         
         for cluster_items in idxPair:
             cluster_number = cluster_items[0]
@@ -512,7 +549,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0):
 
 
 
-def cluster_converge_innerloop(Wall, Hall, totalprocess):
+def cluster_converge_innerloop(Wall, Hall, totalprocess, gpu=False):
     
     processAvg = np.random.rand(Wall.shape[0],totalprocess)
     exposureAvg = np.random.rand(totalprocess, Hall.shape[1])
@@ -520,7 +557,7 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess):
     result = 0
     convergence_count = 0
     while True:
-        processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = reclustering(Wall, Hall, processAvg, exposureAvg)
+        processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = reclustering(Wall, Hall, processAvg, exposureAvg, gpu=gpu)
         
         if result == avgSilhouetteCoefficients:
             break
@@ -534,11 +571,11 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess):
 
 
 # To select the best clustering converge of the cluster_converge_innerloop
-def cluster_converge_outerloop(Wall, Hall, totalprocess):
+def cluster_converge_outerloop(Wall, Hall, totalprocess, gpu=False):
     avgSilhouetteCoefficients = -1  # intial avgSilhouetteCoefficients 
     for i in range(50):  # using 10 iterations to get the best clustering 
         
-        temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients = cluster_converge_innerloop(Wall, Hall, totalprocess)
+        temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients = cluster_converge_innerloop(Wall, Hall, totalprocess, gpu=gpu)
         
         if avgSilhouetteCoefficients < temp_avgSilhouetteCoefficients:
               processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients =   temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients
@@ -551,6 +588,12 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess):
 
 ################################### Dicompose the new signatures into global signatures   #########################
 def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37"):
+    
+    # open the log file for signature decomposition 
+    lognote = open(directory+"/decomposition_logfile.txt", "w") 
+    lognote.write("############################ Signature Decomposition Details ################################\n\n\n")
+    lognote.write("Context Type: {}\n".format(mtype))
+    lognote.write("Genome Build: {}\n".format(genome_build))
     
     paths = cosmic.__path__[0]
     
@@ -606,16 +649,20 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
     newsig = list() # will create the letter based id of newsignatures
     newsigmatrixidx = list() # will create the original id of newsignature to help to record the original matrix
     fh = open(directory+"/comparison_with_global_ID_signatures.csv", "w")
-    fh.write("De novo extracted, Global NMF Signatures, Similarity\n")
+    fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, Cosine Similarity\n")
     fh.close()
     dictionary = {}
     
-    for i in range(signatures.shape[1]):
+    # get the names of denovo signatures
+    denovo_signature_names = make_letter_ids(signatures.shape[1])
+    #lognote.write("\n********** Starting Signature Decomposition **********\n\n")
+    for i, j in zip(range(signatures.shape[1]), denovo_signature_names):
         
         # Only for context SBS96
         if signatures.shape[0]==96:
-            
-            #print("\n\n\n\n######################## Signature "+str(i+1)+" ########################"  )
+            lognote = open(directory+"/decomposition_logfile.txt", "a")  
+            lognote.write("\n\n\n\n######################## Decomposing "+j+" ########################\n"  )
+            lognote.close()
             if genome_build=="mm9" or genome_build=="mm10":
                 check_rule_negatives = [1,16]
                 check_rule_penalty=1.50
@@ -627,7 +674,19 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             #print("Exposure after adding", exposures)
             #exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
             #print(exposures)
-            _, exposures,_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, signatures[:,i], metric="l2", solver="nnls", background_sigs = [0,4], permanent_sigs = [0,4], candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
+            _, exposures,L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
+                                                                                                         signatures[:,i], 
+                                                                                                         metric="l2", 
+                                                                                                         solver="nnls", 
+                                                                                                         background_sigs = [0,4], 
+                                                                                                         permanent_sigs = [0,4], 
+                                                                                                         candidate_sigs="all", 
+                                                                                                         allsigids = signames, 
+                                                                                                         penalty = 0.05, 
+                                                                                                         check_rule_negatives = check_rule_negatives, 
+                                                                                                         checkrule_penalty = check_rule_penalty, 
+                                                                                                         directory = directory+"/decomposition_logfile.txt", 
+                                                                                                         verbose=False)
             #print(exposures)
             #print("######################################################################")
             #ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="cosine", solver = "nnls", cutoff=0.05, background_sigs= [0,4], verbose=True)
@@ -635,8 +694,22 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             #print("\n\n\n\n\n\n\n\n")
         # for other contexts     
         else:
-            _, exposures,_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, signatures[:,i], metric="l2", solver="nnls", background_sigs = [], candidate_sigs="all", penalty = 0.05, check_rule_negatives = [], checkrule_penalty = [], verbose=False)
+            _, exposures,L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
+                                                                                                         signatures[:,i], 
+                                                                                                         metric="l2", 
+                                                                                                         solver="nnls", 
+                                                                                                         background_sigs = [], 
+                                                                                                         candidate_sigs="all", 
+                                                                                                         penalty = 0.05, 
+                                                                                                         check_rule_negatives = [], 
+                                                                                                         checkrule_penalty = [], 
+                                                                                                         directory = directory+"/decomposition_logfile.txt", 
+                                                                                                         verbose=False)
         #print(signames[np.nonzero(exposures)], similarity)
+        
+        # calculate the L1 Error %
+        L1dist = np.linalg.norm(signatures[:,i]-np.dot(sigDatabase,exposures) , ord=1)/np.linalg.norm(signatures[:,i], ord=1)
+        
         #print(exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100)
         exposure_percentages = exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100
         listofinformation = list("0"*len(np.nonzero(exposures)[0])*3)
@@ -649,9 +722,9 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             listofinformation[count*3+2]="%"
             decomposed_signatures.append(signames[j])
             count+=1
-        ListToTumple = tuple([mtype, letters[i]]+listofinformation+ [similarity])
+        ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist]+[L2dist]+[similarity])
         
-        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f\n" 
+        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
         ##print(np.nonzero(exposures)[0])
         ##print(similarity)
@@ -670,7 +743,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
             newsig.append("Signature "+letters[i])
             newsigmatrixidx.append(i)
             fh = open(directory+"/comparison_with_global_ID_signatures.csv", "a")
-            fh.write("Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 ))
+            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 1))
             fh.close()
             dictionary.update({"Signature {}".format(letters[i]):["Signature {}".format(letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
@@ -681,9 +754,16 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
     if mtype == "96":
         different_signatures = list(set().union(different_signatures, [0,4]))
         different_signatures.sort()
+    
+    
+        
+    # add connected signatures   
+    different_signatures = ss.add_connected_sigs(different_signatures, list(signames))
+    
+    #get the name of the signatures
     detected_signatures = signames[different_signatures]
     
-   
+    
     globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
     newsigsmats=signatures[:,newsigmatrixidx]
     
@@ -698,8 +778,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
     else:
         background_sigs = []
         
-   
+    # close the lognote
+    lognote.close()
     
+    #return values
     return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary, 
             "background_sigs": background_sigs} 
 
@@ -712,7 +794,14 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
 #################################### Decipher Signatures ###################################################
 #############################################################################################################
 """
-def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True):
+def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, gpu=False):
+    
+    if gpu:
+        import torch
+        from . import nmf_gpu
+
+        multiprocessing.set_start_method('spawn', force=True)
+        
     m = mut_context
     
     tic = time.time()
@@ -728,7 +817,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     ##############################################################################################################################################################################         
     ############################################################# The parallel processing takes place here #######################################################################  
     ##############################################################################################################################################################################         
-    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample)
+    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, gpu=gpu)
         
     toc = time.time()
     print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
@@ -756,7 +845,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     
     
     processes=i #renamed the i as "processes"    
-    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes)
+    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes, gpu=gpu)
     reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
     
 
@@ -1086,6 +1175,12 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
     
+    # Create the lognote file
+    lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "w")
+    lognote.write("************************ Stepwise Description of Signature Assaignment to Samples ************************")
+    lognote.close()
+    
+    
     #Get the type of Signatures
     if m == 83:
         signature_type = "INDEL"
@@ -1111,6 +1206,11 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         for r in range(allgenomes.shape[1]):
             if verbose==True:
                 print("\n\n\n\n\n                                        ################ Sample "+str(r+1)+ " #################")
+                     
+            # Record information to lognote
+            lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
+            lognote.write("\n\n\n\n\n                    ################ Sample "+str(r+1)+ " #################\n") 
+            
             sample_exposure = np.array(denovo_exposureAvg.iloc[:,r])
             init_sig_idx = np.nonzero(sample_exposure)[0]
             init_sigs = denovo_exposureAvg.index[init_sig_idx]
@@ -1141,28 +1241,71 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             for nonzero_idx, nozero_exp in zip(init_decomposed_sigs_idx, newExposure):
                 exposureAvg[nonzero_idx, r] = nozero_exp
             if verbose==True:
-                print("################################################################# Original :") 
-                print( exposureAvg[:, r])    
+                print("############################# Initial Composition #################################### ") 
+                print(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)   
+                print("L2%: ", newSimilarity)  
+                
+            lognote.write("############################# Initial Composition ####################################\n")
+            exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
+            lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
+            lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(newSimilarity,2), round(cos_sim(allgenomes[:,r], np.dot(processAvg, exposureAvg[:, r] )),2)))
             #remove signatures 
-            exposureAvg[:,r],_,_ = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
-                       solver = "nnls", cutoff=0.05, background_sigs= background_sig_idx, verbose=False)
+            exposureAvg[:,r],L2dist,cosine_sim = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
+                       solver = "nnls", cutoff=0.05, background_sigs= [], verbose=False)
             if verbose==True:
-                print("############################################################# After Initial Remove :")
-                print (exposureAvg[:, r])
+                print("############################## Composition After Initial Remove ############################### ")
+                print(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)  
+                print("L2%: ", L2dist)
+            lognote.write("############################## Composition After Initial Remove ###############################\n")
+            exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
+            lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
+            lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(cosine_sim,2)))
+            lognote.write("\n############################## Performing Add-Remove Step ##############################\n")
+            #Close the Lognote file
+            lognote.close()
             
             init_add_sig_idx = list(set().union(list(np.nonzero(exposureAvg[:, r])[0]), background_sigs))
             #print(init_add_sig_idx)
-            #print(background_sig_idx)
+            
+            #get the background_sig_idx for the add_remove function only for the decomposed solution:
+            if background_sigs != 0:  # in the decomposed solution only 
+                background_sig_idx = get_indeces(allsigids, ["SBS1", "SBS5"])
+                #print(background_sig_idx)
+            
+             
+            
             
             # if the there is no other signatures to be added on top the existing signatures
             try:
                 
-                _, exposureAvg[:, r],_,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, allgenomes[:,r], metric="l2", solver="nnls", background_sigs = init_add_sig_idx, permanent_sigs = background_sig_idx, candidate_sigs="all", penalty = 0.05, check_rule_negatives = check_rule_negatives, checkrule_penalty = check_rule_penalty, verbose=False)
+                _, exposureAvg[:, r],L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, 
+                                                                                                  allgenomes[:,r], 
+                                                                                                  metric="l2", 
+                                                                                                  solver="nnls", 
+                                                                                                  background_sigs = init_add_sig_idx, 
+                                                                                                  permanent_sigs = background_sig_idx, 
+                                                                                                  candidate_sigs="all", 
+                                                                                                  allsigids = allsigids, 
+                                                                                                  penalty = 0.05, 
+                                                                                                  check_rule_negatives = check_rule_negatives, 
+                                                                                                  checkrule_penalty = check_rule_penalty, 
+                                                                                                  directory = layer_directory+"/Signature_assaignment_logfile.txt", 
+                                                                                                  verbose=False)
                 if verbose==True:
-                    print("############################################################# After Add-Remove :") 
+                    print("####################################### Composition After Add-Remove #######################################\n") 
                     print(exposureAvg[:, r])
+                    print("L2%: ", L2dist)
+                # Recond the information in the log file
+                lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
+                lognote.write("####################################### Composition After Add-Remove #######################################\n")
+                exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
+                lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
+                lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(similarity,2)))
+                lognote.close()
             except:
                 pass
+            
+            
             """
             # add signatures
             exposureAvg[:, r], _, similarity = ss.add_signatures(processAvg, allgenomes[:,r][:,np.newaxis], presentSignatures=copy.deepcopy(init_add_sig_idx),cutoff=penalty, metric="l2", solver = "nnls",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
@@ -1191,7 +1334,12 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else:      
         for g in range(allgenomes.shape[1]):
             
-            exposures, _, similarity = ss.add_signatures(processAvg, allgenomes[:,g][:,np.newaxis], presentSignatures=[],cutoff=penalty,check_rule_negatives=[], check_rule_penalty=1.0)
+            exposures, _, similarity = ss.add_signatures(processAvg, 
+                                                         allgenomes[:,g][:,np.newaxis], 
+                                                         presentSignatures=[],
+                                                         cutoff=penalty,
+                                                         check_rule_negatives=[], 
+                                                         check_rule_penalty=1.0)
             exposureAvg[:,g] = exposures
         
     
