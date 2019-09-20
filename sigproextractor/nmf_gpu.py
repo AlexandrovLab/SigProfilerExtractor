@@ -54,6 +54,10 @@ class NMF:
         self.max_iterations = max_iterations
         self.min_iterations = min_iterations
 
+        # If V is not in a batch, put it in a batch of 1
+        if len(V.shape) == 2:
+            V = V[None, :, :]
+
         self._V = V.type(self._tensor_type).cuda()
         self._fix_neg = nn.Threshold(0., 1e-8)
         self._tolerance = tolerance
@@ -66,11 +70,11 @@ class NMF:
 
     def _initialise_wh(self, init_method):
         """
-        Initialise baseis and coefficient matrices according to `init_method`
+        Initialise basis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
-            W = torch.rand(self._V.shape[0], self._rank).type(self._tensor_type).cuda(self._gpu_id)
-            H = torch.rand(self._rank, self._V.shape[1]).type(self._tensor_type).cuda(self._gpu_id)
+            W = torch.rand(self._V.shape[0], self._V.shape[1], self._rank).type(self._tensor_type).cuda()
+            H = torch.rand(self._V.shape[0], self._rank, self._V.shape[2]).type(self._tensor_type).cuda()
             return W, H
 
         elif init_method == 'NNDSVD':
@@ -132,39 +136,43 @@ class NMF:
         """
         with torch.no_grad():
             def stop_iterations():
-                stop = (self._iter % self._test_conv == 0) and self._loss_converged and (self._iter > self.min_iterations)
+                stop = (self._V.shape[0] == 1) and \
+                       (self._iter % self._test_conv == 0) and \
+                       self._loss_converged and \
+                       (self._iter > self.min_iterations)
                 if stop:
                     print("loss converged with {} iterations".format(self._iter))
                 return stop
-    
+
             if beta == 2:
                 for self._iter in range(self.max_iterations):
-                    self.H = self.H * (self.W.transpose(0, 1) @ self._V) / (self.W.transpose(0, 1) @ (self.W @ self.H))
-                    self.W = self.W * (self._V @ self.H.transpose(0, 1)) / (self.W @ (self.H @ self.H.transpose(0, 1)))
+                    self.H = self.H * (self.W.transpose(1, 2) @ self._V) / (self.W.transpose(1, 2) @ (self.W @ self.H))
+                    self.W = self.W * (self._V @ self.H.transpose(1, 2)) / (self.W @ (self.H @ self.H.transpose(1, 2)))
                     if stop_iterations():
                         break
-    
+
             # Optimisations for the (common) beta=1 (KL) case.
             elif beta == 1:
                 ones = torch.ones(self._V.shape).type(self._tensor_type).cuda(self._gpu_id)
                 for self._iter in range(self.max_iterations):
-                    ht = self.H.t()
+                    ht = self.H.transpose(1, 2)
                     numerator = (self._V / (self.W @ self.H)) @ ht
+
                     denomenator = ones @ ht
                     self._W *= numerator / denomenator
-    
-                    wt = self.W.t()
+
+                    wt = self.W.transpose(1, 2)
                     numerator = wt @ (self._V / (self.W @ self.H))
                     denomenator = wt @ ones
                     self._H *= numerator / denomenator
                     if stop_iterations():
                         break
-    
+
             else:
                 for self._iter in range(self.max_iterations):
-                    self.H = self.H * ((self.W.t() @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
-                                       (self.W.transpose(0, 1) @ ((self.W @ self.H)**(beta-1))))
-                    self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(0, 1)) /
-                                       (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(0, 1)))
+                    self.H = self.H * ((self.W.transpose(1, 2) @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
+                                       (self.W.transpose(1, 2) @ ((self.W @ self.H)**(beta-1))))
+                    self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(1, 2)) /
+                                       (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(1, 2)))
                     if stop_iterations():
                         break
