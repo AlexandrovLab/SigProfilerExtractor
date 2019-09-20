@@ -5,6 +5,7 @@ Created on Sun Oct  7 15:21:55 2018
 
 @author: mishugeb
 """
+import warnings as _warnings
 from scipy.cluster import hierarchy
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
@@ -222,10 +223,10 @@ def denormalize_samples(genomes, original_totals, normalization_value=30000):
 """###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
 
 def nnmf_gpu(genomes, nfactors):
-    #p = current_process()
-    #identity = p._identity[0]
+    p = current_process()
+    identity = p._identity[0]
 
-    gpu_id = 0#identity % torch.cuda.device_count()
+    gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
     net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=100000,test_conv=2000, gpu_id=gpu_id, seed=None)
     net.fit()
@@ -315,7 +316,6 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
                 bootstrapGenomes= BootstrapCancerGenomes(genomes)
                 bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
                 genome_list.append(bootstrapGenomes.values)
-                #print(type(bootstrapGenomes))
             else:
                 genome_list.append(genomes)
 
@@ -325,12 +325,13 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
             _W = np.array(W[i])
             _H = np.array(H[i])
             total = _W.sum(axis=0)[np.newaxis]
-            #print ("total: ", total); print("\n");
             _W = _W/total
             _H = _H*total.T
             results.append((_W, _H))
-        return results
+            print ("process " +str(totalProcesses)+" continues please wait... ")
+            print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
 
+        return results
 
     else:
         nmf_fn = nnmf
@@ -343,21 +344,18 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
                 W, H = nmf_fn(bootstrapGenomes,totalProcesses)  #uses custom function nnmf
             else:
                 W, H = nmf_fn(genomes,totalProcesses)  #uses custom function nnmf
-            #print ("initital W: ", W); print("\n");
-            #print ("initial H: ", H); print("\n");
             W = np.array(W)
             H = np.array(H)
             total = W.sum(axis=0)[np.newaxis]
-            #print ("total: ", total); print("\n");
             W = W/total
             H = H*total.T
             results.append((W,H))
-            #print ("process " +str(totalProcesses)+" continues please wait... ")
-            #print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
+            print ("process " +str(totalProcesses)+" continues please wait... ")
+            print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
         return results
 
 
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, gpu=False, batch_size=10):
+def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, gpu=False, batch_size=128):
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
