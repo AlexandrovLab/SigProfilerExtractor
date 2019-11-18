@@ -100,7 +100,7 @@ def importdata(datatype="matobj"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True, gpu=False): 
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, cpu=-1, hierarchy = False, mtype = ["default"],exome = False, par_h=0.90, penalty=0.05, resample = True, gpu=False, batch_size=128):
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -549,7 +549,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                     cpu=cpu, \
                                                     mut_context=m, \
                                                     resample = resample,
-                                                    gpu=gpu)
+                                                    gpu=gpu,
+                                                    batch_size=batch_size)
                 
                 
                     
