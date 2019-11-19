@@ -304,8 +304,6 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, gpu=False):
     tic = time.time()
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
 
-    gpu=True
-
     if gpu:
         nmf_fn = nnmf_gpu
         results = []
@@ -370,9 +368,6 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose 
     if last_batch_size != 0:
         batches.append(last_batch_size)
 
-    #print("Running with the following batches: ", batches)
-    #for batch_size in batches:
-    #    pnmf(batch_size=batch_size, genomes=genomes, totalProcesses=totalProcesses, resample=resample, gpu=gpu)
     pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, gpu=gpu)
     result_list = pool.map(pool_nmf, batches) 
     pool.close()
@@ -849,7 +844,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37")
 #################################### Decipher Signatures ###################################################
 #############################################################################################################
 """
-def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, gpu=False):
+def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, gpu=False, batch_size=128):
     m = mut_context
     
     tic = time.time()
@@ -865,7 +860,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     ##############################################################################################################################################################################         
     ############################################################# The parallel processing takes place here #######################################################################  
     ##############################################################################################################################################################################         
-    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, gpu=gpu)
+    results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, gpu=gpu, batch_size=batch_size)
         
     toc = time.time()
     print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
