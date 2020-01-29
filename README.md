@@ -11,7 +11,7 @@ and SigProfilerPlotting.
 ## INSTALLATION
 In the commandline, please type the following line:
 ```
-$pip install sigproextractor
+$pip install SigProfilerExtractor
 ```
 Install your desired reference genome from the command line/terminal as follows (available reference genomes are: GRCh37, GRCh38, mm9, and mm10):
 ```
@@ -34,7 +34,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
 
     Example: 
     -------
-    >>> from sigproextractor import sigpro as sig
+    >>> from SigProfilerExtractor import sigpro as sig
     >>> path_to_example_table = sig.importdata("table")
     >>> data = path_to_example_table 
     This "data" variable can be used as a parameter of the "project" argument of the sigProfilerExtractor function.
@@ -111,7 +111,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     Examples
     --------
 
-    >>> from sigproextractor import sigpro as sig
+    >>> from SigProfilerExtractor import sigpro as sig
     
     # to get input from vcf files
     >>> path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
@@ -153,7 +153,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     Examples
     --------
 
-    >>> from sigproextractor import decomposition as decomp
+    >>> from SigProfilerExtractor import decomposition as decomp
     >>> signatures = "path/to/signatures.txt"
     >>> activities = "path/to/activities.txt"
     >>> samples = "path/to/samples.txt"
