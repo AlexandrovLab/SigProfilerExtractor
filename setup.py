@@ -6,18 +6,19 @@ import os
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '0.0.5.72'
+VERSION = '1.0.4'
 
 
 with open('README.md') as f:
 	long_description = f.read()
 
-def write_version_py(filename='sigproextractor/version.py'):
+def write_version_py(filename='SigProfilerExtractor/version.py'):
     # Copied from numpy setup.py
     cnt = """
-# THIS FILE IS GENERATED FROM SIGPROEXTRACTOR SETUP.PY
+# THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
+Update = 'Heirarchy option deleted, clustering deleted and signatures orders by the mutation burden'
     
     """
     fh = open(filename, 'w')
@@ -25,7 +26,7 @@ version = '%(version)s'
     fh.close()
     
 write_version_py()
-setup(name='sigproextractor',
+setup(name='SigProfilerExtractor',
       version=VERSION,
       description='Extracts mutational signatures from mutational catalogues',
       long_description=long_description,
@@ -34,19 +35,19 @@ setup(name='sigproextractor',
       author='S Mishu Ashiqul Islam',
       author_email='m0islam@ucsd.edu',
       license='UCSD',
-      packages=['sigproextractor'],
+      packages=['SigProfilerExtractor'],
       install_requires=[
           'matplotlib>=2.2.2',
-          'scipy>=1.2.1',
+          'scipy>=1.3.3',
           'torch>=1.1.0',
-          'numpy>=1.14.4', 
-          'pandas>=0.23.4', 
+          'numpy>=1.17.4', 
+          'pandas>=0.25.3', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.0.17', 
-          'sigProfilerPlotting>=1.0.5', 
+          'SigProfilerMatrixGenerator>=1.0.24', 
+          'sigProfilerPlotting>=1.0.10', 
           'pillow',
           'statsmodels>=0.9.0',
-          'scikit-learn>=0.20.2',
+          'scikit-learn>=0.22',
 	  'psutil>=5.6.1',
       'xlrd>=1.0.0'
            ],

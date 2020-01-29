@@ -9,7 +9,7 @@ import numpy as np
 from numpy import linalg as LA
 from scipy.optimize import nnls
 from scipy.optimize import minimize
-from sigproextractor import subroutines as sub
+from SigProfilerExtractor import subroutines as sub
 import copy 
 import os
 """

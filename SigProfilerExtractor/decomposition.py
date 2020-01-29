@@ -6,7 +6,7 @@ Created on Sun May 19 12:21:06 2019
 @author: mishugeb
 """
 
-from sigproextractor import subroutines as sub
+from SigProfilerExtractor import subroutines as sub
 import numpy as np
 import pandas as pd
 import os
@@ -51,7 +51,7 @@ def decompose(signatures, activities, samples, output, mutation_type="96", genom
     genomes = pd.read_csv(samples, sep = "\t", index_col = 0)
     index = genomes.index
     m=mutation_type
-    layer_directory2 = "/Users/mishugeb/Desktop/decomposition/Decomposed_Solution"
+    layer_directory2 = output
     if not os.path.exists(layer_directory2):
         os.makedirs(layer_directory2)
     
@@ -84,11 +84,4 @@ def decompose(signatures, activities, samples, output, mutation_type="96", genom
 
     return result
 
-signatures = "/Users/mishugeb/Desktop/decomposition/De_Novo_Solution_Signatures.txt"
-activities = "/Users/mishugeb/Desktop/decomposition/De_Novo_Solution_Activities.txt"
-samples = "/Users/mishugeb/Desktop/decomposition/Samples.txt"
-mutation_type="96"
-output = "/Users/mishugeb/Desktop/decomposition/Decomposed_Solution"
 
-
-results = decompose(signatures, activities, samples, output, mutation_type="96", genome_build="GRCh37", verbose=False)
