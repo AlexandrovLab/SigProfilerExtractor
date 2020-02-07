@@ -113,7 +113,41 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     
     >>> help(sig.sigProfilerExtractor)
 ```
+
+### decompose
+    Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
     
+    Parameters: 
+        
+        signatures: A string. Path to a  tab delimited file that contains the signaure table where the rows are mutation                         types and colunms are signature IDs. 
+        activities: A string. Path to a tab delimilted file that contains the activity table where the rows are sample IDs                       and colunms are signature IDs.
+        samples: A string. Path to a tab delimilted file that contains the activity table where the rows are mutation types                  and colunms are sample IDs.
+        output: A string. Path to the output folder.
+        genome_build = A string. The genome type. Example: "GRCh37", "GRCh38", "mm9", "mm10". The default value is "GRCh37"
+        verbose = Boolean. Prints statements. Default value is False. 
+        
+    Example:
+         >>>from SigProfilerExtractor import decomposition as decomp
+         >>>signatures = "path/to/dDe_Novo_Solution_Signatures.txt"
+         >>>activities="path/to/De_Novo_Solution_Activities.txt"
+         >>>samples="path/to/Samples.txt"
+         >>>output="name or path/to/output.txt"
+         >>>decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", verbose=False)   
+         
+     Values:
+        The files below will be generated in the output folder--
+        
+        Cluster_of_Samples.txt
+        comparison_with_global_ID_signatures.csv
+        Decomposed_Solution_Activities.txt
+        Decomposed_Solution_Samples_stats.txt
+        Decomposed_Solution_Signatures.txt
+        decomposition_logfile.txt
+        dendogram.pdf
+        Mutation_Probabilities.txt
+        Signature_assaignment_logfile.txt
+        Signature_plot[MutatutionContext]_plots_Decomposed_Solution.pdf
+        
 ### GPU support
 
 Sigprofilerextractor is GPU-enabled and can run on single or multi-GPU systems for significantly increased performance in most circumstances.
