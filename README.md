@@ -94,7 +94,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     Examples
     --------
 
-    >>> from  import sigpro as sig
+    >>> from SigProfilerExtractor import sigpro as sig
     
     # to get input from vcf files
     >>> path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
