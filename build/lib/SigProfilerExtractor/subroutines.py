@@ -1370,7 +1370,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     
    
     
-    # get the mutationa contexts    
+    # get the mutational contexts    
     #print ("The mutaion type is", mutation_type)    
     m = mutation_context
     if not (m=="DINUC"or m=="INDEL"):
@@ -1584,6 +1584,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             lognote.write("\n\n\n\n\n                    ################ Sample "+str(r+1)+ " #################\n") 
             
             sample_exposure = np.array(denovo_exposureAvg.iloc[:,r])
+            
             init_sig_idx = np.nonzero(sample_exposure)[0]
             init_sigs = denovo_exposureAvg.index[init_sig_idx]
             
@@ -1723,6 +1724,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
      
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
+    
     allsigids = np.array(allsigids)
     exposures = exposureAvg.set_index(allsigids)
     exposures.columns = allcolnames

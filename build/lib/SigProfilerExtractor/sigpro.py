@@ -42,7 +42,6 @@ import datetime
 import psutil
 import sigProfilerPlotting 
 from SigProfilerExtractor import single_sample as ss
-import pickle
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -55,7 +54,7 @@ def memory_usage():
 
 
 
-def importdata(datatype="matobj"):
+def importdata(datatype="matrix"):
     
     """
     Imports the path of example data.
@@ -65,8 +64,9 @@ def importdata(datatype="matobj"):
     
     datatype: A string. Type of data. The type of data should be one of the following:
             - "vcf": used for vcf format data.
-            - "table": used for text format data. This format represents the catalog of mutations seperated by tab. 
+            - "matrix": used for text format data. This format represents the catalog of mutations seperated by tab. 
             - "matobj": used for matlab object format data.
+            
     
     
     Returns:
@@ -101,7 +101,7 @@ def importdata(datatype="matobj"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=8, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False, penalty=0.05, resample = True, wall= False, gpu=False): 
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False, penalty=0.05, resample = True, wall= False, gpu=False): 
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -112,7 +112,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     input_type: A string. Type of input. The type of input should be one of the following:
             - "vcf": used for vcf format inputs.
-            - "table": used for table format inputs using a tab seperated file.
+            - "matrix": used for table format inputs using a tab seperated file.
              
         
     out_put: A string. The name of the output folder. The output folder will be generated in the current working directory. 
@@ -125,14 +125,13 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     endProcess: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
     
-    totalIterations: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 8
+    totalIterations: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 100
+    
+    init: A String. The initialization algorithm for W and H matrix of NMF
+    
+    wall: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output. 
             
     cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. 
-    
-    hierarchy: Boolean, optional. Defines if the signature will be extracted in a hierarchical fashion. The default value is "False".
-    
-    par_h = Float, optional. Ranges from 0 t0 1. Default is 0.90. Active only if the "hierarchy" is True. Sets the cutoff to select the unexplained samples in a hierarchical layer based on the cosine similarity 
-    between the original and reconstructed samples.  
     
     mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
     is the DINULEOTIDE context and ID is INDEL context. 
@@ -146,87 +145,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     Returns
     -------
+    To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
     
-    After sigProfilerExtractor is successfully executed, an output directory will be generated in the current working directory 
-    according to the name of the  parameter of the "out_put" argument. In the "output" directory there will be subfolder 
-    for each type of mutational contexts. 
-    
-    If the "hierarchy" parameter is false, inside of each mutational context subdirectory, there will be subdirectories named 
-    "All solutions" and "Final solution". Besides the subdirectories, there will be a file named "results_stat.csv" which 
-    will contain the record of the relative reconstruction error and process stability for each number of signatures. 
-    Another file named stibility.pdf will contain the plot of recontruction error vs process stability. The "All solution"
-    directory will contain the subdirectories for each number of signatures which will further contain the solution files 
-    ("signature.txt", "exposure.txt", "probabilities.txt" and a pdf file that depicts the  proportion of the mututaions 
-    for each number signatures. On the other hand, the "Final solution" directory contains two subdirectories: "De Novo Solution"
-    and "Decomposed Solution". The "De Novo Solution" subdirectory will contain the solution files for the optimum number of 
-    "De Novo Signatures" signatures with a dendrogram file where the samples are clustered by the de novo signatures. The "Decomposed 
-    Solution" subfolder contains the records  where "De Novo Signatures" are further decomposed into the global signatures. 
-    
-    If the "hierarchy" parameter is true, inside of each mutational context subdirectory, there will be a subdirectory named
-    "All_Solution_by_Layer" which will further contain the solutions  in the layer (L) subdirectories. Everything else will be similar to
-    the previously described directory structures. The structure of the result folder is synopsized below:
-        
-        If Hierarchy is False:
-            
-        -Mutational Context folder
-            -All solution folder
-                -Signature folder
-                    -exposure.txt file
-                    -signature.txt file
-                    -probabilities.txt file
-                    -signature plot pdf file
-            -Selected_Solution folder
-                -De_Novo_Solution folder
-                    -exposure.txt file
-                    -signature.txt file
-                    -probabilities.txt file
-                    -signature plot pdf file
-                    -dendrogram plot file
-                -Decomposed_Solution folder
-                    -comparison with global signature.csv file
-                    -exposure.txt file
-                    -signature.txt file
-                    -probabilities.txt file
-                    -signature plot pdf file
-                    -dendrogram plot file
-            -results_stat.csv file
-            -stability plot pdf
-            
-                    
-        If Hierarchy is True:
-            
-        -Mutational Context folder
-            -All Solution by Layer folder
-                -Layer folder (L)
-                    -All solution folder
-                        -Signature folder
-                            -exposure.txt file
-                            -signature.txt file
-                            -probabilities.txt file
-                            -signature plot pdf file
-                    -L1_solution folder
-                        -exposure.txt file
-                        -signature.txt file
-                        -probabilities.txt file
-                        -signature plot pdf file
-                    -results_stat.csv file
-                    -stability plot pdf
-            -Selected_Solution folder
-                -De_Novo_Solution folder
-                    -exposure.txt file
-                    -signature.txt file
-                    -probabilities.txt file
-                    -signature plot pdf file
-                    -dendrogram plot file
-                -Decomposed_Solution folder
-                    -comparison with global signature.csv file
-                    -exposure.txt file
-                    -signature.txt file
-                    -probabilities.txt file
-                    -signature plot pdf file
-                    -dendrogram plot file
-            -results_stat.csv file
-            -stability plot pdf
     
     Examples
     --------
@@ -236,10 +156,9 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     >>> sig.sigProfilerExtractor("vcf", "example_output", data, startProcess=1, endProcess=3)
     
     Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
-    Check the current working directory for the "example_output" folder.
-    
-    
+    Check the results in the "example_output" folder.
     """
+    
     if gpu == True:
         import torch
     
@@ -263,7 +182,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     sysdata.write("Numpy version: "+np.__version__+"\n")
     sysdata.write("Scipy version: "+scipy.__version__+"\n")
     sysdata.write("Scikit-learn version: "+sklearn.__version__+"\n")
-    sysdata.write("Nimfa version: "+nimfa.__version__+"\n")
+    #sysdata.write("Nimfa version: "+nimfa.__version__+"\n")
     
     
     
@@ -336,9 +255,11 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         #creating list of mutational type to sync with the vcf type input
         mtypes = [str(genomes.shape[0])]
         if mtypes[0] == "78":
-            mtypes = ["DINUC"]
+            mtypes = ["DBS78"]
         elif mtypes[0] == "83":
-            mtypes = ["ID"]
+            mtypes = ["ID83"]
+        else:
+            mtypes = ["SBS"+mtypes[0]]
         
     ###############################################################################################################
     
@@ -430,19 +351,19 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         # Selecting the mutation types    
         if mtype == ["default"]:
             if set(["96", "DINUC", "ID"]).issubset(data):  
-                mtypes = ["96", "DINUC", "ID"] 
+                mtypes = ["SBS96", "DBS78", "ID83"] 
             elif set(["96", "DINUC"]).issubset(data): 
-                mtypes = ["96", "DINUC"]
+                mtypes = ["SBS96", "DBS78"]
             elif set(["ID"]).issubset(data):            
-                mtypes = ["ID"]    
+                mtypes = ["ID83"]    
         
         elif mtype == "default":
             if set(["96", "DINUC", "ID"]).issubset(data):  
-                mtypes = ["96", "DINUC", "ID"] 
+                mtypes = ["SBS96", "DBS78", "ID83"] 
             elif set(["96", "DINUC"]).issubset(data): 
-                mtypes = ["96", "DINUC"]
+                mtypes = ["SBS96", "DBS78"]
             elif set(["ID"]).issubset(data):            
-                mtypes = ["ID"]
+                mtypes = ["ID83"]
           
         else:
             #mkeys = data.keys()
@@ -468,11 +389,19 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         
           
     ###########################################################################################################################################################################################                  
-    
+   
     for m in mtypes:
         
        
         mutation_context = m
+        
+        # we need to rename the m because users input could be SBS96, SBS1536, DBS78, ID83 etc
+        if m.startswith("SBS"):
+            m = m[3:] #removing "SBS"
+        elif m.startswith("DBS"):
+            m = "DINUC"
+        elif m.startswith("ID"):
+            m = "ID"
         
         # Determine the types of mutation which will be needed for exporting and copying the files
         if not (m=="DINUC" or m.startswith("DBS") or m.startswith("ID")):
@@ -491,14 +420,6 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
        
             
         if input_type=="vcf":
-            
-            # we may need to rename the m because users input could be SBS96, SBS1536, DBS78, ID83 etc
-            if m.startswith("SBS"):
-                m = m[3:] #removing "SBS"
-            elif m.startswith("DBS"):
-                m = "DINUC"
-            elif m.startswith("ID"):
-                m = "ID"
             
             try: 
                 
@@ -754,8 +675,17 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
         # make de novo solution(processAvg, allgenomes, layer_directory1)
         
+        
+       
+        
+        
+       
         listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_context)
         allgenomes = pd.DataFrame(allgenomes)
+        
+        
+        
+        
         
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
@@ -780,7 +710,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                 processAvg = np.array(processAvg)
                 genomes = np.array(genomes)
                 
-            
+           
             final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context)
             
             # extract the global signatures and new signatures from the final_signatures dictionary
@@ -793,7 +723,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             background_sigs= final_signatures["background_sigs"]
             genomes = pd.DataFrame(genomes)
             
-            
+            print(exposureAvg)
             
             exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
                                     remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
