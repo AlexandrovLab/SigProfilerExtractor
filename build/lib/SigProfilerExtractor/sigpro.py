@@ -723,7 +723,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             background_sigs= final_signatures["background_sigs"]
             genomes = pd.DataFrame(genomes)
             
-            print(exposureAvg)
+            #print(exposureAvg)
             
             exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
                                     remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
