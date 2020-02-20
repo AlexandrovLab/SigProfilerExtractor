@@ -516,7 +516,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                 seeds=seeds, 
                                                 init = init,
                                                 normalization_cutoff=normalization_cutoff,
-                                                gpu=gpu,)
+                                                gpu=gpu, batch_size=128)
             
             
             
