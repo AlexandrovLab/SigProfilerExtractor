@@ -6,7 +6,7 @@ import os
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.0.4'
+VERSION = '1.0.5'
 
 
 with open('README.md') as f:

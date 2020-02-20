@@ -1738,7 +1738,10 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     plt.xlabel("Samples")
     plt.ylabel("Mutation Count")
     plt.xticks(allcolnames, rotation='vertical')
-    plt.tight_layout()
+    try:
+        plt.tight_layout()
+    except: 
+        pass
     plt.savefig(layer_directory+"/"+solution_type+"_"+"Activities_Plot_"+signature_type+".pdf", dpi=300)  
     
     plt.close()
@@ -1885,7 +1888,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     probable_solutions["Significant Decrease of L2"] = probable_solutions["Significant Decrease of L2"].astype(str)
     probable_solutions = probable_solutions[probable_solutions["Significant Decrease of L2"]=="True"]
     #probable_solutions = probable_solutions[probable_solutions["avgStability"]>=0.8]
-    probable_solutions = probable_solutions[probable_solutions["Minimum Stability"]+probable_solutions["avgStability"]>=1.0]
+    if mtype=="DBS78" or mtype=="ID78":
+        probable_solutions = probable_solutions[probable_solutions["Minimum Stability"]>=0.80]
+    else:    
+        probable_solutions = probable_solutions[probable_solutions["Minimum Stability"]+probable_solutions["avgStability"]>=1.0]
     #probable_solutions = probable_solutions[probable_solutions["avgStability"]>=0.8]
     #print(probable_solutions.columns)
     #print(probable_solutions)
@@ -1922,12 +1928,15 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     ax1.set_ylabel('Mean L2 %', color=color)
     ax1.set_title(title)
     lns1 = ax1.plot(t, data1, marker='o', linestyle=":", color=color, label = 'Mean L2 %')
+    
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
     #ax1.axvspan(shadow_start, shadow_end, alpha=0.20, color='#ADD8E6')
     ax1.axvspan(shadow_alternative_start,  shadow_alternative_end, alpha=0.20, color='#696969')         
     # manipulate the y-axis values into percentage 
     vals = ax1.get_yticks()
+    ax1.set_xticklabels(np.arange(min(t), max(t)+1, 1),list(), rotation=30)
+    
     ax1.set_yticklabels(['{:,.0%}'.format(x) for x in vals])
     
     #ax1.legend(loc=0)
@@ -1938,6 +1947,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     lns2 = ax2.plot(t, data2, marker='s', linestyle="-.", color=color, label = 'Avg Stability')
     ax2.tick_params(axis='y', labelcolor=color)
     #ax2.legend(loc=1)
+    
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     #plt.show()
     

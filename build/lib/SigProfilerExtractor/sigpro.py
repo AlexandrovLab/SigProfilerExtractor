@@ -27,7 +27,6 @@ plt.switch_backend('agg')
 import scipy
 import scipy.io
 import sklearn
-import nimfa
 import numpy as np
 import pandas as pd
 import time
@@ -219,7 +218,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     totalIterations=totalIterations
     cpu = cpu
-    hierarchi = False #No use
+    hierarchy = False #No use
     
     
    
@@ -516,7 +515,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                 seeds=seeds, 
                                                 init = init,
                                                 normalization_cutoff=normalization_cutoff,
-                                                gpu=gpu,)
+                                                gpu=gpu, batch_size=128)
             
             
             
@@ -566,7 +565,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             #report progress to the system file:
             current_time_end = datetime.datetime.now()
             sysdata = open(out_put+"/JOB_METADATA.txt", "a")
-            if  hierarchi is True:
+            if  hierarchy is True:
                 sysdata.write("\nSignature extraction for {} completed for layer {} {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  H_iteration, processes,  current_time_end-current_time_start, current_time_end))
             else:
                 sysdata.write("\nSignature extraction for {} completed for {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  processes,  current_time_end-current_time_start, current_time_end))
@@ -590,7 +589,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             ##########################################################################################################################################################################
             # store the resutls of the loop.  Here,  processStd and exposureStd are standard Errors, NOT STANDARD DEVIATIONS.           
             loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, signature_total_mutations, all_similarities, signature_stats, reconstruction_error, finalgenomeErrors, finalgenomesReconstructed, converge_information, finalWall, finalHall,  processes]    
-            information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchical approach
+            information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchycal approach
             
             ################################# Export the results ###########################################################    
             sub.export_information(loopResults, m, layer_directory, index, colnames, wall=wall)
@@ -723,7 +722,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             background_sigs= final_signatures["background_sigs"]
             genomes = pd.DataFrame(genomes)
             
-            #print(exposureAvg)
+            
             
             exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
                                     remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
