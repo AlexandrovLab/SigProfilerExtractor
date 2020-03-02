@@ -494,7 +494,7 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
             
             totalMutations = np.sum(bootstrapGenomes, axis=0)
             log2_of_tM = np.log2(totalMutations)
-            #bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+            bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
             W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init)  #uses custom function nnmf
         
         else:
