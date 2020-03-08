@@ -12,8 +12,8 @@ from torch import nn
 
 
 class NMF:
-    def __init__(self, V, rank, max_iterations=100000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
-                 init_method='random', floating_point_precision='double', min_iterations=2000):
+    def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
+                 init_method='nndsvd', floating_point_precision='float', min_iterations=2000):
 
         """
         Run non-negative matrix factorisation using GPU. Uses beta-divergence.
@@ -37,7 +37,7 @@ class NMF:
               fp32 tensors as convergence can happen too early.
         """
         torch.cuda.set_device(gpu_id)
-
+        
         if seed is None:
             seed = datetime.now().timestamp()
 
@@ -77,21 +77,44 @@ class NMF:
             H = torch.rand(self._V.shape[0], self._rank, self._V.shape[2]).type(self._tensor_type).cuda()
             return W, H
 
-        elif init_method == 'NNDSVD':
+        elif init_method == 'nndsvd':
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
-            vin = np.mat(self._V.cpu().numpy())
-            W, H = nv.initialize(vin, self._rank, options={'flag': 0})
-
-        elif init_method == 'NNDSVDa':
+            for i in range(self._V.shape[0]):
+                vin = np.mat(self._V.cpu().numpy()[i])
+                W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 0})
+                
+        elif init_method == 'nndsvda':
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
-            vin = np.mat(self._V.cpu().numpy())
-            W, H = nv.initialize(vin, self._rank, options={'flag': 1})
+            for i in range(self._V.shape[0]):
+                vin = np.mat(self._V.cpu().numpy()[i])
+                W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 1})
 
-        elif init_method == 'NNDSVDar':
+        elif init_method == 'nndsvdar':
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
-            vin = np.mat(self._V.cpu().numpy())
-            W, H = nv.initialize(vin, self._rank, options={'flag': 2})
-
+            for i in range(self._V.shape[0]):
+                vin = np.mat(self._V.cpu().numpy()[i])
+                W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 2})
+        elif init_method == 'alexandrov-lab-custom':
+           W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
+           H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
+           nv = nndsvd.Nndsvd()
+           for i in range(self._V.shape[0]):
+               vin = np.mat(self._V.cpu().numpy()[i])
+               w, h = nv.initialize(vin, self._rank, options={'flag': 2})
+               min_X = np.min(vin[vin>0])
+               h[h <= min_X] = min_X
+               w[w <= min_X] = min_X
+               #W= np.expand_dims(W, axis=0)
+               #H = np.expand_dims(H, axis=0)
+               W[i,:,:]=w
+               H[i,:,:]=h
+        #W,H=initialize_nm(vin, nfactors, init=init, eps=1e-6,random_state=None)   
         W = torch.from_numpy(W).type(self._tensor_type).cuda(self._gpu_id)
         H = torch.from_numpy(H).type(self._tensor_type).cuda(self._gpu_id)
         return W, H

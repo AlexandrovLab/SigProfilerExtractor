@@ -18,6 +18,7 @@ from multiprocessing import current_process
 from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
+from SigProfilerExtractor import SigProfilerPlotting_plot_png as plotE
 import string 
 import os
 import scipy
@@ -31,6 +32,8 @@ from SigProfilerExtractor import single_sample as ss
 from sklearn.decomposition import NMF
 from sklearn import mixture
 from scipy.spatial.distance import cdist
+#import mkl
+#mkl.set_num_threads(40)
 #from numba import jit
 #from numba import vectorize
 import warnings as _warnings
@@ -332,7 +335,7 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
         if (i+1)%10==0:
             h[h <= EPS] = EPS
             w[w <= EPS] = EPS
-        if (i+1)%500==0:    
+        if (i+1)%1000==0:    
             est_v = np.dot(w, h)
             
             norm_v = np.linalg.norm(v)
@@ -348,7 +351,7 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
                #print(diff)
                #print("diff is smaller than tol")
                conv+=1
-               if conv==10:
+               if conv==3:
                   break
             elif diff>tol:
                conv =1
@@ -358,13 +361,13 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
     
 
 
-def nnmf_gpu(genomes, nfactors):
+def nnmf_gpu(genomes, nfactors, init="nndsvd"):
     p = current_process()
     identity = p._identity[0]
     #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
-    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=100000,test_conv=2000, gpu_id=gpu_id, seed=None)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=0.000005,test_conv=1000, gpu_id=gpu_id, init=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
@@ -385,7 +388,7 @@ def nnmf(genomes, nfactors, init="nndsvd"):
     #w = model_init.fit_transform(genomes)
     #h = model_init.components_
     w,h=initialize_nmf(genomes, nfactors, init=init, eps=1e-6,random_state=None)
-    W, H = inhouse_nmf(genomes, w=w, h=h, k=nfactors, iterations=200000, tol=0.0005)
+    W, H = inhouse_nmf(genomes, w=w, h=h, k=nfactors, iterations=200000, tol=0.000005)
     
     
     
@@ -453,13 +456,17 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
             if resample == True:
                 bootstrapGenomes= BootstrapCancerGenomes(genomes)
                 bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+                bootstrapGenomes = np.array(bootstrapGenomes)
+                totalMutations = np.sum(bootstrapGenomes, axis=0)
+                log2_of_tM = np.log2(totalMutations)
+                bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM 
                 genome_list.append(bootstrapGenomes.values)
             else:
                 genome_list.append(genomes)
             #print(genomes.shape)
        
         g = np.array(genome_list)
-        W, H = nmf_fn(g, totalProcesses)
+        W, H = nmf_fn(g, totalProcesses, init=init)
         for i in range(len(W)):
             
             _W = np.array(W[i])
@@ -576,7 +583,7 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
 #     return W, H, kl
 # =============================================================================
 
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="nndsvd", normalization_cutoff=1000000, n_cpu=-1, verbose = False, resample=True, gpu=False, batch_size=128):
+def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="nndsvd", normalization_cutoff=1000000, n_cpu=-1, verbose = False, resample=True, gpu=False, batch_size=1):
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
@@ -983,6 +990,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     # get the names of denovo signatures
     denovo_signature_names = make_letter_ids(signatures.shape[1], mtype=mutation_context)
     #lognote.write("\n********** Starting Signature Decomposition **********\n\n")
+    activity_percentages=[]
     for i, j in zip(range(signatures.shape[1]), denovo_signature_names):
         
         # Only for context SBS96
@@ -1043,13 +1051,16 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
         count =0
         decomposed_signatures = []
+        contribution_percentages = []
         for j in np.nonzero(exposures)[0]:
             listofinformation[count*3] = signames[j]
             listofinformation[count*3+1] = round(exposure_percentages[count],2)
+            contribution_percentages.append(round(exposure_percentages[count],2))
             listofinformation[count*3+2]="%"
             decomposed_signatures.append(signames[j])
             count+=1
         ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist]+[L2dist]+[similarity])
+        activity_percentages.append(contribution_percentages)
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
@@ -1110,7 +1121,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     
     #return values
     return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary, 
-            "background_sigs": background_sigs} 
+            "background_sigs": background_sigs, "activity_percentages": activity_percentages} 
 
 
 
@@ -1121,7 +1132,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
 #################################### Decipher Signatures ###################################################
 #############################################################################################################
 """
-def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, seeds = None, init="alexandrov-lab-custom", normalization_cutoff=1, gpu=False, batch_size=128):
+def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, seeds = None, init="alexandrov-lab-custom", normalization_cutoff=1, gpu=False, batch_size=1):
     
     
         
@@ -1142,7 +1153,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     ############################################################################################################################################################################## 
     if gpu==True:
         results = []
-        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, gpu=gpu)
+        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, batch_size=batch_size,gpu=gpu)
         
         for items in range(len(flat_list)):
             
@@ -1543,7 +1554,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = 0, penalty=0.05, \
                         background_sigs=0, genome_build="GRCh37", verbose=False):
-   
+    
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
     
@@ -1780,12 +1791,16 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     if m=="DINUC" or m=="78":
         plot.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        #plotE.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        
     elif m=="INDEL" or m=="83":
         plot.plotID(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        #plotE.plotID(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     else:
         plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-   
-     
+        plotE.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations, path=layer_directory )
+        
+        
         
     #processAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", sep="\t", index_col=0)
     #exposureAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Activities.txt", sep="\t", index_col=0)
@@ -1801,6 +1816,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     except:
         pass
     """
+    
     return exposures
 """
 #############################################################################################################
@@ -1838,8 +1854,9 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     data = pd.read_csv(csvfile, sep=",")
     
+    
     #exracting and preparing other similiry matrices from the all_similarities_list
-    mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; all_mean_l2=[];
+    mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; #all_mean_l2=[];
     #median_l1= Median L1 , maximum _l1 = Maximum L1, median_l2= Median L2 , maximum _l2 = Maximum L2, median_kl= Median KL , maximum _kl = Maximum KL, wilcoxontest = Wilcoxontest significance (True or False); all_med_l2=[] = list of all Median L2
     
     
@@ -1849,6 +1866,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
       all_similarities = all_similarities_list[values].iloc[:,[3,5,6]]
+      avg_stability=data["avgStability"][values]
+      min_stability=data["Stability"][values]
+      thresh_hold=avg_stability+min_stability
+      
       #record the statistical test between the l2_of the current and previous signatures first
       cur_l2_dist = all_similarities["L2_Norm_%"]
       cur_mean = all_similarities["L2_Norm_%"].mean()
@@ -1857,14 +1878,17 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
       
       if (wiltest<0.05) and (pre_mean-cur_mean>0):
           wilcoxontest.append("True")
-          all_mean_l2.append(cur_mean)
-          pre_l2_dist = cur_l2_dist
-          pre_mean = cur_mean
+          #all_mean_l2.append(cur_mean)
+          #pre_l2_dist = cur_l2_dist
+          #pre_mean = cur_mean
+          if thresh_hold>=1.0:
+              pre_l2_dist = cur_l2_dist
+              pre_mean = cur_mean
       else:
           wilcoxontest.append("False")
-          all_mean_l2.append(pre_mean)
+          #all_mean_l2.append(pre_mean)
           #pre_l2_dist = cur_l2_dist
-          
+      
       
       mean_l1.append(round(all_similarities["L1_Norm_%"].mean(),2))
       maximum_l1.append(round(all_similarities["L1_Norm_%"].max(),2))

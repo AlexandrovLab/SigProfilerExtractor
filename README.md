@@ -49,7 +49,7 @@ open a python interpreter and import the SigProfilerExtractor module. Please see
     
 Extracts mutational signatures from an array of samples.
 
-sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1,             endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False,                 penalty=0.05, resample = True, wall= False, gpu=False)
+sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1,             endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False,                 penalty=0.05, resample = True, wall= False, batch_size=1, gpu=False)
 
 
 
@@ -85,6 +85,11 @@ sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_bu
 
 **resample:** Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
 
+**gpu:** Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
+        will be used in the computation.
+
+**batch_size:** An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performred
+                by each CPU during the parallel processing. Default is 1.
 
 Returns
 -------

@@ -1,9 +1,16 @@
 MANIFEST.in
 README.md
 setup.py
+SigProfilerExtractor/SPEDecomposition_DBS78.py
+SigProfilerExtractor/SPEDecomposition_ID83.py
+SigProfilerExtractor/SPEDecomposition_SBS1536.py
+SigProfilerExtractor/SPEDecomposition_SBS96.py
+SigProfilerExtractor/SPExtractor_PNG_generator.py
+SigProfilerExtractor/SigProfilerPlotting_plot_png.py
 SigProfilerExtractor/__init__.py
 SigProfilerExtractor/decomposition.py
 SigProfilerExtractor/nmf_gpu.py
+SigProfilerExtractor/piebar_figures.py
 SigProfilerExtractor/sigpro.py
 SigProfilerExtractor/single_sample.py
 SigProfilerExtractor/subroutines.py
