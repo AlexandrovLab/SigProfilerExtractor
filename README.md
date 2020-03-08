@@ -81,14 +81,14 @@ sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_bu
 
 **exome:** Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
 
-**penalty:** Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to asaign                signatures to a sample.    
+**penalty:** Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned                signatures to a sample.    
 
 **resample:** Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
 
 **gpu:** Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
         will be used in the computation.
 
-**batch_size:** An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performred
+**batch_size:** An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
                 by each CPU during the parallel processing. Default is 1.
 
 Returns

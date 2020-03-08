@@ -130,17 +130,24 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     wall: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output. 
             
-    cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. 
+    cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available        processors. 
     
     mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
     is the DINULEOTIDE context and ID is INDEL context. 
             
     exome: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
-    penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to asaign signatures to a sample.    
+    penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample.    
     
     resample: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
     
+    gpu:Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
+        will be used in the computation.
+
+    batch_size: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
+              by each CPU during the parallel processing. Default is 1.
+
+
     
     Returns
     -------
@@ -515,7 +522,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                 seeds=seeds, 
                                                 init = init,
                                                 normalization_cutoff=normalization_cutoff,
-                                                gpu=gpu, batch_size=128)
+                                                gpu=gpu, batch_size=batch_size)
             
             
             
