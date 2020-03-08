@@ -1797,7 +1797,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         #plotE.plotID(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     else:
         plot.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        plotE.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations, path=layer_directory )
+        #plotE.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations, path=layer_directory )
         
         
         

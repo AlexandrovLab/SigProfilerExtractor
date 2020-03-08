@@ -734,10 +734,10 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
                                 remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
         
-        #make the decomposition plots
+        """#make the decomposition plots
         if m=="SBS96" or m=="96":
             from SigProfilerExtractor import SPEDecomposition_SBS96 as decomp
-            decomp.gen_decomposition(out_put)
+            #decomp.gen_decomposition(out_put)
         elif m=="SBS1536" or m=="1536":
             from SigProfilerExtractor import SPEDecomposition_SBS1536 as decomp
         elif m=="DBS78" or m=="78":
@@ -745,7 +745,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         elif m=="ID83" or m=="83":
             from SigProfilerExtractor import SPEDecomposition_DBS78 as decomp
         else:
-            pass
+            pass"""
      
             
         #except:
