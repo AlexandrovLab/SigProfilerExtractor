@@ -367,7 +367,7 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd"):
     #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
-    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=0.000005,test_conv=1000, gpu_id=gpu_id, init=init,seed=None)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=0.000005,test_conv=1000, gpu_id=gpu_id, init_method=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
