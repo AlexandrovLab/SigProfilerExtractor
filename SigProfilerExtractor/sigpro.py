@@ -698,7 +698,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
-                       signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty, exposureAvg=exposureAvg)    
+                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, signature_stats = signature_stats, penalty=penalty)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution

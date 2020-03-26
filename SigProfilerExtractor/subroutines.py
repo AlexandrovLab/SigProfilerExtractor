@@ -1599,8 +1599,8 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
-                        signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = 0, penalty=0.05, \
-                        background_sigs=0, genome_build="GRCh37", exposureAvg="none", verbose=False):
+                        signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = "none", penalty=0.05, \
+                        background_sigs=0, genome_build="GRCh37",  verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -1763,8 +1763,9 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             """      
                
     else:   
+        
         # when refilt de_novo_signatures 
-        if exposureAvg=="none":
+        if denovo_exposureAvg=="none":
             for g in range(allgenomes.shape[1]):
                 
                 exposures, _, similarity = ss.add_signatures(processAvg, 
@@ -1777,7 +1778,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 
         # when use the exposures from the initial NMF
         else:
-            exposureAvg=exposureAvg
+            
+            exposureAvg=denovo_exposureAvg
             
         
     
