@@ -29,6 +29,7 @@ import SigProfilerExtractor as cosmic
 from scipy.stats import  ranksums
 from SigProfilerExtractor import single_sample as ss
 #from sklearn.cluster import KMeans
+from SigProfilerExtractor import nmf_cpu
 from sklearn.decomposition import NMF
 from sklearn import mixture
 from scipy.spatial.distance import cdist
@@ -233,14 +234,14 @@ def normalize_samples(genomes, normalize=True, all_samples=True, number=30000):
             total_mutations = np.sum(genomes, axis=0)
             indices = np.where(total_mutations>number)[0]
             results = genomes[:,list(indices)]/total_mutations[list(indices)][:,np.newaxis].T*number
-            results = np.round(results, 0)
-            results = results.astype(int)
+            #results = np.round(results, 0)
+            #results = results.astype(int)
             genomes[:,list(indices)] = results
         else:    
             total_mutations = np.sum(genomes, axis=0)          
             genomes = (genomes/total_mutations.T*number)
-            genomes = np.round(genomes, 0)
-            genomes = genomes.astype(int)
+            #genomes = np.round(genomes, 0)
+            #genomes = genomes.astype(int)
             
     return genomes
 
@@ -360,6 +361,29 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
     return w, h
     
 
+def nnmf_cpu(genomes, nfactors, init="nndsvd"):
+   
+    
+    genomes = torch.from_numpy(genomes).float()
+    net = nmf_cpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=1e-8,test_conv=1000, init_method=init,seed=None)
+    net.fit()
+    Ws = []
+    Hs = []
+    for H in net.H.detach().cpu().numpy():
+        Hs.append(np.matrix(H))
+    for W in net.W.detach().cpu().numpy():
+        Ws.append(np.matrix(W))
+    
+    W = Ws[0]
+    H = Hs[0]
+    #calculate L1, L2 and KL for the solution 
+    
+    est_genome = np.array(np.dot(W, H))
+    genomes = np.array(genomes)
+    similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
+    similarities = np.array(np.mean(similarities, axis=0)).T
+
+    return W, H, similarities
 
 def nnmf_gpu(genomes, nfactors, init="nndsvd"):
     p = current_process()
@@ -367,7 +391,7 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd"):
     #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
-    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=0.000005,test_conv=1000, gpu_id=gpu_id, init_method=init,seed=None)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=1e-8,test_conv=1000, gpu_id=gpu_id, init_method=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
@@ -389,6 +413,7 @@ def nnmf(genomes, nfactors, init="nndsvd"):
     #h = model_init.components_
     w,h=initialize_nmf(genomes, nfactors, init=init, eps=1e-6,random_state=None)
     W, H = inhouse_nmf(genomes, w=w, h=h, k=nfactors, iterations=200000, tol=0.000005)
+   
     
     
     
@@ -442,7 +467,7 @@ def BootstrapCancerGenomes(genomes, seed=None):
     return dataframe
 
 # NMF version for the multiprocessing library
-def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd", seeds=None, normalization_cutoff=10000000, gpu=False):
+def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd", seeds=None, normalization_cutoff=10000000, norm="log2", gpu=False):
     tic = time.time()
     totalMutations = np.sum(genomes, axis =0)
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
@@ -457,13 +482,27 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
                 bootstrapGenomes= BootstrapCancerGenomes(genomes)
                 bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
                 totalMutations = np.sum(bootstrapGenomes, axis=0)
-                log2_of_tM = np.log2(totalMutations)
-                bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM 
+                if norm=="gmm":
+                    bootstrapGenomes = np.array(bootstrapGenomes)
+                    indices = np.where(totalMutations>normalization_cutoff)[0]
+                    norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
+                    bootstrapGenomes[:,list(indices)] = norm_genome
+                    bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+                elif norm == "100X":
+                    bootstrapGenomes = np.array(bootstrapGenomes)
+                    rows = bootstrapGenomes.shape[0]
+                    indices = np.where(totalMutations>normalization_cutoff)[0]
+                    norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
+                    bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+                elif norm == "log2":
+                    log2_of_tM = np.log2(totalMutations)
+                    bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+                
                 genome_list.append(bootstrapGenomes.values)
             else:
                 genome_list.append(genomes)
             #print(genomes.shape)
-       
+        #print(len(genome_list))      
         g = np.array(genome_list)
         W, H = nmf_fn(g, totalProcesses, init=init)
         for i in range(len(W)):
@@ -480,7 +519,7 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
         return results
 
     else:
-        nmf_fn = nnmf
+        nmf_fn = nnmf_cpu
         
         if resample == True:
             bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=seeds)
@@ -494,13 +533,22 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
             
             # normalize the samples to handle the hypermutators
             bootstrapGenomes = np.array(bootstrapGenomes)
-            #print(normalization_cutoff)
-            #bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=normalization_cutoff)
-            #print(type(bootstrapGenomes))
-            
             totalMutations = np.sum(bootstrapGenomes, axis=0)
-            log2_of_tM = np.log2(totalMutations)
-            bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+            #print(normalization_cutoff)
+            
+            #if gmm normalization
+            if norm=="gmm":
+                bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=normalization_cutoff)
+            #if 100X normalization
+            elif norm == "100X":
+                rows = bootstrapGenomes.shape[0]
+                bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=rows*100)
+            #if log normalization
+            elif norm == "log2":
+                log2_of_tM = np.log2(totalMutations)
+                bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+            else:
+                pass #no normalization
             W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init)  #uses custom function nnmf
         
         else:
@@ -517,7 +565,7 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
         H = H*total.T
         
         # denormalize H
-        H = denormalize_samples(H, totalMutations, normalization_value=log2_of_tM) 
+        H = denormalize_samples(H, totalMutations, normalization_value=100) 
         print ("process " +str(totalProcesses)+" continues please wait... ")
         print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
         
@@ -582,7 +630,7 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
 #     return W, H, kl
 # =============================================================================
 
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="nndsvd", normalization_cutoff=1000000, n_cpu=-1, verbose = False, resample=True, gpu=False, batch_size=1):
+def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="nndsvd", normalization_cutoff=1000000, n_cpu=-1, verbose = False, resample=True, norm="log2", gpu=False, batch_size=1):
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
@@ -600,7 +648,7 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="n
     
     
     if gpu==True:
-        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, gpu=gpu)
+        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu)
         result_list = pool.map(pool_nmf, batches) 
         pool.close()
         pool.join()
@@ -608,7 +656,7 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="n
         flat_list = [item for sublist in result_list for item in sublist]
 
     else:
-         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, normalization_cutoff=normalization_cutoff, gpu=gpu)
+         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu)
          result_list = pool.map(pool_nmf, seeds) 
          pool.close()
          pool.join()
@@ -1131,7 +1179,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
 #################################### Decipher Signatures ###################################################
 #############################################################################################################
 """
-def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, seeds = None, init="alexandrov-lab-custom", normalization_cutoff=1, gpu=False, batch_size=1):
+def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, seeds = None, init="alexandrov-lab-custom", normalization_cutoff=1, norm="log2", gpu=False, batch_size=1):
     
     
         
@@ -1152,7 +1200,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     ############################################################################################################################################################################## 
     if gpu==True:
         results = []
-        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, batch_size=batch_size,gpu=gpu)
+        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, batch_size=batch_size, norm=mprm,gpu=gpu)
         
         for items in range(len(flat_list)):
             
@@ -1166,7 +1214,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
             
             results.append([W,H,similarities])
     else:
-        results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, gpu=gpu)
+        results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff,norm=norm, gpu=gpu)
     #print(results[0][2])     
     toc = time.time()
     print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
@@ -1454,7 +1502,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     exposures = exposureAvg.set_index(listOfSignatures)
     exposures.columns = colnames
     #plot exposures
-    for p in range(exposures.shape[0]):
+    """for p in range(exposures.shape[0]):
       plt.bar(colnames, exposures.iloc[p], bottom = np.sum(exposures.iloc[:p], axis = 0), label = listOfSignatures[p])
         
     plt.legend(loc=(1.01,0.0))
@@ -1465,7 +1513,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     plt.tight_layout()
     plt.savefig(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Activities_Plot.pdf", dpi=300)  
     
-    plt.close()
+    plt.close()"""
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
     #print("exposures are ok", exposures)
@@ -1552,7 +1600,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
 #############################################################################################################
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = 0, penalty=0.05, \
-                        background_sigs=0, genome_build="GRCh37", verbose=False):
+                        background_sigs=0, genome_build="GRCh37", exposureAvg="none", verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -1714,16 +1762,23 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 print(exposureAvg[:, r])
             """      
                
-    else:      
-        for g in range(allgenomes.shape[1]):
+    else:   
+        # when refilt de_novo_signatures 
+        if exposureAvg=="none":
+            for g in range(allgenomes.shape[1]):
+                
+                exposures, _, similarity = ss.add_signatures(processAvg, 
+                                                             allgenomes[:,g][:,np.newaxis], 
+                                                             presentSignatures=[],
+                                                             cutoff=penalty,
+                                                             check_rule_negatives=[], 
+                                                             check_rule_penalty=1.0)
+                exposureAvg[:,g] = exposures
+                
+        # when use the exposures from the initial NMF
+        else:
+            exposureAvg=exposureAvg
             
-            exposures, _, similarity = ss.add_signatures(processAvg, 
-                                                         allgenomes[:,g][:,np.newaxis], 
-                                                         presentSignatures=[],
-                                                         cutoff=penalty,
-                                                         check_rule_negatives=[], 
-                                                         check_rule_penalty=1.0)
-            exposureAvg[:,g] = exposures
         
     
     processAvg= pd.DataFrame(processAvg.astype(float))
@@ -1780,6 +1835,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         signature_stats = signature_stats.set_index(allsigids)
         signature_stats = signature_stats.rename_axis("Signatures", axis="columns")
         signature_stats.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_stats_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
+        signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
+        signature_total_mutations = signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
@@ -1911,7 +1968,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     probable_solutions["Significant Decrease of L2"] = probable_solutions["Significant Decrease of L2"].astype(str)
     probable_solutions = probable_solutions[probable_solutions["Significant Decrease of L2"]=="True"]
     #probable_solutions = probable_solutions[probable_solutions["avgStability"]>=0.8]
-    if mtype=="DBS78" or mtype=="ID78":
+    if mtype=="DBS78" or mtype=="ID83":
         probable_solutions = probable_solutions[probable_solutions["Minimum Stability"]>=0.80]
     else:    
         probable_solutions = probable_solutions[probable_solutions["Minimum Stability"]+probable_solutions["avgStability"]>=1.0]

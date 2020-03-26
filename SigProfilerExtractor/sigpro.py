@@ -100,7 +100,7 @@ def importdata(datatype="matrix"):
     return data
 
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False, penalty=0.05, resample = True, wall= False, batch_size=1, gpu=False): 
+def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False, penalty=0.05, resample = True, wall= False, batch_size=1, norm="log2", gpu=False): 
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -146,6 +146,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
 
     batch_size: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
               by each CPU during the parallel processing. Default is 1.
+    norm: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization". 
 
 
     
@@ -522,6 +523,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
                                                 seeds=seeds, 
                                                 init = init,
                                                 normalization_cutoff=normalization_cutoff,
+                                                norm=norm,
                                                 gpu=gpu, batch_size=batch_size)
             
             
@@ -661,6 +663,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         del layer_genome
         ################################### Decompose the new signatures into global signatures   #########################
         processAvg = information[solution-startProcess][0]
+        exposureAvg = information[solution-startProcess][1]
         processSTE = information[solution-startProcess][2]
         signature_stabilities = information[solution-startProcess][4]
         signature_total_mutations = information[solution-startProcess][5]  
@@ -695,7 +698,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
-                       signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty)    
+                       signature_total_mutations = signature_total_mutations, signature_stats = signature_stats, penalty=penalty, exposureAvg=exposureAvg)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution

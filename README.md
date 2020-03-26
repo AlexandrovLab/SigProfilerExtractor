@@ -90,6 +90,7 @@ sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_bu
 
 **batch_size:** An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
                 by each CPU during the parallel processing. Default is 1.
+**norm:** A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization". 
 
 Returns
 -------
@@ -112,7 +113,7 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
     # to get input from table format (mutation catalog matrix)
     >>> path_to_example_table = sig.importdata("matrix")
     >>> data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog         matrix/table
-    >>> sig.sigProfilerExtractor("table", "example_output", data, genome_build="GRCh38", startProcess=1, endProcess=3)
+    >>> sig.sigProfilerExtractor("matrix", "example_output", data, genome_build="GRCh38", startProcess=1, endProcess=3)
     
     To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
     

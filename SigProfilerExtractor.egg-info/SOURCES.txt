@@ -9,6 +9,7 @@ SigProfilerExtractor/SPExtractor_PNG_generator.py
 SigProfilerExtractor/SigProfilerPlotting_plot_png.py
 SigProfilerExtractor/__init__.py
 SigProfilerExtractor/decomposition.py
+SigProfilerExtractor/nmf_cpu.py
 SigProfilerExtractor/nmf_gpu.py
 SigProfilerExtractor/piebar_figures.py
 SigProfilerExtractor/sigpro.py
@@ -23,6 +24,7 @@ SigProfilerExtractor.egg-info/requires.txt
 SigProfilerExtractor.egg-info/top_level.txt
 SigProfilerExtractor/data/.DS_Store
 SigProfilerExtractor/data/21_breast_WGS_substitutions.mat
+SigProfilerExtractor/data/Accolade_fermante.png
 SigProfilerExtractor/data/DBS_signatures_genome_builds.xlsx
 SigProfilerExtractor/data/SBS_signatures_genome_builds.xlsx
 SigProfilerExtractor/data/Samples.txt
