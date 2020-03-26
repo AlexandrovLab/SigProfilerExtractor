@@ -90,6 +90,7 @@ sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_bu
 
 **batch_size:** An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
                 by each CPU during the parallel processing. Default is 1.
+                
 **norm:** A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization". 
 
 Returns
