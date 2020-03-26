@@ -1200,7 +1200,7 @@ def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context
     ############################################################################################################################################################################## 
     if gpu==True:
         results = []
-        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, batch_size=batch_size, norm=mprm,gpu=gpu)
+        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, batch_size=batch_size, norm=norm,gpu=gpu)
         
         for items in range(len(flat_list)):
             
