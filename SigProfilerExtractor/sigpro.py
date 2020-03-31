@@ -99,8 +99,67 @@ def importdata(datatype="matrix"):
         data="vcftest"
     return data
 
+    
+def record_parameters(sysdata, excecution_parameters, start_time):
+            #genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
+            sysdata.write("\n--------------EXECUTION PARAMETERS--------------\n")
+            sysdata.write("INPUT DATA\n")
+            sysdata.write("\tinput_type: {}\n".format(excecution_parameters["input_type"]))
+            sysdata.write("\tout_put: {}\n".format(excecution_parameters["out_put"]))
+            sysdata.write("\tinput_data: {}\n".format(excecution_parameters["input_data"]))
+            sysdata.write("\treference_genome: {}\n".format(excecution_parameters["reference_genome"]))
+            sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
+            sysdata.write("\tcontext_type: {}\n".format(excecution_parameters["context_type"]))
+            sysdata.write("\texome: {}\n".format(excecution_parameters["exome"]))
+            sysdata.write("NMF RUNS\n")
+            sysdata.write("\tminimum_signatures: {}\n".format(excecution_parameters["minimum_signatures"]))
+            sysdata.write("\tmaximum_signatures: {}\n".format(excecution_parameters["maximum_signatures"]))
+            sysdata.write("\tNMF_replicates: {}\n".format(excecution_parameters["NMF_replicates"]))
+            sysdata.write("NMF ENGINE\n")
+            sysdata.write("\tNMF_init: {}\n".format(excecution_parameters["NMF_init"]))
+            sysdata.write("\tprecision: {}\n".format(excecution_parameters["precision"]))
+            sysdata.write("\tmatrix_normalization: {}\n".format(excecution_parameters["matrix_normalization"]))
+            sysdata.write("\tresample: {}\n".format(excecution_parameters["resample"]))
+            sysdata.write("\trandom_seeds: {}\n".format(excecution_parameters["random_seeds"]))
+            sysdata.write("\tmin_NMF_iterations: {}\n".format(excecution_parameters["min_NMF_iterations"]))
+            sysdata.write("\tmax_NMF_iterations: {}\n".format(excecution_parameters["max_NMF_iterations"]))
+            sysdata.write("\tNMF_test_conv: {}\n".format(excecution_parameters["NMF_test_conv"]))
+            sysdata.write("\tNMF_tolerance: {}\n".format(excecution_parameters["NMF_tolerance"]))
+            sysdata.write("EXECUTION\n")
+            sysdata.write("\tcpu: {}\n".format(excecution_parameters["cpu"]))
+            sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
+            sysdata.write("OTHERS\n")
+            sysdata.write("\tnnls_penalty: {}\n".format(excecution_parameters["nnls_penalty"]))
+            sysdata.write("\tget_all_signature_matrices: {}\n".format(excecution_parameters["get_all_signature_matrices"]))
+            
+            sysdata.write("\n-------Date and Time Data------- \n")
+            sysdata.write("Date and Clock time when the execution started: "+str(start_time)+"\n")
+            
 
-def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1, endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False, penalty=0.05, resample = True, wall= False, batch_size=1, norm="log2", gpu=False): 
+def sigProfilerExtractor(input_type, 
+                         out_put, 
+                         input_data, 
+                         reference_genome="GRCh37", 
+                         opportunity_genome = "GRCh37", 
+                         context_type = "default", 
+                         exome = False, 
+                         minimum_signatures=1,
+                         maximum_signatures=10,  
+                         nmf_replicates=100, 
+                         resample = True, 
+                         batch_size=1, 
+                         cpu=-1, 
+                         gpu=False, 
+                         nmf_init="alexandrov-lab-custom", 
+                         precision= "single", 
+                         matrix_normalization= "gmm", 
+                         random_seeds= True, 
+                         min_nmf_iterations= 2000, 
+                         max_nmf_iterations=200000, 
+                         nmf_test_conv= 1000, 
+                         nmf_tolerance= 1e-8, 
+                         nnls_penalty=0.05, 
+                         get_all_signature_matrices= False): 
     memory_usage()
     """
     Extracts mutational signatures from an array of samples.
@@ -108,6 +167,8 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     Parameters
     ----------
+    
+    INPUT DATA:-
     
     input_type: A string. Type of input. The type of input should be one of the following:
             - "vcf": used for vcf format inputs.
@@ -118,37 +179,63 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             
     input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
             
-    refgen: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
-            
-    startProcess: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1 
+    reference_genome: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
+       
+    opportunity_genome: The build or version of the reference signatures for the reference genome. The default opportunity genome is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input reference genome value.    
+     
+    context_type: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
+            is the DINULEOTIDE context and ID is INDEL context. 
     
-    endProcess: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
-    
-    totalIterations: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 100
-    
-    init: A String. The initialization algorithm for W and H matrix of NMF
-    
-    wall: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output. 
-            
-    cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available        processors. 
-    
-    mtype: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
-    is the DINULEOTIDE context and ID is INDEL context. 
-            
     exome: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
-    penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample.    
+    
+    NMF RUNS:-
+    
+    minimum_signature: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1 
+    
+    maximum_signatures: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
+    
+    nmf_replicates: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 100
     
     resample: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
+    
+    random_seeds: Boolean. Default is True. If True, then the seeds for resampling will be random for different analysis.
+                  If False, then resampling will be identical for repeated analysis. 
+    
+    NMF RUNS:-
+    
+    matrix_normalization: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization".         
+    
+    nmf_init: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'
+              Default is 'alexandrov-lab-custom'.
+    
+    precision: A string. Values should be single or double. Default is single.
+    
+    min_nmf_iterations: An integer. Value defines the minimum number of iterations to be completed before NMF converges. Default is 2000.
+    
+    max_nmf_iterations: An integer. Value defines the maximum number of iterations to be completed before NMF converges. Default is 200000
+    
+    nmf_test_conv: An integer. Value definer the number number of iterations to done between checking next convergence.
+            
+    nmf_tolerance: A float. Value defines the tolerance to achieve to converge. 
+    
+    
+    EXECUTION:-
+    
+    cpu: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available        processors. 
     
     gpu:Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
         will be used in the computation.
 
     batch_size: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
               by each CPU during the parallel processing. Default is 1.
-    norm: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization". 
-
-
+              
+              
+    OTHERS:-
+    
+    nnls_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample. 
+    
+    get_all_signature_matrices: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
     
     Returns
     -------
@@ -158,13 +245,29 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     Examples
     --------
     
+    Examples
+    --------
+
     >>> from SigProfilerExtractor import sigpro as sig
-    >>> data = sig.importdata("vcf")
-    >>> sig.sigProfilerExtractor("vcf", "example_output", data, startProcess=1, endProcess=3)
+    
+    # to get input from vcf files
+    >>> path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
+    >>> data = path_to_example_folder_containing_vcf_files # you can put the path to your folder containing the vcf samples
+    >>> sig.sigProfilerExtractor("vcf", "example_output", data, minimum_signatures=1, maximum_signatures=3)
+    
+    Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
+    Check the current working directory for the "example_output" folder.
+    
+    # to get input from table format (mutation catalog matrix)
+    >>> path_to_example_table = sig.importdata("matrix")
+    >>> data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog         matrix/table
+    >>> sig.sigProfilerExtractor("matrix", "example_output", data, opportunity_genome="GRCh38", minimum_signatures=1, maximum_signatures=3)
     
     Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
     Check the results in the "example_output" folder.
     """
+    #record the start time
+    start_time = datetime.datetime.now()
     
     if gpu == True:
         import torch
@@ -193,7 +296,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
     
     
     
-    sysdata.write("\n-------Vital Parameters Used for the execution -------\n")
+    
     #format the project_name first:
     project = input_data  #will use this variable as the parameter for project argument in SigprofilerMatrixGenerator
     try:
@@ -203,17 +306,38 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             project_name = project.split("/")[-2]
     except:
         project_name = "Input from DataFrame"
-    sysdata.write("input_type: {}\ninputdata: {}\nstartProcess: {}\nendProcess: {}\ntotalIterations: {}\ncpu: {}\nrefgen: {}\ngenome_build: {}\nmtype: {} \ninit: {}\n".format(input_type, project_name, startProcess, endProcess, totalIterations, cpu, refgen, genome_build, mtype, init))
     
-    sysdata.write("\n-------Date and Time Data------- \n")
-    tic = datetime.datetime.now()
-    sysdata.write("Date and Clock time when the execution started: "+str(tic)+"\n")
+   
+        
+        
+    excecution_parameters= {"input_type":input_type, 
+                        "out_put":out_put, 
+                        "input_data":input_data, 
+                        "reference_genome":reference_genome, 
+                        "opportunity_genome":opportunity_genome, 
+                        "context_type":context_type,
+                        "exome":exome,
+                        "minimum_signatures":minimum_signatures, 
+                        "maximum_signatures":maximum_signatures, 
+                        "NMF_replicates":nmf_replicates, 
+                        "cpu":cpu, 
+                        "gpu":gpu, 
+                        "batch_size":batch_size, 
+                        "NMF_init":nmf_init,
+                        "precision":precision,
+                        "matrix_normalization":matrix_normalization,
+                        "resample":resample, 
+                        "random_seeds":random_seeds,
+                        "min_NMF_iterations":min_nmf_iterations,
+                        "max_NMF_iterations":max_nmf_iterations,
+                        "NMF_test_conv": nmf_test_conv,
+                        "NMF_tolerance": nmf_tolerance,
+                        "nnls_penalty":nnls_penalty,
+                        "get_all_signature_matrices":get_all_signature_matrices}
+    
+    
+    record_parameters(sysdata, excecution_parameters, start_time)
     sysdata.close()
-    
-    
-    
-    
-    
     ################################ take the inputs from the mandatory arguments ####################################
     input_type = input_type;
     out_put = out_put;  
@@ -221,12 +345,21 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         
     
     ################################ take the inputs from the general optional arguments ####################################
-    startProcess=startProcess ; 
-    endProcess=endProcess;
+    startProcess=minimum_signatures ; 
+    endProcess=maximum_signatures;
     
-    totalIterations=totalIterations
+    #totalIterations=nmf_replicates
     cpu = cpu
     hierarchy = False #No use
+    mtype=context_type
+    #init=nmf_init
+    wall=get_all_signature_matrices
+    penalty=nnls_penalty
+    genome_build=opportunity_genome
+    refgen=reference_genome
+    
+    
+    
     
     
    
@@ -487,15 +620,14 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
         
         
         
-        # set up the seeds generation same matrices for different number of signatures
-        seeds = np.random.randint(0, 10000000, size=totalIterations) # set the seeds ranging from 0 to 10000000 for resampling and same seeds are used in different number of signatures
         
         # get the cutoff for normatization to handle the hypermutators 
         
         normalization_cutoff = sub.get_normalization_cutoff(genomes)
         #print("Normalization Cutoff is :", normalization_cutoff)
+        excecution_parameters["normalization_cutoff"]= normalization_cutoff
         
-        #genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
+        
         
         
         for i in range(startProcess,endProcess+1):
@@ -514,17 +646,10 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             finalHall, \
             converge_information, \
             reconstruction_error, \
-            processes = sub.decipher_signatures(genomes= genomes, \
-                                                i = i, \
-                                                totalIterations=totalIterations, \
-                                                cpu=cpu, \
-                                                mut_context=m, \
-                                                resample = resample,
-                                                seeds=seeds, 
-                                                init = init,
-                                                normalization_cutoff=normalization_cutoff,
-                                                norm=norm,
-                                                gpu=gpu, batch_size=batch_size)
+            processes = sub.decipher_signatures(excecution_parameters,
+                                                genomes= genomes, 
+                                                mut_context=m,
+                                                i = i)
             
             
             
@@ -574,6 +699,7 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             #report progress to the system file:
             current_time_end = datetime.datetime.now()
             sysdata = open(out_put+"/JOB_METADATA.txt", "a")
+            
             if  hierarchy is True:
                 sysdata.write("\nSignature extraction for {} completed for layer {} {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  H_iteration, processes,  current_time_end-current_time_start, current_time_end))
             else:
@@ -611,7 +737,9 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
             
             
             
-            
+        if excecution_parameters["matrix_normalization"]=="gmm":
+                sysdata.write("\nGMM NORMALIZATION_CUTOFF for context type {} is: {}\n".format(m, normalization_cutoff))    
+                sysdata.write("\Analysis of context type {} is ended successfully\n".format(m)) 
         ################################################################################################################
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
         ################################################################################################################    
@@ -759,11 +887,11 @@ def sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genom
            
     
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
-    toc = datetime.datetime.now()
-    sysdata.write("\nDate and Clock time when the execution ended: "+str(toc)+"\n")
+    end_time = datetime.datetime.now()
+    sysdata.write("\nDate and Clock time when the execution ended: "+str(end_time)+"\n")
     
     sysdata.write("-------Job Status------- \n")
-    sysdata.write("Analysis of mutational signatures completed successfully! Total execution time: "+str(toc-tic)+". Results can be found in: ["+out_put+"] folder")
+    sysdata.write("Analysis of mutational signatures completed successfully! Total execution time: "+str(end_time-start_time)+". Results can be found in: ["+out_put+"] folder")
     sysdata.close()
 
     print("\n\n \nYour Job Is Successfully Completed! Thank You For Using SigProfiler Extractor.\n ")

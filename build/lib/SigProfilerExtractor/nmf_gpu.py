@@ -130,6 +130,10 @@ class NMF:
     @property
     def H(self):
         return self._H
+    
+    @property
+    def conv(self):
+        return self._conv
 
     @property
     def _kl_loss(self):
@@ -164,14 +168,16 @@ class NMF:
                        self._loss_converged and \
                        (self._iter > self.min_iterations)
                 if stop:
-                    print("loss converged with {} iterations".format(self._iter))
-                return stop
+                    pass
+                    #print("loss converged with {} iterations".format(self._iter))
+                return [stop, self._iter]
 
             if beta == 2:
                 for self._iter in range(self.max_iterations):
                     self.H = self.H * (self.W.transpose(1, 2) @ self._V) / (self.W.transpose(1, 2) @ (self.W @ self.H))
                     self.W = self.W * (self._V @ self.H.transpose(1, 2)) / (self.W @ (self.H @ self.H.transpose(1, 2)))
-                    if stop_iterations():
+                    if stop_iterations()[0]:
+                        self._conv=stop_iterations()[1]
                         break
 
             # Optimisations for the (common) beta=1 (KL) case.
@@ -188,7 +194,8 @@ class NMF:
                     numerator = wt @ (self._V / (self.W @ self.H))
                     denomenator = wt @ ones
                     self._H *= numerator / denomenator
-                    if stop_iterations():
+                    if stop_iterations()[0]:
+                        self._conv=stop_iterations()[1]
                         break
 
             else:
@@ -197,5 +204,6 @@ class NMF:
                                        (self.W.transpose(1, 2) @ ((self.W @ self.H)**(beta-1))))
                     self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(1, 2)) /
                                        (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(1, 2)))
-                    if stop_iterations():
+                    if stop_iterations()[0]:
+                        self._conv=stop_iterations()[1]
                         break

@@ -57,49 +57,85 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
             
         Extracts mutational signatures from an array of samples.
         
-        sigProfilerExtractor(input_type, out_put, input_data, refgen="GRCh37", genome_build = 'GRCh37', startProcess=1,             endProcess=10, totalIterations=100, init="alexandrov-lab-custom", cpu=-1,  mtype = "default",exome = False,                 penalty=0.05, resample = True, wall= False, batch_size=1, gpu=False)
+        sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37", opportunity_genome = "GRCh37", context_type = "default", exome = False, 
+                                 minimum_signatures=1, maximum_signatures=10, nmf_replicates=100, resample = True, batch_size=1, cpu=-1, gpu=False, 
+                                 nmf_init="alexandrov-lab-custom", precision= "single", matrix_normalization= "gmm", random_seeds= True, 
+                                 min_nmf_iterations= 2000, max_nmf_iterations=200000, nmf_test_conv= 1000, nmf_tolerance= 1e-8, nnls_penalty=0.05, get_all_signature_matrices= False): 
         
         
-        
-        **input_type:** A string. Type of input. The type of input should be one of the following:
-                - "vcf": used for vcf format inputs.
-                - "matrix": used for table format inputs using a tab seperated file.
-        
-        
-        **out_put:** A string. The name of the output folder. The output folder will be generated in the current working                directory. 
-        
-        **input_data:** A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "matrix"          type input). The project file or folder should be inside the current working directory. For the "vcf" type                  input,the project has to be a folder which will contain the vcf files in vcf format or text formats.The "matrix"            type projects have to be a file.   
-        
-        **refgen:** A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This                parameter is applicable only if the input_type is "vcf".
-        
-        **startProcess:** A positive integer, optional. The minimum number of signatures to be extracted. The default value              is 1 
-        
-        **endProcess:** A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
-        
-        **totalIterations:** A positive integer, optional. The number of iteration to be performed to extract each number                signature. The default value is 100
-        
-        **init:** A String. The initialization algorithm for W and H matrix of NMF. Options are "alexandrov-lab-custom",                "nndsvd", nndsvda", "nndsvdar". 
-        
-        **wall:** A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output. 
-        
-        **cpu:** An integer, optional. The number of processors to be used to extract the signatures. The default value is -1            which will use all available processors. 
-        
-        **mtype:** A string, optional. The items in the list defines the mutational contexts to be considered to extract the             signatures. The default value is "96,DBS,ID", where "96" is the SBS96 context, "DBS"
-              is the DINULEOTIDE context and ID is INDEL context. 
-        
-        **exome:** Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
-        
-        **penalty:** Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned                signatures to a sample.    
-        
-        **resample:** Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
-        
-        **gpu:** Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
+        INPUT DATA:-
+            
+            **input_type**: A string. Type of input. The type of input should be one of the following:
+                    - "vcf": used for vcf format inputs.
+                    - "matrix": used for table format inputs using a tab seperated file.
+                     
+                
+            **out_put**: A string. The name of the output folder. The output folder will be generated in the current working directory. 
+                    
+            **input_data**: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
+                    
+            **reference_genome**: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
+               
+            **opportunity_genome**: The build or version of the reference signatures for the reference genome. The default opportunity genome is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input reference genome value.    
+             
+            **context_type**: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
+                    is the DINULEOTIDE context and ID is INDEL context. 
+            
+            **exome**: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
+            
+            
+            NMF RUNS:-
+            
+            **minimum_signature**: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1 
+            
+            **maximum_signatures**: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
+            
+            **nmf_replicates**: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 100
+            
+            **resample**: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
+            
+            **random_seeds**: Boolean. Default is True. If True, then the seeds for resampling will be random for different analysis.
+                          If False, then resampling will be identical for repeated analysis. 
+            
+            NMF RUNS:-
+            
+            **matrix_normalization**: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization".         
+            
+            **nmf_init**: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'
+                      Default is 'alexandrov-lab-custom'.
+            
+            **precision**: A string. Values should be single or double. Default is single.
+            
+            **min_nmf_iterations**: An integer. Value defines the minimum number of iterations to be completed before NMF converges. Default is 2000.
+            
+            **max_nmf_iterations**: An integer. Value defines the maximum number of iterations to be completed before NMF converges. Default is 200000.
+            
+            **nmf_test_conv**: An integer. Value definer the number number of iterations to done between checking next convergence. Default is 1000.
+                    
+            **nmf_tolerance**: A float. Value defines the tolerance to achieve to converge. Default is 1e-8.
+            
+            
+            EXECUTION:-
+            
+            **cpu**: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available        processors. 
+            
+            **gpu**:Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
                 will be used in the computation.
         
-        **batch_size:** An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
-                        by each CPU during the parallel processing. Default is 1.
-        **norm:** A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization". 
-        
+            **batch_size**: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
+                      by each CPU during the parallel processing. Default is 1.
+                      
+                      
+            OTHERS:-
+            
+            **nnls_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample. 
+            
+            **get_all_signature_matrices**: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
+            
+            Returns
+            -------
+            To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
+            
         Returns
         -------
         To learn about the output, please visit https://osf.io/t6j7u/wiki/home/  

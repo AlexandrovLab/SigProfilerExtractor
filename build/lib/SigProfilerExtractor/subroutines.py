@@ -361,18 +361,24 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
     return w, h
     
 
-def nnmf_cpu(genomes, nfactors, init="nndsvd"):
+def nnmf_cpu(genomes, nfactors, init="nndsvd", excecution_parameters=None):
    
     
     genomes = torch.from_numpy(genomes).float()
-    net = nmf_cpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=1e-8,test_conv=1000, init_method=init,seed=None)
+    max_iterations=excecution_parameters["max_NMF_iterations"]
+    tolerance=excecution_parameters["NMF_tolerance"]
+    test_conv=excecution_parameters["NMF_test_conv"]
+    net = nmf_cpu.NMF(genomes,rank=nfactors,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
+    
     for H in net.H.detach().cpu().numpy():
         Hs.append(np.matrix(H))
     for W in net.W.detach().cpu().numpy():
         Ws.append(np.matrix(W))
+    
+    convergence = int(net.conv)
     
     W = Ws[0]
     H = Hs[0]
@@ -382,16 +388,19 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd"):
     genomes = np.array(genomes)
     similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
     similarities = np.array(np.mean(similarities, axis=0)).T
-
+    similarities = np.append(similarities, convergence)
     return W, H, similarities
 
-def nnmf_gpu(genomes, nfactors, init="nndsvd"):
+def nnmf_gpu(genomes, nfactors, init="nndsvd",excecution_parameters=None):
     p = current_process()
     identity = p._identity[0]
     #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
-    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=200000, tolerance=1e-8,test_conv=1000, gpu_id=gpu_id, init_method=init,seed=None)
+    max_iterations=excecution_parameters["max_NMF_iterations"]
+    tolerance=excecution_parameters["NMF_tolerance"]
+    test_conv=excecution_parameters["NMF_test_conv"]
+    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
@@ -399,6 +408,13 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd"):
         Hs.append(np.matrix(H))
     for W in net.W.detach().cpu().numpy():
         Ws.append(np.matrix(W))
+    
+    if len(Ws)==1:  
+        convergence = int(net.conv)
+    else:
+        convergence = int(max_iterations)
+        
+
 
     return Ws, Hs
 
@@ -467,19 +483,21 @@ def BootstrapCancerGenomes(genomes, seed=None):
     return dataframe
 
 # NMF version for the multiprocessing library
-def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd", seeds=None, normalization_cutoff=10000000, norm="log2", gpu=False):
+def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, init="nndsvd", seeds=None, normalization_cutoff=10000000, norm="log2", gpu=False, excecution_parameters=None):
     tic = time.time()
     totalMutations = np.sum(genomes, axis =0)
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
-
+    
     if gpu:
+        batch_size=batch_seed_pair[0]
+        seeds=batch_seed_pair[1]
         nmf_fn = nnmf_gpu
         results = []
         genome_list = []
 
         for b in range(batch_size):
             if resample == True:
-                bootstrapGenomes= BootstrapCancerGenomes(genomes)
+                bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=seeds)
                 bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
                 totalMutations = np.sum(bootstrapGenomes, axis=0)
                 if norm=="gmm":
@@ -504,7 +522,7 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
             #print(genomes.shape)
         #print(len(genome_list))      
         g = np.array(genome_list)
-        W, H = nmf_fn(g, totalProcesses, init=init)
+        W, H = nmf_fn(g, totalProcesses, init=init, excecution_parameters=excecution_parameters)
         for i in range(len(W)):
             
             _W = np.array(W[i])
@@ -549,12 +567,12 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
                 bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
             else:
                 pass #no normalization
-            W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init)  #uses custom function nnmf
+            W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
         
         else:
             #genomes = normalize_samples(genomes[:,:,seed], normalize=False, all_samples=False, number=normalization_cutoff)
             #print(genomes)
-            W, H, kl = nmf_fn(genomes,totalProcesses, init= init)  #uses custom function nnmf
+            W, H, kl = nmf_fn(genomes,totalProcesses, init= init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
         #print ("initital W: ", W); print("\n");
         #print ("initial H: ", H); print("\n");
         W = np.array(W)
@@ -630,7 +648,28 @@ def pnmf(batch_size=1, genomes=1, totalProcesses=1, resample=True, init="nndsvd"
 #     return W, H, kl
 # =============================================================================
 
-def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="nndsvd", normalization_cutoff=1000000, n_cpu=-1, verbose = False, resample=True, norm="log2", gpu=False, batch_size=1):
+def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = False):
+    
+    iterations = excecution_parameters["NMF_replicates"]
+    random_seeds=excecution_parameters["random_seeds"]
+    init=excecution_parameters["NMF_init"]
+    normalization_cutoff=excecution_parameters["normalization_cutoff"]
+    n_cpu=excecution_parameters["cpu"]
+    resample=excecution_parameters["resample"]
+    norm=excecution_parameters["matrix_normalization"]
+    gpu=excecution_parameters["gpu"]
+    batch_size=excecution_parameters["batch_size"]
+    
+    
+    
+    
+    
+    # set up the seeds generation same matrices for different number of signatures
+    if random_seeds==True:
+        seeds = np.random.randint(0, 10000000, size=iterations) # set the seeds ranging from 0 to 10000000 for resampling and same seeds are used in different number of signatures
+    else:
+        seeds = list(range(0,iterations))
+    
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
     if n_cpu==-1:
@@ -644,19 +683,22 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="n
     batches = [batch_size for _ in range(num_full_batches)]
     if last_batch_size != 0:
         batches.append(last_batch_size)
-
     
+    batch_seed_pair = []
+    for i,j in zip(batches,seeds):
+        batch_seed_pair.append([i,j])
+   
     
     if gpu==True:
-        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu)
-        result_list = pool.map(pool_nmf, batches) 
+        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
+        result_list = pool.map(pool_nmf, batch_seed_pair) 
         pool.close()
         pool.join()
         #result_list_flattened = [s for sublist for sublist in result_list]
         flat_list = [item for sublist in result_list for item in sublist]
 
     else:
-         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu)
+         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
          result_list = pool.map(pool_nmf, seeds) 
          pool.close()
          pool.join()
@@ -680,6 +722,94 @@ def parallel_runs(genomes=1, totalProcesses=1, iterations=1, seeds=None, init="n
 #     return result_list
 # =============================================================================
 ####################################################################################################################
+
+
+
+"""
+#############################################################################################################
+#################################### Decipher Signatures ###################################################
+#############################################################################################################
+"""
+def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96"):
+    
+    
+        
+    m = mut_context
+    
+    tic = time.time()
+    # The initial values accumute the results for each number of 
+    totalMutationTypes = genomes.shape[0];
+    totalGenomes = genomes.shape[1];
+    totalProcesses = i
+    totalIterations=excecution_parameters["NMF_replicates"]
+    gpu=excecution_parameters["gpu"]
+    norm = excecution_parameters["matrix_normalization"]
+    normalization_cutoff=excecution_parameters["normalization_cutoff"]
+    
+    print ("Extracting signature {} for mutation type {}".format(i, m))  # m is for the mutation context
+    
+    if norm=="gmm":
+        print("The matrix normalizig cutoff is {}\n\n".format(normalization_cutoff))
+    else:
+        print("The matrix normalizig cutoff is set for {}\n\nq".format(norm))
+    
+    
+    
+    ##############################################################################################################################################################################         
+    ############################################################# The parallel processing takes place here #######################################################################  
+    ############################################################################################################################################################################## 
+    if gpu==True:
+        results = []
+        flat_list = parallel_runs(excecution_parameters, genomes=genomes, totalProcesses=totalProcesses,  verbose = False)
+        
+        for items in range(len(flat_list)):
+            
+            W = flat_list[items][0]
+            H = flat_list[items][1]
+            #calculate L1, L2 and KL for the solution 
+            est_genome = np.array(np.dot(W, H))
+            
+            similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
+            similarities = np.array(np.mean(similarities, axis=0)).T
+            
+            results.append([W,H,similarities])
+    else:
+        results = parallel_runs(excecution_parameters, genomes=genomes, totalProcesses=totalProcesses, verbose = False)
+    #print(results[0][2])     
+    toc = time.time()
+    print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
+    ##############################################################################################################################################################################       
+    ######################################################### The parallel processing ends here ##################################################################################      
+    ##############################################################################################################################################################################        
+    
+    
+    ################### Achieve the best clustering by shuffling results list using a few iterations ##########        
+    Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
+    #print (Wall.shape)
+    Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
+    converge_information = np.zeros((totalIterations, 6))
+    
+    finalgenomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
+    finalgenomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
+    
+    processCount=0
+    for j in range(len(results)):
+        W = results[j][0]
+        H = results[j][1]
+        converge_information[j,:] = results[j][2][:]
+        finalgenomeErrors[:, :, j] = genomes -  np.dot(W,H);
+        finalgenomesReconstructed[:, :, j] = np.dot(W,H);
+        Wall[ :, processCount : (processCount + totalProcesses) ] = W;
+        Hall[ processCount : (processCount + totalProcesses), : ] = H;
+        processCount = processCount + totalProcesses;
+    
+    
+    processes=i #renamed the i as "processes"    
+    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes, gpu=gpu)
+    reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
+    
+
+    return  processAvg, exposureAvg, processSTE, exposureSTE, avgSilhouetteCoefficients, np.round(clusterSilhouetteCoefficients,3), finalgenomeErrors, finalgenomesReconstructed, Wall, Hall, converge_information, reconstruction_error, processes
 
 
 
@@ -1174,82 +1304,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
 
 
 
-"""
-#############################################################################################################
-#################################### Decipher Signatures ###################################################
-#############################################################################################################
-"""
-def decipher_signatures(genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", resample=True, seeds = None, init="alexandrov-lab-custom", normalization_cutoff=1, norm="log2", gpu=False, batch_size=1):
-    
-    
-        
-    m = mut_context
-    
-    tic = time.time()
-    # The initial values accumute the results for each number of 
-    totalMutationTypes = genomes.shape[0];
-    totalGenomes = genomes.shape[1];
-    totalProcesses = i
-    
-    print ("Extracting signature {} for mutation type {}".format(i, m))  # m is for the mutation context
-    
-    
-    
-    ##############################################################################################################################################################################         
-    ############################################################# The parallel processing takes place here #######################################################################  
-    ############################################################################################################################################################################## 
-    if gpu==True:
-        results = []
-        flat_list = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff, batch_size=batch_size, norm=norm,gpu=gpu)
-        
-        for items in range(len(flat_list)):
-            
-            W = flat_list[items][0]
-            H = flat_list[items][1]
-            #calculate L1, L2 and KL for the solution 
-            est_genome = np.array(np.dot(W, H))
-            
-            similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
-            similarities = np.array(np.mean(similarities, axis=0)).T
-            
-            results.append([W,H,similarities])
-    else:
-        results = parallel_runs(genomes=genomes, totalProcesses=totalProcesses, iterations=totalIterations,  n_cpu=cpu, verbose = False, resample=resample, seeds = seeds, init=init, normalization_cutoff=normalization_cutoff,norm=norm, gpu=gpu)
-    #print(results[0][2])     
-    toc = time.time()
-    print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
-    ##############################################################################################################################################################################       
-    ######################################################### The parallel processing ends here ##################################################################################      
-    ##############################################################################################################################################################################        
-    
-    
-    ################### Achieve the best clustering by shuffling results list using a few iterations ##########        
-    Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
-    #print (Wall.shape)
-    Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
-    converge_information = np.zeros((totalIterations, 5))
-    
-    finalgenomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
-    finalgenomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
-    
-    processCount=0
-    for j in range(len(results)):
-        W = results[j][0]
-        H = results[j][1]
-        converge_information[j,:] = results[j][2][:]
-        finalgenomeErrors[:, :, j] = genomes -  np.dot(W,H);
-        finalgenomesReconstructed[:, :, j] = np.dot(W,H);
-        Wall[ :, processCount : (processCount + totalProcesses) ] = W;
-        Hall[ processCount : (processCount + totalProcesses), : ] = H;
-        processCount = processCount + totalProcesses;
-    
-    
-    processes=i #renamed the i as "processes"    
-    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes, gpu=gpu)
-    reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
-    
-
-    return  processAvg, exposureAvg, processSTE, exposureSTE, avgSilhouetteCoefficients, np.round(clusterSilhouetteCoefficients,3), finalgenomeErrors, finalgenomesReconstructed, Wall, Hall, converge_information, reconstruction_error, processes
 
 
 
@@ -1554,7 +1608,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     converge_information = loopResults[13]
     converge_information = pd.DataFrame(np.around(converge_information, decimals=3))
     conv_index = list(range(1,len(converge_information)+1)) 
-    colmetrices = ['L1', 'L1 %', 'L2', 'L2 %', 'KL Divergence']
+    colmetrices = ['L1', 'L1 %', 'L2', 'L2 %', 'KL Divergence', "Convergence Iterations"]
     converge_information.index = conv_index 
     converge_information.columns = colmetrices
     converge_information.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_"+"NMF_Convergence_Information.txt", "\t", index_label="Iteration")
