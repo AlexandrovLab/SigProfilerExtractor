@@ -414,9 +414,9 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",excecution_parameters=None):
     else:
         convergence = int(max_iterations)
         
+    convergence=[convergence]*len(Ws)
 
-
-    return Ws, Hs
+    return Ws, Hs, convergence
 
 def nnmf(genomes, nfactors, init="nndsvd"):
     
@@ -522,7 +522,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             #print(genomes.shape)
         #print(len(genome_list))      
         g = np.array(genome_list)
-        W, H = nmf_fn(g, totalProcesses, init=init, excecution_parameters=excecution_parameters)
+        W, H, Conv = nmf_fn(g, totalProcesses, init=init, excecution_parameters=excecution_parameters)
         for i in range(len(W)):
             
             _W = np.array(W[i])
@@ -530,7 +530,8 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             total = _W.sum(axis=0)[np.newaxis]
             _W = _W/total
             _H = _H*total.T
-            results.append((_W, _H))
+            _conv=Conv[i]
+            results.append((_W, _H, _conv))
             print ("process " +str(totalProcesses)+" continues please wait... ")
             print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
 
@@ -751,7 +752,7 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
     if norm=="gmm":
         print("The matrix normalizig cutoff is {}\n\n".format(normalization_cutoff))
     else:
-        print("The matrix normalizig cutoff is set for {}\n\nq".format(norm))
+        print("The matrix normalizig cutoff is set for {}\n\n".format(norm))
     
     
     
@@ -766,11 +767,13 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
             
             W = flat_list[items][0]
             H = flat_list[items][1]
+            conv=flat_list[items][2]
             #calculate L1, L2 and KL for the solution 
             est_genome = np.array(np.dot(W, H))
             
             similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
             similarities = np.array(np.mean(similarities, axis=0)).T
+            similarities = np.append(similarities, conv)
             
             results.append([W,H,similarities])
     else:
