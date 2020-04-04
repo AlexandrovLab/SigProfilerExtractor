@@ -191,13 +191,6 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
         Signature_plot[MutatutionContext]_plots_Decomposed_Solution.pdf
         
 ### GPU support
-
-Sigprofilerextractor is GPU-enabled and can run on single or multi-GPU systems for significantly increased performance in most circumstances.
-
-To use this feature set the GPU flag to True:
-```
-    sigProfilerExtractor(input_type, out_put, project, refgen="GRCh37", genome_build = "GRCh37", startProcess=1, endProcess=10, totalIterations=100, 
-    cpu=-1, exome = False, gpu=True)
 ```
 If CUDA out of memory exceptions occur, it will be necessary to reduce the number of CPU processes used (the `cpu` parameter).
 
