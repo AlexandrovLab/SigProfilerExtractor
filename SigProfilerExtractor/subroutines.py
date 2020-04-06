@@ -1327,10 +1327,13 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     different_signatures = ss.add_connected_sigs(different_signatures, list(signames))
     
     #get the name of the signatures
-    detected_signatures = signames[different_signatures]
+    try:
+        detected_signatures = signames[different_signatures]
+        globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
+    except:
+        detected_signatures=[None]
+        globalsigmats=None
     
-    
-    globalsigmats= sigDatabases.loc[:,list(detected_signatures)]
     newsigsmats=signatures[:,newsigmatrixidx]
     
     #for k, v in dictionary.items():
