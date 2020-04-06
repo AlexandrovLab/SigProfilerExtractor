@@ -133,7 +133,7 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             if excecution_parameters["cpu"]==-1:
                 sysdata.write("\tcpu: {}. Maximum number of CPU is {}\n".format(multiprocessing.cpu_count(), multiprocessing.cpu_count()))
             else:
-                sysdata.write("\tcpu: {}. Maximum number of CPU is {}\n".format(excecution_parameters["cpu"], multiprocessing.cpu_count()))
+                sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(excecution_parameters["cpu"], multiprocessing.cpu_count()))
             sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
             sysdata.write("COSMIC MATCH\n")
             sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
@@ -951,7 +951,7 @@ def sigProfilerExtractor(input_type,
     
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
     end_time = datetime.datetime.now()
-    sysdata.write("\n[{}] Analysis ended: \n".format(str(end_time).split(".")[0]))
+    sysdata.write("\n[{}] Analysis ended \n".format(str(end_time).split(".")[0]))
     
     sysdata.write("\n-------Job Status------- \n")
     sysdata.write("Analysis of mutational signatures completed successfully! \nTotal execution time: "+str(end_time-start_time).split(".")[0]+" \nResults can be found in: "+" "+out_put+ " " +" folder")
