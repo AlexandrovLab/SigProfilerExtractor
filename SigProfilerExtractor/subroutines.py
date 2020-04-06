@@ -554,6 +554,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
                     rows = bootstrapGenomes.shape[0]
                     indices = np.where(totalMutations>int(norm))[0]
                     norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
+                    bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
                 except:
                     pass
                     
