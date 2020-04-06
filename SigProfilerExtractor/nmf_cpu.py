@@ -45,6 +45,7 @@ class NMF:
         """
         #torch.cuda.set_device(gpu_id)
         
+        
         if seed is None:
             seed = datetime.now().timestamp()
 

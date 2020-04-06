@@ -40,6 +40,7 @@ import platform
 import datetime
 import psutil
 import sigProfilerPlotting 
+import multiprocessing
 from SigProfilerExtractor import single_sample as ss
 def memory_usage():
     pid = os.getpid()
@@ -103,48 +104,55 @@ def importdata(datatype="matrix"):
 def record_parameters(sysdata, excecution_parameters, start_time):
             #genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
             sysdata.write("\n--------------EXECUTION PARAMETERS--------------\n")
+            
             sysdata.write("INPUT DATA\n")
             sysdata.write("\tinput_type: {}\n".format(excecution_parameters["input_type"]))
-            sysdata.write("\tout_put: {}\n".format(excecution_parameters["out_put"]))
+            sysdata.write("\toutput: {}\n".format(excecution_parameters["output"]))
             sysdata.write("\tinput_data: {}\n".format(excecution_parameters["input_data"]))
             sysdata.write("\treference_genome: {}\n".format(excecution_parameters["reference_genome"]))
-            sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
-            sysdata.write("\tcontext_type: {}\n".format(excecution_parameters["context_type"]))
+            sysdata.write("\tcontext_types: {}\n".format(excecution_parameters["context_type"]))
             sysdata.write("\texome: {}\n".format(excecution_parameters["exome"]))
-            sysdata.write("NMF RUNS\n")
+            
+            sysdata.write("NMF REPLICATES\n")
             sysdata.write("\tminimum_signatures: {}\n".format(excecution_parameters["minimum_signatures"]))
             sysdata.write("\tmaximum_signatures: {}\n".format(excecution_parameters["maximum_signatures"]))
             sysdata.write("\tNMF_replicates: {}\n".format(excecution_parameters["NMF_replicates"]))
+            
             sysdata.write("NMF ENGINE\n")
             sysdata.write("\tNMF_init: {}\n".format(excecution_parameters["NMF_init"]))
             sysdata.write("\tprecision: {}\n".format(excecution_parameters["precision"]))
             sysdata.write("\tmatrix_normalization: {}\n".format(excecution_parameters["matrix_normalization"]))
             sysdata.write("\tresample: {}\n".format(excecution_parameters["resample"]))
-            sysdata.write("\trandom_seeds: {}\n".format(excecution_parameters["random_seeds"]))
-            sysdata.write("\tmin_NMF_iterations: {}\n".format(excecution_parameters["min_NMF_iterations"]))
-            sysdata.write("\tmax_NMF_iterations: {}\n".format(excecution_parameters["max_NMF_iterations"]))
-            sysdata.write("\tNMF_test_conv: {}\n".format(excecution_parameters["NMF_test_conv"]))
+            sysdata.write("\tseeds: {}\n".format(excecution_parameters["seeds"]))
+            sysdata.write("\tmin_NMF_iterations: {}\n".format(format(excecution_parameters["min_NMF_iterations"],',d')))
+            sysdata.write("\tmax_NMF_iterations: {}\n".format(format(excecution_parameters["max_NMF_iterations"], ',d')))
+            sysdata.write("\tNMF_test_conv: {}\n".format(format(excecution_parameters["NMF_test_conv"],',d')))
             sysdata.write("\tNMF_tolerance: {}\n".format(excecution_parameters["NMF_tolerance"]))
-            sysdata.write("EXECUTION\n")
-            sysdata.write("\tcpu: {}\n".format(excecution_parameters["cpu"]))
-            sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
-            sysdata.write("OTHERS\n")
-            sysdata.write("\tnnls_penalty: {}\n".format(excecution_parameters["nnls_penalty"]))
-            sysdata.write("\tget_all_signature_matrices: {}\n".format(excecution_parameters["get_all_signature_matrices"]))
             
-            sysdata.write("\n-------Date and Time Data------- \n")
-            sysdata.write("Date and Clock time when the execution started: "+str(start_time)+"\n")
+            sysdata.write("EXECUTION\n")
+            if excecution_parameters["cpu"]==-1:
+                sysdata.write("\tcpu: {}. Maximum number of CPU is {}\n".format(multiprocessing.cpu_count(), multiprocessing.cpu_count()))
+            else:
+                sysdata.write("\tcpu: {}. Maximum number of CPU is {}\n".format(excecution_parameters["cpu"], multiprocessing.cpu_count()))
+            sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
+            sysdata.write("COSMIC MATCH\n")
+            sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
+            sysdata.write("\tnnls_penalty: {}\n".format(excecution_parameters["nnls_penalty"]))
+            
+            
+            sysdata.write("\n-------Analysis Progress------- \n")
+            sysdata.write("[{}] Analysis started: \n".format(str(start_time).split(".")[0]))
             
 
 def sigProfilerExtractor(input_type, 
-                         out_put, 
+                         output, 
                          input_data, 
                          reference_genome="GRCh37", 
                          opportunity_genome = "GRCh37", 
                          context_type = "default", 
                          exome = False, 
                          minimum_signatures=1,
-                         maximum_signatures=10,  
+                         maximum_signatures=25,  
                          nmf_replicates=100, 
                          resample = True, 
                          batch_size=1, 
@@ -152,12 +160,12 @@ def sigProfilerExtractor(input_type,
                          gpu=False, 
                          nmf_init="alexandrov-lab-custom", 
                          precision= "single", 
-                         matrix_normalization= "gmm", 
-                         random_seeds= True, 
-                         min_nmf_iterations= 2000, 
-                         max_nmf_iterations=200000, 
-                         nmf_test_conv= 1000, 
-                         nmf_tolerance= 1e-8, 
+                         matrix_normalization= "100X", 
+                         seeds= "random", 
+                         min_nmf_iterations= 10000, 
+                         max_nmf_iterations=1000000, 
+                         nmf_test_conv= 10000, 
+                         nmf_tolerance= 1e-15, 
                          nnls_penalty=0.05, 
                          get_all_signature_matrices= False): 
     memory_usage()
@@ -175,7 +183,7 @@ def sigProfilerExtractor(input_type,
             - "matrix": used for table format inputs using a tab seperated file.
              
         
-    out_put: A string. The name of the output folder. The output folder will be generated in the current working directory. 
+    output: A string. The name of the output folder. The output folder will be generated in the current working directory. 
             
     input_data: A string. Name of the input folder (in case of "vcf" type input) or the input file (in case of "table"  type input). The project file or folder should be inside the current working directory. For the "vcf" type input,the project has to be a folder which will contain the vcf files in vcf format or text formats. The "text"type projects have to be a file.   
             
@@ -199,8 +207,8 @@ def sigProfilerExtractor(input_type,
     
     resample: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
     
-    random_seeds: Boolean. Default is True. If True, then the seeds for resampling will be random for different analysis.
-                  If False, then resampling will be identical for repeated analysis. 
+    seeds: Boolean. Default is "random". If random, then the seeds for resampling will be random for different analysis.
+                  If not random, then seeds will be obtained from a given path of a .txt file that contains a list of seed. 
     
     NMF RUNS:-
     
@@ -269,6 +277,9 @@ def sigProfilerExtractor(input_type,
     #record the start time
     start_time = datetime.datetime.now()
     
+    #set the output variable
+    out_put = output; 
+    
     if gpu == True:
         import torch
     
@@ -311,7 +322,7 @@ def sigProfilerExtractor(input_type,
         
         
     excecution_parameters= {"input_type":input_type, 
-                        "out_put":out_put, 
+                        "output":output, 
                         "input_data":input_data, 
                         "reference_genome":reference_genome, 
                         "opportunity_genome":opportunity_genome, 
@@ -327,7 +338,7 @@ def sigProfilerExtractor(input_type,
                         "precision":precision,
                         "matrix_normalization":matrix_normalization,
                         "resample":resample, 
-                        "random_seeds":random_seeds,
+                        "seeds":seeds,
                         "min_NMF_iterations":min_nmf_iterations,
                         "max_NMF_iterations":max_nmf_iterations,
                         "NMF_test_conv": nmf_test_conv,
@@ -336,11 +347,10 @@ def sigProfilerExtractor(input_type,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
     
-    record_parameters(sysdata, excecution_parameters, start_time)
-    sysdata.close()
+    
     ################################ take the inputs from the mandatory arguments ####################################
     input_type = input_type;
-    out_put = out_put;  
+     
     #project = input_data   #the variable was already set above
         
     
@@ -360,7 +370,25 @@ def sigProfilerExtractor(input_type,
     
     
     
-    
+    #setting seeds
+    if seeds=="random":
+         excecution_parameters["seeds"]=seeds
+         replicates=list(range(1,nmf_replicates+1))
+         seed=np.random.randint(0, 10000000, size=nmf_replicates)
+         seeds=pd.DataFrame(list(zip(replicates, seed)), columns=["Replicates","Seeds"])
+         seeds=seeds.set_index("Replicates")
+         seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
+    else:
+        try:
+            excecution_parameters["seeds"]=seeds
+            seeds=pd.read_csv(seeds,sep="\t", index_col=0)
+            seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
+            seed=np.array(seeds["Seeds"])
+            
+            
+            
+        except:
+            "Please set valid seeds"
     
    
     
@@ -376,6 +404,7 @@ def sigProfilerExtractor(input_type,
     
         if type(text_file)!=str:
             data=text_file
+            excecution_parameters["input_data"]="Matrix["+str(data.shape[0])+" rows X "+str(data.shape[1])+ " columns]"
         else:
             data = pd.read_csv(text_file, sep="\t").iloc[:,:]
         
@@ -526,10 +555,17 @@ def sigProfilerExtractor(input_type,
         
     else:
         raise ValueError("Please provide a correct input_type. Check help for more details")
-        
-          
+    
+    #recording context types
+    excecution_parameters["context_type"]=",".join(mtypes) 
+  
+    
+    record_parameters(sysdata, excecution_parameters, start_time)
+    sysdata.close()      
+    
+    
     ###########################################################################################################################################################################################                  
-   
+    
     for m in mtypes:
         
        
@@ -627,8 +663,38 @@ def sigProfilerExtractor(input_type,
         #print("Normalization Cutoff is :", normalization_cutoff)
         excecution_parameters["normalization_cutoff"]= normalization_cutoff
         
+        #pass the seed values to inner funtions:
+        excecution_parameters["seeds"]= seed
+            
         
         
+        
+        if genomes.shape[1]<endProcess:
+            endProcess=genomes.shape[1]
+        
+        #report the notmatlization criteria
+        sysdata = open(out_put+"/JOB_METADATA.txt", "a")
+        context_start_time=datetime.datetime.now()
+        sysdata.write("\n##################################\n")
+        sysdata.write("\n[{}] Analysis started for {}. Matrix size [{} rows x {} columns]\n".format(str(context_start_time).split(".")[0],mutation_type,genomes.shape[0],genomes.shape[1])) 
+        if excecution_parameters["matrix_normalization"]=="gmm":
+                sysdata.write("\n[{}] Normalization GMM with cutoff value set at {}\n". \
+                              format(str(datetime.datetime.now()).split(".")[0], normalization_cutoff)) 
+        elif excecution_parameters["matrix_normalization"]=="100X":
+                sysdata.write("\n[{}] Normalization 100X with cutoff value set at {}\n". \
+                              format(str(datetime.datetime.now()).split(".")[0],(genomes.shape[0]*100)))
+        elif excecution_parameters["matrix_normalization"]=="log2":
+            sysdata.write("\n[{}] Normalization Log2\n". \
+                              format(str(datetime.datetime.now()).split(".")[0]))
+        elif excecution_parameters["matrix_normalization"]=="none":
+            sysdata.write("\n[{}] Analysis is proceeding without normalization\n". \
+                          format(str(datetime.datetime.now()).split(".")[0]))
+        else:
+            sysdata.write("\n[{}] Normalization Custom with cutoff value set at {}\n". \
+                              format(str(datetime.datetime.now()).split(".")[0],excecution_parameters["matrix_normalization"]))
+            
+            
+                
         
         for i in range(startProcess,endProcess+1):
             current_time_start = datetime.datetime.now()
@@ -695,15 +761,14 @@ def sigProfilerExtractor(input_type,
                     
                 stoc = time.time()
                 print ("Optimization time is {} seconds".format(stoc-stic))    
-                
+                #sysdata.write("\nAnalysis of context type {} is ended successfully\n".format(m)) 
             #report progress to the system file:
             current_time_end = datetime.datetime.now()
-            sysdata = open(out_put+"/JOB_METADATA.txt", "a")
             
-            if  hierarchy is True:
-                sysdata.write("\nSignature extraction for {} completed for layer {} {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  H_iteration, processes,  current_time_end-current_time_start, current_time_end))
-            else:
-                sysdata.write("\nSignature extraction for {} completed for {} signatures for {}! TimeStamp: {}\n".format(mutation_type,  processes,  current_time_end-current_time_start, current_time_end))
+            
+            sysdata.write("\n[{}] {} de novo extraction completed for a total of {} signatures! \nExecution time:{}\n". \
+                          format(str(datetime.datetime.now()).split(".")[0],mutation_type,processes,str(current_time_end-current_time_start).split(".")[0], current_time_end))
+       
             
             #Get total mutationation for each signature in reverse order and order the signatures from high to low mutation barden
             signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
@@ -737,9 +802,7 @@ def sigProfilerExtractor(input_type,
             
             
             
-        if excecution_parameters["matrix_normalization"]=="gmm":
-                sysdata.write("\nGMM NORMALIZATION_CUTOFF for context type {} is: {}\n".format(m, normalization_cutoff))    
-                sysdata.write("\Analysis of context type {} is ended successfully\n".format(m)) 
+        
         ################################################################################################################
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
         ################################################################################################################    
@@ -888,10 +951,10 @@ def sigProfilerExtractor(input_type,
     
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
     end_time = datetime.datetime.now()
-    sysdata.write("\nDate and Clock time when the execution ended: "+str(end_time)+"\n")
+    sysdata.write("\n[{}] Analysis ended: \n".format(str(end_time).split(".")[0]))
     
-    sysdata.write("-------Job Status------- \n")
-    sysdata.write("Analysis of mutational signatures completed successfully! Total execution time: "+str(end_time-start_time)+". Results can be found in: ["+out_put+"] folder")
+    sysdata.write("\n-------Job Status------- \n")
+    sysdata.write("Analysis of mutational signatures completed successfully! \nTotal execution time: "+str(end_time-start_time).split(".")[0]+" \nResults can be found in: "+" "+out_put+ " " +" folder")
     sysdata.close()
 
     print("\n\n \nYour Job Is Successfully Completed! Thank You For Using SigProfiler Extractor.\n ")

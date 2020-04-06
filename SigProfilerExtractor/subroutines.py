@@ -50,6 +50,26 @@ multiprocessing.set_start_method('spawn', force=True)
 """################################################################## Vivid Functions #############################"""
 
 ############################################################## FUNCTION ONE ##########################################
+
+def format_integer(number, thousand_separator=','):
+    def reverse(string):
+        string = "".join(reversed(string))
+        return string
+
+    s = reverse(str(number))
+    count = 0
+    result = ''
+    for char in s:
+        count = count + 1
+        if count % 3 == 0:
+            if len(s) == count:
+                result = char + result
+            else:
+                result = thousand_separator + char + result
+        else:
+            result = char + result
+    return result
+
 def make_letter_ids(idlenth = 10, mtype = None):
     
     listOfSignatures = []
@@ -122,14 +142,18 @@ def get_items_from_index(x,y):
 def signature_plotting_text(value, text, Type):
     name = text + ": "
     name_list =[]
+    total=np.sum(np.array(value))
     for i in value:
         
         if Type=="integer":  
             i = int(i)
-            i = format(i, ',d')            
+            p=round(i/total*100,1)
+            i = format(i, ',d')   
+            tail = str(i)+'/'+str(p)+'%'
+            name_list.append(name+tail)
         elif Type=="float":
             i = round(i,2)
-        name_list.append(name + str(i))
+            name_list.append(name + str(i))
     return(name_list)
 
 
@@ -365,10 +389,11 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", excecution_parameters=None):
    
     
     genomes = torch.from_numpy(genomes).float()
+    min_iterations=excecution_parameters["min_NMF_iterations"]
     max_iterations=excecution_parameters["max_NMF_iterations"]
     tolerance=excecution_parameters["NMF_tolerance"]
     test_conv=excecution_parameters["NMF_test_conv"]
-    net = nmf_cpu.NMF(genomes,rank=nfactors,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init,seed=None)
+    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
@@ -397,10 +422,11 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",excecution_parameters=None):
     #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
+    min_iterations=excecution_parameters["min_NMF_iterations"]
     max_iterations=excecution_parameters["max_NMF_iterations"]
     tolerance=excecution_parameters["NMF_tolerance"]
     test_conv=excecution_parameters["NMF_test_conv"]
-    net = nmf_gpu.NMF(genomes,rank=nfactors,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=None)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=None)
     net.fit()
     Ws = []
     Hs = []
@@ -498,27 +524,42 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         for b in range(batch_size):
             if resample == True:
                 bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=seeds)
-                bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-                totalMutations = np.sum(bootstrapGenomes, axis=0)
-                if norm=="gmm":
-                    bootstrapGenomes = np.array(bootstrapGenomes)
-                    indices = np.where(totalMutations>normalization_cutoff)[0]
-                    norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
-                    bootstrapGenomes[:,list(indices)] = norm_genome
-                    bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-                elif norm == "100X":
+            else: 
+                bootstrapGenomes=genomes    
+            
+            bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+            totalMutations = np.sum(bootstrapGenomes, axis=0)
+            
+                
+            if norm=="gmm":
+                bootstrapGenomes = np.array(bootstrapGenomes)
+                indices = np.where(totalMutations>normalization_cutoff)[0]
+                norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
+                bootstrapGenomes[:,list(indices)] = norm_genome
+                bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+            elif norm == "100X":
+                bootstrapGenomes = np.array(bootstrapGenomes)
+                rows = bootstrapGenomes.shape[0]
+                indices = np.where(totalMutations>(rows*100))[0]
+                norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
+                bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+            elif norm == "log2":
+                log2_of_tM = np.log2(totalMutations)
+                bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+            elif norm == "none":
+                pass
+            else:
+                try:
                     bootstrapGenomes = np.array(bootstrapGenomes)
                     rows = bootstrapGenomes.shape[0]
-                    indices = np.where(totalMutations>normalization_cutoff)[0]
-                    norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
-                    bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-                elif norm == "log2":
-                    log2_of_tM = np.log2(totalMutations)
-                    bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
-                
-                genome_list.append(bootstrapGenomes.values)
-            else:
-                genome_list.append(genomes)
+                    indices = np.where(totalMutations>int(norm))[0]
+                    norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
+                except:
+                    pass
+                    
+            
+            genome_list.append(bootstrapGenomes.values)
+            
             #print(genomes.shape)
         #print(len(genome_list))      
         g = np.array(genome_list)
@@ -539,41 +580,47 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
 
     else:
         nmf_fn = nnmf_cpu
-        
+        seeds=batch_seed_pair[1]
+       
         if resample == True:
             bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=seeds)
+        else:
+            bootstrapGenomes=genomes
             
             #print(pool_constant)
             #print(bootstrapGenomes.iloc[0,:].T)
             #print("\n\n\n")
             
             
-            bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-            
-            # normalize the samples to handle the hypermutators
-            bootstrapGenomes = np.array(bootstrapGenomes)
-            totalMutations = np.sum(bootstrapGenomes, axis=0)
-            #print(normalization_cutoff)
-            
-            #if gmm normalization
-            if norm=="gmm":
-                bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=normalization_cutoff)
-            #if 100X normalization
-            elif norm == "100X":
-                rows = bootstrapGenomes.shape[0]
-                bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=rows*100)
-            #if log normalization
-            elif norm == "log2":
-                log2_of_tM = np.log2(totalMutations)
-                bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
-            else:
-                pass #no normalization
-            W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
+        bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+        # normalize the samples to handle the hypermutators
+        bootstrapGenomes = np.array(bootstrapGenomes)
+        totalMutations = np.sum(bootstrapGenomes, axis=0)
+        #print(normalization_cutoff)
         
+        #if gmm normalization
+        if norm=="gmm":
+            bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=normalization_cutoff)
+        #if 100X normalization
+        elif norm == "100X":
+            rows = bootstrapGenomes.shape[0]
+            bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=rows*100)
+        #if log normalization
+        elif norm == "log2":
+            log2_of_tM = np.log2(totalMutations)
+            bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+        elif norm=="none":
+            pass
         else:
-            #genomes = normalize_samples(genomes[:,:,seed], normalize=False, all_samples=False, number=normalization_cutoff)
-            #print(genomes)
-            W, H, kl = nmf_fn(genomes,totalProcesses, init= init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
+            try:
+                bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=int(norm))
+            except:
+                pass
+                
+            pass #no normalization
+        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
+        
+        
         #print ("initital W: ", W); print("\n");
         #print ("initial H: ", H); print("\n");
         W = np.array(W)
@@ -652,7 +699,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
 def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = False):
     
     iterations = excecution_parameters["NMF_replicates"]
-    random_seeds=excecution_parameters["random_seeds"]
+    seeds=excecution_parameters["seeds"]
     init=excecution_parameters["NMF_init"]
     normalization_cutoff=excecution_parameters["normalization_cutoff"]
     n_cpu=excecution_parameters["cpu"]
@@ -664,12 +711,12 @@ def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = 
     
     
     
-    
+    #random_seeds=True
     # set up the seeds generation same matrices for different number of signatures
-    if random_seeds==True:
-        seeds = np.random.randint(0, 10000000, size=iterations) # set the seeds ranging from 0 to 10000000 for resampling and same seeds are used in different number of signatures
-    else:
-        seeds = list(range(0,iterations))
+    #if random_seeds==True:
+        #seeds = np.random.randint(0, 10000000, size=iterations) # set the seeds ranging from 0 to 10000000 for resampling and same seeds are used in different number of signatures
+    #else:
+        #seeds = list(range(0,iterations))
     
     if verbose:
         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
@@ -689,7 +736,7 @@ def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = 
     for i,j in zip(batches,seeds):
         batch_seed_pair.append([i,j])
    
-    
+   
     if gpu==True:
         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
         result_list = pool.map(pool_nmf, batch_seed_pair) 
@@ -699,8 +746,8 @@ def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = 
         flat_list = [item for sublist in result_list for item in sublist]
 
     else:
-         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
-         result_list = pool.map(pool_nmf, seeds) 
+         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, seeds=seeds,normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
+         result_list = pool.map(pool_nmf, batch_seed_pair) 
          pool.close()
          pool.join()
          flat_list = result_list
@@ -1614,7 +1661,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     colmetrices = ['L1', 'L1 %', 'L2', 'L2 %', 'KL Divergence', "Convergence Iterations"]
     converge_information.index = conv_index 
     converge_information.columns = colmetrices
-    converge_information.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_"+"NMF_Convergence_Information.txt", "\t", index_label="Iteration")
+    converge_information.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_"+"NMF_Convergence_Information.txt", "\t", index_label="NMF_Replicate")
     
     # export Wall and Hall if "wall" argument is true
     if wall==True:
@@ -1632,7 +1679,8 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     ########################################### PLOT THE SIGNATURES ################################################
     #prepare the texts lists:
     stability_list = signature_plotting_text(loopResults[6], "Stability", "float")
-    total_mutation_list = signature_plotting_text(loopResults[7], "Total Mutations", "integer")
+    total_mutation_list = signature_plotting_text(loopResults[7], "Sig. Mutations", "integer")
+    
     
     
     if m=="DINUC" or m=="78":        
@@ -1895,10 +1943,10 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         signature_stats = signature_stats.rename_axis("Signatures", axis="columns")
         signature_stats.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_stats_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
-        signature_total_mutations = signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
+        signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
-        signature_total_mutations = signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
+        signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
         if m == "1536": # collapse the 1536 to 96
             m = "96"  
        
@@ -1988,6 +2036,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
       #record the statistical test between the l2_of the current and previous signatures first
       cur_l2_dist = all_similarities["L2_Norm_%"]
       cur_mean = all_similarities["L2_Norm_%"].mean()
+     
       wiltest = ranksums(np.array(cur_l2_dist), np.array(pre_l2_dist))[1]
       
       
