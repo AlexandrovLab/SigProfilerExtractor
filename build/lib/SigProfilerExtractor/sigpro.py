@@ -917,12 +917,13 @@ def sigProfilerExtractor(input_type,
         globalsigs = final_signatures["globalsigs"]
         globalsigs = np.array(globalsigs)
         newsigs = final_signatures["newsigs"]
-        if globalsigs==None:
-            processAvg=newsigs
-            allsigids=final_signatures["newsigids"]
-        else:    
+        try:    
             processAvg = np.hstack([globalsigs, newsigs])  
             allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+        except: 
+            processAvg=newsigs
+            allsigids=final_signatures["newsigids"]
+            
         attribution = final_signatures["dictionary"]
         background_sigs= final_signatures["background_sigs"]
         genomes = pd.DataFrame(genomes)
