@@ -51,8 +51,8 @@ Extracts mutational signatures from an array of samples.
 
 sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37", opportunity_genome = "GRCh37", context_type = "default", exome = False, 
                          minimum_signatures=1, maximum_signatures=10, nmf_replicates=100, resample = True, batch_size=1, cpu=-1, gpu=False, 
-                         nmf_init="alexandrov-lab-custom", precision= "single", matrix_normalization= "gmm", random_seeds= True, 
-                         min_nmf_iterations= 2000, max_nmf_iterations=200000, nmf_test_conv= 1000, nmf_tolerance= 1e-8, nnls_penalty=0.05, get_all_signature_matrices= False): 
+                         nmf_init="alexandrov-lab-custom", precision= "single", matrix_normalization= "100X", seeds= "none", 
+                         min_nmf_iterations= 10000, max_nmf_iterations=1000000, nmf_test_conv= 10000, nmf_tolerance= 1e-15, nnls_penalty=0.05, get_all_signature_matrices= False): 
 
 
 INPUT DATA:-
@@ -70,13 +70,10 @@ INPUT DATA:-
        
     **opportunity_genome**: The build or version of the reference signatures for the reference genome. The default opportunity genome is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input reference genome value.    
      
-    **context_type**: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
-            is the DINULEOTIDE context and ID is INDEL context. 
-    
     **exome**: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
     
-    NMF RUNS:-
+    NMF REPLICATES:-
     
     **minimum_signatures**: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1 
     
@@ -86,41 +83,44 @@ INPUT DATA:-
     
     **resample**: Boolean, optional. Default is True. If True, add poisson noise to samples by resampling.  
     
-    **random_seeds**: Boolean. Default is True. If True, then the seeds for resampling will be random for different analysis.
-                  If False, then resampling will be identical for repeated analysis. 
+    **seeds**: A string. It can be used to get reproducible resamples for the NMF replicates. A path of a tab separated .txt file containing the replicated id and preset seeds in a two columns dataframe can be passed through this parameter. The Seeds.txt file in the results folder from a previous analysis can be used for the seeds parameter in a new analysis. The Default value for this parameter is "none". When "none", the seeds for resampling will be random for different analysis.
+                  
     
-    NMF RUNS:-
+    NMF ENGINES:-
     
-    **matrix_normalization**: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization".         
+    **matrix_normalization**: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is value is "100X". Other options are "gmm", "log2", "custom" or "none".           
     
     **nmf_init**: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'
               Default is 'alexandrov-lab-custom'.
     
     **precision**: A string. Values should be single or double. Default is single.
     
-    **min_nmf_iterations**: An integer. Value defines the minimum number of iterations to be completed before NMF converges. Default is 2000.
+    **min_nmf_iterations**: An integer. Value defines the minimum number of iterations to be completed before NMF converges. Default is 10000.
     
-    **max_nmf_iterations**: An integer. Value defines the maximum number of iterations to be completed before NMF converges. Default is 200000.
+    **max_nmf_iterations**: An integer. Value defines the maximum number of iterations to be completed before NMF converges. Default is 1000000.
     
-    **nmf_test_conv**: An integer. Value definer the number number of iterations to done between checking next convergence. Default is 1000.
+    **nmf_test_conv**: An integer. Value definer the number number of iterations to done between checking next convergence. Default is 10000.
             
-    **nmf_tolerance**: A float. Value defines the tolerance to achieve to converge. Default is 1e-8.
+    **nmf_tolerance**: A float. Value defines the tolerance to achieve to converge. Default is 1e-15.
     
     
     EXECUTION:-
     
-    **cpu**: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available        processors. 
+    **cpu**: An integer, optional. The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. 
     
-    **gpu**:Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resource 
-        will be used in the computation.
+    **gpu**:Boolean, optional. Defines if the GPU resource will used if available. Default is False. If True, the GPU resources will be used in the computation.
 
-    **batch_size**: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
-              by each CPU during the parallel processing. Default is 1.
+    **batch_size**: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing. Default is 1.
               
               
-    OTHERS:-
+    COSMIC:-
     
     **nnls_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample. 
+    
+      **context_type**: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
+            is the DINULEOTIDE context and ID is INDEL context. 
+    
+    OTHERS:-
     
     **get_all_signature_matrices**: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
     
