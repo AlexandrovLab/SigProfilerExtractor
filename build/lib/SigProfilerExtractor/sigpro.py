@@ -763,12 +763,7 @@ def sigProfilerExtractor(input_type,
                 print ("Optimization time is {} seconds".format(stoc-stic))    
                 #sysdata.write("\nAnalysis of context type {} is ended successfully\n".format(m)) 
             #report progress to the system file:
-            current_time_end = datetime.datetime.now()
             
-            
-            sysdata.write("\n[{}] {} de novo extraction completed for a total of {} signatures! \nExecution time:{}\n". \
-                          format(str(datetime.datetime.now()).split(".")[0],mutation_type,processes,str(current_time_end-current_time_start).split(".")[0], current_time_end))
-       
             
             #Get total mutationation for each signature in reverse order and order the signatures from high to low mutation barden
             signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
@@ -800,7 +795,12 @@ def sigProfilerExtractor(input_type,
                 #
             #similarity_dataframe["Total Signatures "+str(processes)] = cosine_similarities
             
+            current_time_end = datetime.datetime.now()
             
+            
+            sysdata.write("\n[{}] {} de novo extraction completed for a total of {} signatures! \nExecution time:{}\n". \
+                          format(str(datetime.datetime.now()).split(".")[0],mutation_type,processes,str(current_time_end-current_time_start).split(".")[0], current_time_end))
+       
             
         
         ################################################################################################################
