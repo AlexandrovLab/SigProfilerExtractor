@@ -141,7 +141,10 @@ class NMF:
 
     @property
     def conv(self):
-        return self._conv
+        try:
+            return self._conv
+        except: 
+            return 0
     @property
     def _kl_loss(self):
         return (self._V * (self._V / self.reconstruction).log()).sum() - self._V.sum() + self.reconstruction.sum()
