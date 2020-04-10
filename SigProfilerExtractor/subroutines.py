@@ -1690,7 +1690,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     if m=="DINUC" or m=="78":        
         plot.plotDBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "S"+str(i), "78", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="INDEL" or m=="83":
-        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "S"+str(i), "94", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+        plot.plotID(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
         plot.plotSBS(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
      
@@ -1731,7 +1731,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     
     allgenomes = np.array(allgenomes)
-    if (m=="96" or m=="1536") and (genome_build=="mm9" or genome_build=="mm10"):
+    if (m=="96" or m=="1536" or m=="288") and (genome_build=="mm9" or genome_build=="mm10"):
         check_rule_negatives = [1,16]
         check_rule_penalty=1.50
     else:
@@ -1951,7 +1951,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
-        if m == "1536": # collapse the 1536 to 96
+        if m == "1536" or m=="288": # collapse the 1536 to 96
             m = "96"  
        
     ########################################### PLOT THE SIGNATURES ################################################

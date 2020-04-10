@@ -900,7 +900,7 @@ def sigProfilerExtractor(input_type,
                 os.makedirs(layer_directory2)
         except: 
             print ("The {} folder could not be created".format("output"))
-    
+        
         if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
             processAvg = pd.DataFrame(processAvg, index=index)
             processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
@@ -910,7 +910,16 @@ def sigProfilerExtractor(input_type,
             processAvg = np.array(processAvg)
             genomes = np.array(genomes)
             
-       
+            
+        if processAvg.shape[0]==288: #collapse the 1596 context into 96 only for the deocmposition 
+            processAvg = pd.DataFrame(processAvg, index=index)
+            processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
+            genomes = pd.DataFrame(genomes, index=index)
+            genomes = genomes.groupby(genomes.index.str[2:9]).sum()
+            index = genomes.index
+            processAvg = np.array(processAvg)
+            genomes = np.array(genomes)
+            
         final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
