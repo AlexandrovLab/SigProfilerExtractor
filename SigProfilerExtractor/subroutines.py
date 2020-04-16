@@ -325,6 +325,7 @@ def split_samples(samples, intervals, rescaled_items, colnames):
    
 def denormalize_samples(genomes, original_totals, normalization_value=30000):
     normalized_totals = np.sum(genomes, axis=0)
+    original_totals = np.array(original_totals)
     results = genomes/normalized_totals*original_totals
     results = np.round(results,0)
     results = results.astype(int)
