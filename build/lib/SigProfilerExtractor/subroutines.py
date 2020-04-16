@@ -33,6 +33,7 @@ from SigProfilerExtractor import nmf_cpu
 from sklearn.decomposition import NMF
 from sklearn import mixture
 from scipy.spatial.distance import cdist
+from scipy.spatial.distance import correlation as cor
 #import mkl
 #mkl.set_num_threads(40)
 #from numba import jit
@@ -252,22 +253,35 @@ def get_normalization_cutoff(data, manual_cutoff=50000):
     
     return cutoff
         
-def normalize_samples(genomes, normalize=True, all_samples=True, number=30000):
-    if normalize == True:
-        if all_samples==False:        
-            total_mutations = np.sum(genomes, axis=0)
-            indices = np.where(total_mutations>number)[0]
-            results = genomes[:,list(indices)]/total_mutations[list(indices)][:,np.newaxis].T*number
-            #results = np.round(results, 0)
-            #results = results.astype(int)
-            genomes[:,list(indices)] = results
-        else:    
-            total_mutations = np.sum(genomes, axis=0)          
-            genomes = (genomes/total_mutations.T*number)
-            #genomes = np.round(genomes, 0)
-            #genomes = genomes.astype(int)
+def normalize_samples(bootstrapGenomes,totalMutations,norm="100X", normalization_cutoff=10000000):
+        if norm=="gmm":
+            bootstrapGenomes = np.array(bootstrapGenomes)
+            indices = np.where(totalMutations>normalization_cutoff)[0]
+            norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
+            bootstrapGenomes[:,list(indices)] = norm_genome
+            bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+        elif norm == "100X":
+            bootstrapGenomes = np.array(bootstrapGenomes)
+            rows = bootstrapGenomes.shape[0]
+            indices = np.where(totalMutations>(rows*100))[0]
+            norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
+            bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
             
-    return genomes
+        elif norm == "log2":
+            log2_of_tM = np.log2(totalMutations)
+            bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+        elif norm == "none":
+            pass
+        else:
+            try:
+                bootstrapGenomes = np.array(bootstrapGenomes)
+                rows = bootstrapGenomes.shape[0]
+                indices = np.where(totalMutations>int(norm))[0]
+                norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
+                bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+            except:
+                pass
+        return bootstrapGenomes
 
 
     
@@ -530,33 +544,8 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
             totalMutations = np.sum(bootstrapGenomes, axis=0)
             
-                
-            if norm=="gmm":
-                bootstrapGenomes = np.array(bootstrapGenomes)
-                indices = np.where(totalMutations>normalization_cutoff)[0]
-                norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
-                bootstrapGenomes[:,list(indices)] = norm_genome
-                bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-            elif norm == "100X":
-                bootstrapGenomes = np.array(bootstrapGenomes)
-                rows = bootstrapGenomes.shape[0]
-                indices = np.where(totalMutations>(rows*100))[0]
-                norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
-                bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-            elif norm == "log2":
-                log2_of_tM = np.log2(totalMutations)
-                bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
-            elif norm == "none":
-                pass
-            else:
-                try:
-                    bootstrapGenomes = np.array(bootstrapGenomes)
-                    rows = bootstrapGenomes.shape[0]
-                    indices = np.where(totalMutations>int(norm))[0]
-                    norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
-                    bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-                except:
-                    pass
+              
+            bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
                     
             
             genome_list.append(bootstrapGenomes.values)
@@ -572,6 +561,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             total = _W.sum(axis=0)[np.newaxis]
             _W = _W/total
             _H = _H*total.T
+            _H=denormalize_samples(_H, totalMutations) 
             _conv=Conv[i]
             results.append((_W, _H, _conv))
             print ("process " +str(totalProcesses)+" continues please wait... ")
@@ -592,33 +582,17 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             #print(bootstrapGenomes.iloc[0,:].T)
             #print("\n\n\n")
             
-            
+        
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
         # normalize the samples to handle the hypermutators
-        bootstrapGenomes = np.array(bootstrapGenomes)
+       
         totalMutations = np.sum(bootstrapGenomes, axis=0)
-        #print(normalization_cutoff)
         
-        #if gmm normalization
-        if norm=="gmm":
-            bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=normalization_cutoff)
-        #if 100X normalization
-        elif norm == "100X":
-            rows = bootstrapGenomes.shape[0]
-            bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=rows*100)
-        #if log normalization
-        elif norm == "log2":
-            log2_of_tM = np.log2(totalMutations)
-            bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
-        elif norm=="none":
-            pass
-        else:
-            try:
-                bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=int(norm))
-            except:
-                pass
-                
-            pass #no normalization
+        #print(normalization_cutoff)
+        bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
+            
+        bootstrapGenomes=np.array(bootstrapGenomes)
+    
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
         
         
@@ -632,12 +606,13 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         H = H*total.T
         
         # denormalize H
-        H = denormalize_samples(H, totalMutations, normalization_value=100) 
+        H = denormalize_samples(H, totalMutations) 
         print ("process " +str(totalProcesses)+" continues please wait... ")
         print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
         
         
         return W, H, kl
+
 
 
 # =============================================================================
@@ -792,6 +767,7 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
     totalProcesses = i
     totalIterations=excecution_parameters["NMF_replicates"]
     gpu=excecution_parameters["gpu"]
+    dist=excecution_parameters["dist"]
     norm = excecution_parameters["matrix_normalization"]
     normalization_cutoff=excecution_parameters["normalization_cutoff"]
     
@@ -856,7 +832,7 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
     
     
     processes=i #renamed the i as "processes"    
-    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes, gpu=gpu)
+    processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = cluster_converge_outerloop(Wall, Hall, processes, dist=dist, gpu=gpu)
     reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
     
 
@@ -886,6 +862,24 @@ def cos_sim(a, b):
     norm_a = np.linalg.norm(a)
     norm_b = np.linalg.norm(b)
     return dot_product / (norm_a * norm_b)
+
+def cor_sim(a, b):
+      
+    
+    """Takes 2 vectors a, b and returns the corrilation similarity according 
+    to the definition of the dot product
+    
+    Dependencies: 
+    *Requires numpy library. 
+    *Does not require any custom function (constructed by me)
+    
+    Required by:
+    * pairwise_cluster_raw
+    	"""
+    if np.sum(a)==0 or np.sum(b) == 0:
+        return 0.0      
+    corr =1-cor(a, b)
+    return corr
 
 
     
@@ -939,7 +933,7 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
 # function to calculate the centroids
 
 ################################################################### FUNCTION  ###################################################################
-def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), gpu=False):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
+def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist="cosine", gpu=False):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
     
     """ Takes a pair of matrices mat1 and mat2 as arguments. Both of the matrices should have the 
     equal shapes. The function makes a partition based clustering (the number of clusters is equal 
@@ -958,21 +952,14 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), gpu=F
     
     """
 
-    if gpu:
-        
-        mat1_t = torch.from_numpy(mat1).float().cuda()
-        mat2_t = torch.from_numpy(mat2).float().cuda()
-        
-        mat1_t_norm = mat1_t / mat1_t.norm(dim=0)[None, :]
-        mat2_t_norm = mat2_t / mat2_t.norm(dim=0)[None, :]
     
-        con_mat = torch.mm(mat1_t_norm.transpose(0,1), mat2_t_norm).cpu().numpy()
-    else:
+   
+        
+    if dist=="cosine":
         con_mat = 1-cdist(mat1.T, mat2.T, "cosine")
-        #con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
-        #for i in range(0, mat1.shape[1]):
-            #for j in range(0,mat2.shape[1]):
-                #con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
+    elif dist=="correlation":
+        con_mat = 1-cdist(mat1.T, mat2.T, "correlation")
+        
     
     maximums = np.argmax(con_mat, axis = 1) #the indices of maximums
     uniques = np.unique(maximums) #unique indices having the maximums
@@ -1025,7 +1012,7 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), gpu=F
 
 
 ################################################################### FUNCTION  ###################################################################
-def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, gpu=False):
+def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosine",gpu=False):
     # exposureAvg is not important here. It can be any matrix with the same size of a single exposure matrix
     iterations = int(tempWall.shape[1]/processAvg.shape[1])
     processes =  processAvg.shape[1]
@@ -1040,7 +1027,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, gpu=False)
         #print(i)
         statidx = idxIter[iteration_number]
         loopidx = list(range(statidx, statidx+processes))
-        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],gpu=gpu)
+        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],dist=dist, gpu=gpu)
         
         for cluster_items in idxPair:
             cluster_number = cluster_items[0]
@@ -1063,7 +1050,11 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, gpu=False)
     
     
     try:
-        SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='cosine')
+        if dist=="cosine":
+            SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='cosine')
+        if dist=="correlation":
+            SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='correlation')
+            
     
         
     
@@ -1093,7 +1084,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, gpu=False)
 
 
 
-def cluster_converge_innerloop(Wall, Hall, totalprocess, iteration=1, gpu=False):
+def cluster_converge_innerloop(Wall, Hall, totalprocess, iteration=1, dist="cosine", gpu=False):
     
     processAvg = np.random.rand(Wall.shape[0],totalprocess)
     exposureAvg = np.random.rand(totalprocess, Hall.shape[1])
@@ -1101,7 +1092,7 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess, iteration=1, gpu=False)
     result = 0
     convergence_count = 0
     while True:
-        processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = reclustering(Wall, Hall, processAvg, exposureAvg, gpu=gpu)
+        processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = reclustering(Wall, Hall, processAvg, exposureAvg, dist=dist, gpu=gpu)
         
         if result == avgSilhouetteCoefficients:
             break
@@ -1115,25 +1106,25 @@ def cluster_converge_innerloop(Wall, Hall, totalprocess, iteration=1, gpu=False)
 
 
 
-def parallel_clustering(Wall, Hall, totalProcesses, iterations=50,  n_cpu=-1, gpu=False):
+def parallel_clustering(Wall, Hall, totalProcesses, iterations=50,  n_cpu=-1, dist= "cosine", gpu=False):
     
     if n_cpu==-1:
         pool = multiprocessing.Pool()
     else:
         pool = multiprocessing.Pool(processes=n_cpu)
         
-    pool_nmf=partial(cluster_converge_innerloop, Wall, Hall, totalProcesses)
+    pool_nmf=partial(cluster_converge_innerloop, Wall, Hall, totalProcesses, dist=dist, gpu=gpu)
     result_list = pool.map(pool_nmf, range(iterations)) 
     pool.close()
     pool.join()
     return result_list
 
 # To select the best clustering converge of the cluster_converge_innerloop
-def cluster_converge_outerloop(Wall, Hall, totalprocess, gpu=False):
+def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=False):
     avgSilhouetteCoefficients = -1  # intial avgSilhouetteCoefficients 
     
     #do the parallel clustering 
-    result_list = parallel_clustering(Wall, Hall, totalprocess, iterations=50,  n_cpu=-1, gpu=False)
+    result_list = parallel_clustering(Wall, Hall, totalprocess, iterations=50,  n_cpu=-1,  dist=dist, gpu=gpu)
     
     for i in range(50):  # using 10 iterations to get the best clustering 
         

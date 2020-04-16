@@ -129,6 +129,10 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             sysdata.write("\tNMF_test_conv: {}\n".format(format(excecution_parameters["NMF_test_conv"],',d')))
             sysdata.write("\tNMF_tolerance: {}\n".format(excecution_parameters["NMF_tolerance"]))
             
+            sysdata.write("CLUSTERING\n")
+            sysdata.write("\tclustering_distance: {}\n".format(excecution_parameters["dist"]))
+            
+            
             sysdata.write("EXECUTION\n")
             if excecution_parameters["cpu"]==-1:
                 sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(multiprocessing.cpu_count(), multiprocessing.cpu_count()))
@@ -167,6 +171,7 @@ def sigProfilerExtractor(input_type,
                          nmf_test_conv= 10000, 
                          nmf_tolerance= 1e-15, 
                          nnls_penalty=0.05, 
+                         clustering_distance="cosine",
                          get_all_signature_matrices= False): 
     memory_usage()
     """
@@ -344,6 +349,7 @@ def sigProfilerExtractor(input_type,
                         "NMF_test_conv": nmf_test_conv,
                         "NMF_tolerance": nmf_tolerance,
                         "nnls_penalty":nnls_penalty,
+                        "dist":clustering_distance,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
     

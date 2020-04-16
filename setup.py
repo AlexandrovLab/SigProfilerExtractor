@@ -6,7 +6,7 @@ import os
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.0.7'
+VERSION = '1.0.8'
 
 
 with open('README.md') as f:
@@ -43,8 +43,8 @@ setup(name='SigProfilerExtractor',
           'numpy>=1.17.4', 
           'pandas>=0.25.3', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.1.11', 
-          'sigProfilerPlotting>=1.1.2', 
+          'SigProfilerMatrixGenerator>=1.1.13', 
+          'sigProfilerPlotting>=1.1.5', 
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.22',
