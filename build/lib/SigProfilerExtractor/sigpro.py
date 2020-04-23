@@ -700,7 +700,7 @@ def sigProfilerExtractor(input_type,
                               format(str(datetime.datetime.now()).split(".")[0],excecution_parameters["matrix_normalization"]))
             
             
-                
+        sysdata.close()        
         
         for i in range(startProcess,endProcess+1):
             current_time_start = datetime.datetime.now()
@@ -803,10 +803,10 @@ def sigProfilerExtractor(input_type,
             
             current_time_end = datetime.datetime.now()
             
-            
+            sysdata = open(out_put+"/JOB_METADATA.txt", "a")
             sysdata.write("\n[{}] {} de novo extraction completed for a total of {} signatures! \nExecution time:{}\n". \
                           format(str(datetime.datetime.now()).split(".")[0],mutation_type,processes,str(current_time_end-current_time_start).split(".")[0], current_time_end))
-       
+            sysdata.close()
             
         
         ################################################################################################################

@@ -907,7 +907,7 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
         #q_i = q_i/np.sum(q_i)*100
         
         cosine_similarity_list.append(round(cos_sim(p_i,q_i ),3))
-        kl_divergence_list.append(round(scipy.stats.entropy(p_i,q_i),4))
+        kl_divergence_list.append(round(scipy.stats.entropy(p_i,q_i),5))
         l1_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=1),3))
         relative_l1_list.append(round((l1_norm_list[-1]/np.linalg.norm(p_i, ord=1))*100,3))
         l2_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=2),3))
@@ -962,6 +962,8 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist=
         con_mat = 1-cdist(mat1.T, mat2.T, "correlation")
         
     
+        
+    
     maximums = np.argmax(con_mat, axis = 1) #the indices of maximums
     uniques = np.unique(maximums) #unique indices having the maximums
 
@@ -982,14 +984,14 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist=
             diffRank[i, 1] = centroid[first_highest_value_idx]-centroid[second_highest_value_idx]
         diffRank = diffRank[diffRank[:,1].argsort(kind='mergesort')]
         diffRank = diffRank.astype(int)
-
+        
   
     
         for a in range(len(diffRank)-1,-1, -1):
             i = diffRank[a,0]
             j = con_mat[i,:].argmax()
-            con_mat[i,:]=0
-            con_mat[:,j]=0
+            con_mat[i,:]=-100
+            con_mat[:,j]=-100
             lstCluster.append([mat1[:,i], mat2[:,j]])
             idxPair.append([i,j])   #for debugging
             lstClusterT.append([mat1T[i,:], mat2T[j, :]])
@@ -1002,8 +1004,8 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist=
             lstCluster.append([mat1[:,i], mat2[:,j]])
             idxPair.append([i,j])   #for debugging
             lstClusterT.append([mat1T[i,:], mat2T[j, :]])
-            con_mat[i,:]=0
-            con_mat[:,j]=0
+            con_mat[i,:]=-100
+            con_mat[:,j]=-100
         
     return lstCluster, idxPair, lstClusterT
          
@@ -1054,11 +1056,10 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
         if dist=="cosine":
             SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='cosine')
         if dist=="correlation":
+            #dummy = np.random.uniform(low=0.000000000005, high=0.00000000001, size=clusters.shape)
+            #clusters=clusters+dummy
             SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='correlation')
-            
-    
         
-    
     except:
         SilhouetteCoefficients = np.ones((len(labels),1))
         
@@ -1652,7 +1653,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     
     #export convergence information 
     converge_information = loopResults[13]
-    converge_information = pd.DataFrame(np.around(converge_information, decimals=3))
+    converge_information = pd.DataFrame(np.around(converge_information, decimals=4))
     conv_index = list(range(1,len(converge_information)+1)) 
     colmetrices = ['L1', 'L1 %', 'L2', 'L2 %', 'KL Divergence', "Convergence Iterations"]
     converge_information.index = conv_index 
@@ -2015,7 +2016,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     
     #exracting and preparing other similiry matrices from the all_similarities_list
-    mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; #all_mean_l2=[];
+    mean_cosine_dist=[]; max_cosine_dist=[]; mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; #all_mean_l2=[];
     #median_l1= Median L1 , maximum _l1 = Maximum L1, median_l2= Median L2 , maximum _l2 = Maximum L2, median_kl= Median KL , maximum _kl = Maximum KL, wilcoxontest = Wilcoxontest significance (True or False); all_med_l2=[] = list of all Median L2
     
     
@@ -2024,7 +2025,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     pre_mean = np.inf  
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
-      all_similarities = all_similarities_list[values].iloc[:,[3,5,6]]
+      all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6]]
       avg_stability=data["avgStability"][values]
       min_stability=data["Stability"][values]
       thresh_hold=avg_stability+min_stability
@@ -2048,8 +2049,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
           wilcoxontest.append("False")
           #all_mean_l2.append(pre_mean)
           #pre_l2_dist = cur_l2_dist
+      cosine_distance=1-all_similarities["Cosine Similarity"]
       
-      
+      mean_cosine_dist.append(round(cosine_distance.mean(),2))
+      max_cosine_dist.append(round(cosine_distance.max(),2))
       mean_l1.append(round(all_similarities["L1_Norm_%"].mean(),2))
       maximum_l1.append(round(all_similarities["L1_Norm_%"].max(),2))
       mean_l2.append(round(all_similarities["L2_Norm_%"].mean(),2))
@@ -2059,10 +2062,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
       
      
     data.iloc[:,2] = np.round(data.iloc[:,2]*100, 2)
-    data = data.assign(**{'Mean Sample L1%': mean_l1, 'Maximum Sample L1%': maximum_l1, 'Mean Sample L2%': mean_l2, 'Maximum Sample L2%': maximum_l2, 'Significant Decrease of L2':wilcoxontest, 'Mean Sample KL': mean_kl, 'Maximum Sample KL': maximum_kl})  
+    data = data.assign(**{'Mean Sample L1%': mean_l1, 'Maximum Sample L1%': maximum_l1, 'Mean Sample L2%': mean_l2, 'Maximum Sample L2%': maximum_l2, 'Significant Decrease of L2':wilcoxontest, 'Mean Sample KL': mean_kl, 'Maximum Sample KL': maximum_kl,"Mean Cosine Distance":mean_cosine_dist,"Max Cosine Distance":max_cosine_dist})  
     data=data.rename(columns = {'Stability': 'Minimum Stability'})
     data = data.set_index("Total Signatures")
-     
+    
     
     #get the solution
     probable_solutions = data.copy()
@@ -2095,7 +2098,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     t = np.array(data.index)
     
     #data1 = np.array(data.iloc[:,2])  #reconstruction error
-    data1 = np.array(mean_l2)/100
+    data1 = np.array(mean_cosine_dist)
     data2 = np.array(avg_stability)  #process stability
     
 
@@ -2109,9 +2112,9 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     color = 'tab:red'
     ax1.set_xlabel('Total Signatures')
-    ax1.set_ylabel('Mean L2 %', color=color)
+    ax1.set_ylabel('Mean Sample Cosine Distance', color=color)
     ax1.set_title(title)
-    lns1 = ax1.plot(t, data1, marker='o', linestyle=":", color=color, label = 'Mean L2 %')
+    lns1 = ax1.plot(t, data1, marker='o', linestyle=":", color=color, label = 'Mean Sample Cosine Distance')
     
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
@@ -2121,7 +2124,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     vals = ax1.get_yticks()
     ax1.set_xticklabels(np.arange(min(t), max(t)+1, 1),list(), rotation=30)
     
-    ax1.set_yticklabels(['{:,.0%}'.format(x) for x in vals])
+    #ax1.set_yticklabels(['{:,.0}'.format(x) for x in vals])
     
     #ax1.legend(loc=0)
     
