@@ -815,7 +815,7 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
     Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
     #print (Wall.shape)
     Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
-    converge_information = np.zeros((totalIterations, 6))
+    converge_information = np.zeros((totalIterations, 7))
     
     finalgenomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
     finalgenomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
@@ -894,11 +894,13 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
         
     cosine_similarity_list = []
     kl_divergence_list = []
+    correlation_list=[]
     l1_norm_list = []
     l2_norm_list = []
     total_mutations_list = []
     relative_l1_list = []
     relative_l2_list = []
+    
     for i in range(genomes.shape[1]):
         p_i = genomes[:,i]
         q_i = est_genomes[:, i]
@@ -908,6 +910,7 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
         
         cosine_similarity_list.append(round(cos_sim(p_i,q_i ),3))
         kl_divergence_list.append(round(scipy.stats.entropy(p_i,q_i),5))
+        correlation_list.append(round(scipy.stats.pearsonr(p_i,q_i)[0],3))
         l1_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=1),3))
         relative_l1_list.append(round((l1_norm_list[-1]/np.linalg.norm(p_i, ord=1))*100,3))
         l2_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=2),3))
@@ -922,7 +925,8 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
                                            "L1_Norm_%":relative_l1_list, \
                                            "L2 Norm": l2_norm_list, \
                                            "L2_Norm_%": relative_l2_list, \
-                                           "KL Divergence": kl_divergence_list})
+                                           "KL Divergence": kl_divergence_list, \
+                                           "Correlation": correlation_list })
     similarities_dataframe = similarities_dataframe.set_index("Sample Names")
     return [similarities_dataframe, cosine_similarity_list]
 
@@ -1204,7 +1208,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     newsig = list() # will create the letter based id of newsignatures
     newsigmatrixidx = list() # will create the original id of newsignature to help to record the original matrix
     fh = open(directory+"/comparison_with_global_ID_signatures.csv", "w")
-    fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, Cosine Similarity\n")
+    fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, KL Divergence, Cosine Similarity, Correlarion\n")
     fh.close()
     dictionary = {}
     
@@ -1230,7 +1234,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             #print("Exposure after adding", exposures)
             #exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
             #print(exposures)
-            _, exposures,L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
+            _, exposures,L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
                                                                                                          signatures[:,i], 
                                                                                                          metric="l2", 
                                                                                                          solver="nnls", 
@@ -1250,7 +1254,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             #print("\n\n\n\n\n\n\n\n")
         # for other contexts     
         else:
-            _, exposures,L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
+            _, exposures,L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
                                                                                                          signatures[:,i], 
                                                                                                          metric="l2", 
                                                                                                          solver="nnls", 
@@ -1280,10 +1284,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             listofinformation[count*3+2]="%"
             decomposed_signatures.append(signames[j])
             count+=1
-        ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist]+[L2dist]+[similarity])
+        ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist]+[L2dist]+[kldiv]+[similarity]+[correlation])
         activity_percentages.append(contribution_percentages)
         
-        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.2f\n" 
+        strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
         ##print(np.nonzero(exposures)[0])
         ##print(similarity)
@@ -1302,7 +1306,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             newsig.append(mutation_context+letters[i])
             newsigmatrixidx.append(i)
             fh = open(directory+"/comparison_with_global_ID_signatures.csv", "a")
-            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 1))
+            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 0, 1, 0))
             fh.close()
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
@@ -1653,9 +1657,9 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
     
     #export convergence information 
     converge_information = loopResults[13]
-    converge_information = pd.DataFrame(np.around(converge_information, decimals=4))
+    converge_information = pd.DataFrame(np.around(converge_information, decimals=3))
     conv_index = list(range(1,len(converge_information)+1)) 
-    colmetrices = ['L1', 'L1 %', 'L2', 'L2 %', 'KL Divergence', "Convergence Iterations"]
+    colmetrices = ['L1', 'L1 %', 'L2', 'L2 %', 'KL Divergence', "Correlation", "Convergence Iterations"]
     converge_information.index = conv_index 
     converge_information.columns = colmetrices
     converge_information.to_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_"+"NMF_Convergence_Information.txt", "\t", index_label="NMF_Replicate")
@@ -2016,7 +2020,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     
     #exracting and preparing other similiry matrices from the all_similarities_list
-    mean_cosine_dist=[]; max_cosine_dist=[]; mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; #all_mean_l2=[];
+    mean_cosine_dist=[]; max_cosine_dist=[]; mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; mean_correlation=[]; minimum_correlation=[]; #all_mean_l2=[];
     #median_l1= Median L1 , maximum _l1 = Maximum L1, median_l2= Median L2 , maximum _l2 = Maximum L2, median_kl= Median KL , maximum _kl = Maximum KL, wilcoxontest = Wilcoxontest significance (True or False); all_med_l2=[] = list of all Median L2
     
     
@@ -2025,7 +2029,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     pre_mean = np.inf  
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
-      all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6]]
+      all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6,7]]
       avg_stability=data["avgStability"][values]
       min_stability=data["Stability"][values]
       thresh_hold=avg_stability+min_stability
@@ -2051,18 +2055,34 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
           #pre_l2_dist = cur_l2_dist
       cosine_distance=1-all_similarities["Cosine Similarity"]
       
-      mean_cosine_dist.append(round(cosine_distance.mean(),2))
-      max_cosine_dist.append(round(cosine_distance.max(),2))
+      
+      mean_cosine_dist.append(round(cosine_distance.mean(),3))
+      max_cosine_dist.append(round(cosine_distance.max(),3))
       mean_l1.append(round(all_similarities["L1_Norm_%"].mean(),2))
       maximum_l1.append(round(all_similarities["L1_Norm_%"].max(),2))
       mean_l2.append(round(all_similarities["L2_Norm_%"].mean(),2))
       maximum_l2.append(round(all_similarities["L2_Norm_%"].max(),2))
       mean_kl.append(round(all_similarities["KL Divergence"].mean(), 4))
       maximum_kl.append(round(all_similarities["KL Divergence"].max(), 4))
+      mean_correlation.append(round(all_similarities["Correlation"].mean(), 3))
+      minimum_correlation.append(round(all_similarities["Correlation"].min(), 3))
+      
       
      
     data.iloc[:,2] = np.round(data.iloc[:,2]*100, 2)
-    data = data.assign(**{'Mean Sample L1%': mean_l1, 'Maximum Sample L1%': maximum_l1, 'Mean Sample L2%': mean_l2, 'Maximum Sample L2%': maximum_l2, 'Significant Decrease of L2':wilcoxontest, 'Mean Sample KL': mean_kl, 'Maximum Sample KL': maximum_kl,"Mean Cosine Distance":mean_cosine_dist,"Max Cosine Distance":max_cosine_dist})  
+    data = data.assign(**{'Mean Sample L1%': mean_l1, 
+                          'Maximum Sample L1%': maximum_l1, 
+                          'Mean Sample L2%': mean_l2, 
+                          'Maximum Sample L2%': maximum_l2, 
+                          'Significant Decrease of L2':wilcoxontest, 
+                          'Mean Sample KL': mean_kl, 
+                          'Maximum Sample KL': maximum_kl,
+                          "Mean Cosine Distance":mean_cosine_dist,
+                          "Max Cosine Distance":max_cosine_dist,
+                          "Mean Correlation":mean_correlation,
+                          "Minimum Correlation":minimum_correlation})  
+        
+        
     data=data.rename(columns = {'Stability': 'Minimum Stability'})
     data = data.set_index("Total Signatures")
     

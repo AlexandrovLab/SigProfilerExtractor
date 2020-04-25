@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: SigProfilerExtractor
-Version: 1.0.8.1
+Version: 1.0.9
 Summary: Extracts mutational signatures from mutational catalogues
 Home-page: https://github.com/AlexandrovLab/SigProfilerExtractor.git
 Author: S Mishu Ashiqul Islam
@@ -85,7 +85,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
             
             **minimum_signatures**: A positive integer, optional. The minimum number of signatures to be extracted. The default value is 1 
             
-            **maximum_signatures**: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 10
+            **maximum_signatures**: A positive integer, optional. The maximum number of signatures to be extracted. The default value is 25
             
             **nmf_replicates**: A positive integer, optional. The number of iteration to be performed to extract each number signature. The default value is 100
             
@@ -208,7 +208,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
         
         ## CONTACT INFORMATION
-        Please address any queries or bug reports to S M Ashiqul Islam (Mishu) at m0islam.ucsd.edu
+        Please address any queries or bug reports to S M Ashiqul Islam (Mishu) at m0islam@ucsd.edu
         
 Platform: UNKNOWN
 Description-Content-Type: text/markdown

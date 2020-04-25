@@ -10,6 +10,7 @@ from numpy import linalg as LA
 from scipy.optimize import nnls
 from scipy.optimize import minimize
 from SigProfilerExtractor import subroutines as sub
+import scipy.stats
 import copy 
 import os
 """
@@ -807,7 +808,11 @@ def add_remove_signatures(W,
                 cosine_similarity_with_four_signatures = cos_sim(M, np.dot(W,finalactivities))
                 #print(cosine_similarity_with_four_signatures)
         else:
-            cosine_similarity = cos_sim(M, np.dot(W,finalactivities))
+            N=np.dot(W,finalactivities)
+            cosine_similarity = cos_sim(M, N)
+            kldiv=round(scipy.stats.entropy(M,N),3)
+            correlation,_=scipy.stats.pearsonr(M, N)
+            correlation=round(correlation,2)
             break
         
     if verbose:
@@ -823,4 +828,4 @@ def add_remove_signatures(W,
     lognote.close()
     #newExposure, newSimilarity = fit_signatures(W[:,list(background_sigs)], M, metric="l2")
     #print(newExposure, newSimilarity)
-    return (background_sigs, finalactivities, original_distance, cosine_similarity, cosine_similarity_with_four_signatures)
+    return (background_sigs, finalactivities, original_distance, cosine_similarity, kldiv, correlation, cosine_similarity_with_four_signatures)
