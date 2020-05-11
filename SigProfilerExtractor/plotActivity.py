@@ -48,7 +48,7 @@ color_code = pd.DataFrame(np.array([['SBS1', 'forestgreen'],
 #    colors = f.read().splitlines()
 ##########################################
 
-def plotActivity(bin_size = 50, activity_file, output_file):
+def plotActivity(activity_file, output_file, bin_size = 50):
     size = int(bin_size)
     inputDF = pd.read_table(activity_file,index_col=0)
     inputDF = inputDF.loc[:, (inputDF != 0).any(axis=0)]
