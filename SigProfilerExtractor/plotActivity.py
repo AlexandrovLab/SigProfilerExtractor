@@ -6,7 +6,6 @@ import json
 from matplotlib import rc
 import matplotlib.backends.backend_pdf
 from matplotlib.backends.backend_pdf import PdfPages
-import sys
 
 colors = ['tab:pink',
  'tab:orange',
@@ -49,7 +48,7 @@ color_code = pd.DataFrame(np.array([['SBS1', 'forestgreen'],
 #    colors = f.read().splitlines()
 ##########################################
 
-def plotActivity(bin_size, activity_file, output_file):
+def plotActivity(bin_size = 50, activity_file, output_file):
     size = int(bin_size)
     inputDF = pd.read_table(activity_file,index_col=0)
     inputDF = inputDF.loc[:, (inputDF != 0).any(axis=0)]
@@ -94,9 +93,3 @@ def plotActivity(bin_size, activity_file, output_file):
         pp.savefig(plot) 
         plt.close()
     pp.close()
-
-
-bin_size = sys.argv[1]
-activity_file = sys.argv[2]
-output_file = sys.argv[3]
-plotActivity(bin_size, activity_file, output_file)
