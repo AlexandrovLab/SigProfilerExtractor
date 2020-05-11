@@ -51,8 +51,8 @@ color_code = pd.DataFrame(np.array([['SBS1', 'forestgreen'],
 
 def plotActivity(bin_size, activity_file, output_file):
     size = int(bin_size)
-    inputDF = inputDF.loc[:, (inputDF != 0).any(axis=0)]
     inputDF = pd.read_table(activity_file,index_col=0)
+    inputDF = inputDF.loc[:, (inputDF != 0).any(axis=0)]
     inputDF["sum"]=inputDF.sum(axis=1)
     inputDF.sort_values(by="sum",inplace=True,ascending=False)
     inputDF.drop(columns="sum",inplace=True)
