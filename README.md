@@ -196,7 +196,8 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
     Parameters: 
         
         bin_size: Number of samples plotted per page, recommended: 50
-        activity_file: The standard output activity file showing the number of, or percentage of mutations attributed to                            each sample. The row names should be samples while the column names should be signatures.
+        activity_file: The standard output activity file showing the number of, or percentage of mutations attributed to  
+        each sample. The row names should be samples while the column names should be signatures.
         output_file: path and full name of the output pdf file, including ".pdf"
 
         
