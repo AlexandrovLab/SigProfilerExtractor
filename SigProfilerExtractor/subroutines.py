@@ -19,7 +19,7 @@ from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
 from SigProfilerExtractor import SigProfilerPlotting_plot_png as plotE
-from SigProfilerExtractor import plotActivity as plot_ac
+from SigProfilerExtractor import plotactivity as plot_ac
 from SigProfilerExtractor import tmbplot as tmb
 import string 
 import os
@@ -194,7 +194,7 @@ def mat_ave_std(matlst):
 
 """############################################## Functions for modifications of Sample Matrices ##################"""   
 
-def get_normalization_cutoff(data, manual_cutoff=50000):
+def get_normalization_cutoff(data, manual_cutoff=9600):
     
     col_sums = np.array(np.sum(data, axis=0))
 
@@ -251,7 +251,7 @@ def get_normalization_cutoff(data, manual_cutoff=50000):
     std = np.std(col_sums)
     cutoff = (mean + 2*(std)).astype(int)
     
-    if cutoff>manual_cutoff:
+    if cutoff<manual_cutoff:
         cutoff = manual_cutoff
     
     return cutoff

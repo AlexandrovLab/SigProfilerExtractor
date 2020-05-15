@@ -675,7 +675,7 @@ def sigProfilerExtractor(input_type,
         
         # get the cutoff for normatization to handle the hypermutators 
         
-        normalization_cutoff = sub.get_normalization_cutoff(genomes)
+        normalization_cutoff = sub.get_normalization_cutoff(genomes, manual_cutoff=100*genomes.shape[0])
         #print("Normalization Cutoff is :", normalization_cutoff)
         excecution_parameters["normalization_cutoff"]= normalization_cutoff
         

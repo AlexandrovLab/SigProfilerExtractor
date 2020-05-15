@@ -123,7 +123,13 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
                       
             COSMIC:-
             
-            **nnls_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample. 
+            **nnls_add_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the strong thresh-hold cutoff to be assigned signatures to a sample. 
+            
+             **nnls_remove_penalty**: Float, optional. Takes any positive float. Default is 0.01. Defines the weak thresh-hold cutoff to be assigned signatures to a sample.
+             
+            **initial_remove_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak thresh-hold cutoff to be assigned signatures to a sample.
+            
+            **refit_denovo_signatures** Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
             
               **context_type**: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
                     is the DINULEOTIDE context and ID is INDEL context. 
@@ -173,6 +179,9 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
                 activities: A string. Path to a tab delimilted file that contains the activity table where the rows are sample IDs                       and colunms are signature IDs.
                 samples: A string. Path to a tab delimilted file that contains the activity table where the rows are mutation types                  and colunms are sample IDs.
                 output: A string. Path to the output folder.
+                nnls_add_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the strong thresh-hold                                   cutoff to be assigned signatures to a sample. 
+                nnls_remove_penalty: Float, optional. Takes any positive float. Default is 0.01. Defines the weak thresh-hold cutoff                              to be assigned signatures to a sample.
+                initial_remove_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak thresh-                                 hold cutoff to be assigned signatures to a sample.
                 genome_build = A string. The genome type. Example: "GRCh37", "GRCh38", "mm9", "mm10". The default value is "GRCh37"
                 verbose = Boolean. Prints statements. Default value is False. 
                 
