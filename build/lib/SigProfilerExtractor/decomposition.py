@@ -14,7 +14,7 @@ import os
 
 
 
-def decompose(signatures, activities, samples, output,  genome_build="GRCh37", verbose=False):
+def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, genome_build="GRCh37", verbose=False):
 
     
     """
@@ -87,9 +87,17 @@ def decompose(signatures, activities, samples, output,  genome_build="GRCh37", v
         genomes = genomes.groupby(genomes.index.str[1:8]).sum()
         index = genomes.index
         processAvg = np.array(processAvg)
-       
     
-    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context)    
+    if processAvg.shape[0]==288: #collapse the 288 context into 96 only for the deocmposition 
+        processAvg = pd.DataFrame(processAvg, index=index)
+        processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
+        genomes = pd.DataFrame(genomes, index=index)
+        genomes = genomes.groupby(genomes.index.str[2:9]).sum()
+        index = genomes.index
+        processAvg = np.array(processAvg)
+            
+    
+    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty)    
     #final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
     # extract the global signatures and new signatures from the final_signatures dictionary
     globalsigs = final_signatures["globalsigs"]
@@ -106,7 +114,7 @@ def decompose(signatures, activities, samples, output,  genome_build="GRCh37", v
     
     
     result = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , penalty=0.01, background_sigs=background_sigs, verbose=verbose, genome_build=genome_build)
+                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg ,  background_sigs=background_sigs, verbose=verbose, genome_build=genome_build, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty)
 
     return result
 

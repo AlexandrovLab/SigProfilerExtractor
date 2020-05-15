@@ -19,6 +19,8 @@ from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
 from SigProfilerExtractor import SigProfilerPlotting_plot_png as plotE
+from SigProfilerExtractor import plotactivity as plot_ac
+from SigProfilerExtractor import tmbplot as tmb
 import string 
 import os
 import scipy
@@ -34,6 +36,7 @@ from sklearn.decomposition import NMF
 from sklearn import mixture
 from scipy.spatial.distance import cdist
 from scipy.spatial.distance import correlation as cor
+
 #import mkl
 #mkl.set_num_threads(40)
 #from numba import jit
@@ -1146,7 +1149,7 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", mutation_context=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", add_penalty=0.05, remove_penalty=0.01, mutation_context=None):
     
     # open the log file for signature decomposition 
     lognote = open(directory+"/decomposition_logfile.txt", "w") 
@@ -1234,6 +1237,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             #print("Exposure after adding", exposures)
             #exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
             #print(exposures)
+            
+            
             _, exposures,L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
                                                                                                          signatures[:,i], 
                                                                                                          metric="l2", 
@@ -1242,7 +1247,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          permanent_sigs = [0,4], 
                                                                                                          candidate_sigs="all", 
                                                                                                          allsigids = signames, 
-                                                                                                         penalty = 0.05, 
+                                                                                                         add_penalty = add_penalty, 
+                                                                                                         remove_penalty = remove_penalty,
                                                                                                          check_rule_negatives = check_rule_negatives, 
                                                                                                          checkrule_penalty = check_rule_penalty, 
                                                                                                          directory = directory+"/decomposition_logfile.txt", 
@@ -1260,7 +1266,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          solver="nnls", 
                                                                                                          background_sigs = [], 
                                                                                                          candidate_sigs="all", 
-                                                                                                         penalty = 0.05, 
+                                                                                                         add_penalty = add_penalty, 
+                                                                                                         remove_penalty = remove_penalty,
                                                                                                          check_rule_negatives = [], 
                                                                                                          checkrule_penalty = [], 
                                                                                                          directory = directory+"/decomposition_logfile.txt", 
@@ -1705,8 +1712,8 @@ def export_information(loopResults, mutation_context, output, index, colnames, w
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
-                        signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = "none", penalty=0.05, \
-                        background_sigs=0, genome_build="GRCh37",  verbose=False):
+                        signature_total_mutations= " ", signature_stats = "none",  remove_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
+                        remove_penalty=0.01, initial_remove_penalty=0.05, background_sigs=0, genome_build="GRCh37",  verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -1788,7 +1795,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(newSimilarity,2), round(cos_sim(allgenomes[:,r], np.dot(processAvg, exposureAvg[:, r] )),2)))
             #remove signatures 
             exposureAvg[:,r],L2dist,cosine_sim = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
-                       solver = "nnls", cutoff=0.05, background_sigs= [], verbose=False)
+                       solver = "nnls", cutoff=initial_remove_penalty, background_sigs= [], verbose=False)
             if verbose==True:
                 print("############################## Composition After Initial Remove ############################### ")
                 print(pd.DataFrame(exposureAvg[:, r],  index=allsigids).T)  
@@ -1815,7 +1822,9 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             # if the there is no other signatures to be added on top the existing signatures
             try:
                 
-                _, exposureAvg[:, r],L2dist,similarity, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, 
+                
+                
+                _, exposureAvg[:, r],L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, 
                                                                                                   allgenomes[:,r], 
                                                                                                   metric="l2", 
                                                                                                   solver="nnls", 
@@ -1823,11 +1832,13 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                                                                                                   permanent_sigs = background_sig_idx, 
                                                                                                   candidate_sigs="all", 
                                                                                                   allsigids = allsigids, 
-                                                                                                  penalty = 0.05, 
+                                                                                                  add_penalty = add_penalty, 
+                                                                                                  remove_penalty=remove_penalty,
                                                                                                   check_rule_negatives = check_rule_negatives, 
                                                                                                   checkrule_penalty = check_rule_penalty, 
                                                                                                   directory = layer_directory+"/Signature_assaignment_logfile.txt", 
-                                                                                                  verbose=False)
+                                                                                                 verbose=False)
+                 
                 if verbose==True:
                     print("####################################### Composition After Add-Remove #######################################\n") 
                     print(exposureAvg[:, r])
@@ -1870,17 +1881,61 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                
     else:   
         
+        
         # when refilt de_novo_signatures 
         if denovo_exposureAvg=="none":
             for g in range(allgenomes.shape[1]):
                 
-                exposures, _, similarity = ss.add_signatures(processAvg, 
-                                                             allgenomes[:,g][:,np.newaxis], 
-                                                             presentSignatures=[],
-                                                             cutoff=penalty,
-                                                             check_rule_negatives=[], 
-                                                             check_rule_penalty=1.0)
-                exposureAvg[:,g] = exposures
+                # Record information to lognote
+                lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
+                lognote.write("\n\n\n\n\n                    ################ Sample "+str(g+1)+ " #################\n")
+                              
+                
+                lognote.write("############################# Initial Composition ####################################\n")
+                exposures = pd.DataFrame(exposureAvg[:, g],  index=allsigids).T
+                lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
+                
+                #remove signatures 
+                exposureAvg[:,g],L2dist,cosine_sim = ss.remove_all_single_signatures(processAvg, exposureAvg[:, g], allgenomes[:,g], metric="l2", \
+                           solver = "nnls", cutoff=initial_remove_penalty, background_sigs= [], verbose=False)
+                if verbose==True:
+                    print("############################## Composition After Initial Remove ############################### ")
+                    print(pd.DataFrame(exposureAvg[:, g],  index=allsigids).T)  
+                    print("L2%: ", L2dist)
+                lognote.write("############################## Composition After Initial Remove ###############################\n")
+                exposures = pd.DataFrame(exposureAvg[:, g],  index=allsigids).T
+                lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
+                lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(cosine_sim,2)))
+                lognote.write("\n############################## Performing Add-Remove Step ##############################\n")
+                #Close the Lognote file
+                lognote.close()              
+                
+                
+                _, exposureAvg[:, g],L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, 
+                                                                                                  allgenomes[:,g], 
+                                                                                                  metric="l2", 
+                                                                                                  solver="nnls", 
+                                                                                                  background_sigs = [], 
+                                                                                                  permanent_sigs = [], 
+                                                                                                  candidate_sigs="all", 
+                                                                                                  allsigids = allsigids, 
+                                                                                                  add_penalty = add_penalty, 
+                                                                                                  remove_penalty=remove_penalty,
+                                                                                                  check_rule_negatives = [], 
+                                                                                                  checkrule_penalty = check_rule_penalty, 
+                                                                                                  directory = layer_directory+"/Signature_assaignment_logfile.txt", 
+                                                                                                 verbose=False)
+                if verbose==True:
+                    print("####################################### Composition After Add-Remove #######################################\n") 
+                    print(exposureAvg[:, g])
+                    print("L2%: ", L2dist)
+                # Recond the information in the log file
+                lognote = open(layer_directory+"/Signature_assaignment_logfile.txt", "a")
+                lognote.write("####################################### Composition After Add-Remove #######################################\n")
+                exposures = pd.DataFrame(exposureAvg[:, g],  index=allsigids).T
+                lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
+                lognote.write("L2 Error %: {}\nCosine Similarity: {}\n".format(round(L2dist,2), round(similarity,2)))
+                lognote.close()
                 
         # when use the exposures from the initial NMF
         else:
@@ -1902,27 +1957,18 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     exposures = exposureAvg.set_index(allsigids)
     exposures.columns = allcolnames
     
-    #plot exposures
-    for p in range(exposures.shape[0]):
-      plt.bar(allcolnames, exposures.iloc[p], bottom = np.sum(exposures.iloc[:p], axis = 0), label = allsigids[p])
-        
-    plt.legend(loc=(1.01,0.0))
-    plt.title("Signature Activities on Samples")
-    plt.xlabel("Samples")
-    plt.ylabel("Mutation Count")
-    plt.xticks(allcolnames, rotation='vertical')
-    try:
-        plt.tight_layout()
-    except: 
-        pass
-    plt.savefig(layer_directory+"/"+solution_type+"_"+"Activities_Plot_"+signature_type+".pdf", dpi=300)  
     
-    plt.close()
     
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
     exposures.to_csv(layer_directory+"/"+solution_type+"_"+"Activities_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
     
+    #plt tmb
+    tmb_exposures = pd.melt(exposures)
+    tmb.plotTMB(tmb_exposures, layer_directory+"/"+solution_type+"_"+"TMB_plot.pdf", scale="genome", Yrange="adapt")
+    del tmb_exposures
+    #plot activities
+    plot_ac.plotActivity(layer_directory+"/"+solution_type+"_"+"Activities_"+signature_type+".txt", output_file = layer_directory+"/"+solution_type+"_"+"Activity_in_samples.pdf", bin_size = 50, log = False)
     
     
     # Calcutlate the similarity matrices
@@ -2194,155 +2240,124 @@ def plot_csv_sbs_samples(filename, output_path, project, mtype="96", percentage=
     
     
     
-########## Functions From Scikit Learn #################
-from sklearn.utils.extmath import randomized_svd, squared_norm
-from sklearn.utils.validation import check_non_negative
-from sklearn.utils import check_random_state
-from math import sqrt
-
-
-def norm(x):
-    """Dot product-based Euclidean norm implementation
-    See: http://fseoane.net/blog/2011/computing-the-vector-norm/
-    Parameters
-    ----------
-    x : array-like
-        Vector for which to compute the norm
-    """
-    return sqrt(squared_norm(x))
-
-def initialize_nmf(X, n_components, init=None, eps=1e-6,
-                    random_state=None):
-    """Algorithms for NMF initialization.
-    Computes an initial guess for the non-negative
-    rank k matrix approximation for X: X = WH
-    Parameters
-    ----------
-    X : array-like, shape (n_samples, n_features)
-        The data matrix to be decomposed.
-    n_components : integer
-        The number of components desired in the approximation.
-    init :  None | 'random' | 'nndsvd' | 'nndsvda' | 'nndsvdar'
-        Method used to initialize the procedure.
-        Default: None.
-        Valid options:
-        - None: 'nndsvd' if n_components <= min(n_samples, n_features),
-            otherwise 'random'.
-        - 'random': non-negative random matrices, scaled with:
-            sqrt(X.mean() / n_components)
-        - 'nndsvd': Nonnegative Double Singular Value Decomposition (NNDSVD)
-            initialization (better for sparseness)
-        - 'nndsvda': NNDSVD with zeros filled with the average of X
-            (better when sparsity is not desired)
-        - 'nndsvdar': NNDSVD with zeros filled with small random values
-            (generally faster, less accurate alternative to NNDSVDa
-            for when sparsity is not desired)
-        - 'custom': use custom matrices W and H
-    eps : float
-        Truncate all values less then this in output to zero.
-    random_state : int, RandomState instance or None, optional, default: None
-        If int, random_state is the seed used by the random number generator;
-        If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by `np.random`. Used when ``random`` == 'nndsvdar' or 'random'.
-    Returns
-    -------
-    W : array-like, shape (n_samples, n_components)
-        Initial guesses for solving X ~= WH
-    H : array-like, shape (n_components, n_features)
-        Initial guesses for solving X ~= WH
-    References
-    ----------
-    C. Boutsidis, E. Gallopoulos: SVD based initialization: A head start for
-    nonnegative matrix factorization - Pattern Recognition, 2008
-    http://tinyurl.com/nndsvd
-    """
-    check_non_negative(X, "NMF initialization")
-    n_samples, n_features = X.shape
-
-    if (init is not None and init != 'random'
-            and n_components > min(n_samples, n_features)):
-        raise ValueError("init = '{}' can only be used when "
-                         "n_components <= min(n_samples, n_features)"
-                         .format(init))
-
-    if init is None:
-        if n_components <= min(n_samples, n_features):
-            init = 'nndsvd'
-        else:
-            init = 'random'
-
-    # Random initialization
-    if init == 'random':
-        avg = np.sqrt(X.mean() / n_components)
-        rng = check_random_state(random_state)
-        H = avg * rng.randn(n_components, n_features)
-        W = avg * rng.randn(n_samples, n_components)
-        # we do not write np.abs(H, out=H) to stay compatible with
-        # numpy 1.5 and earlier where the 'out' keyword is not
-        # supported as a kwarg on ufuncs
-        np.abs(H, H)
-        np.abs(W, W)
-        return W, H
-
-    # NNDSVD initialization
-    U, S, V = randomized_svd(X, n_components, random_state=random_state)
-    W, H = np.zeros(U.shape), np.zeros(V.shape)
-
-    # The leading singular triplet is non-negative
-    # so it can be used as is for initialization.
-    W[:, 0] = np.sqrt(S[0]) * np.abs(U[:, 0])
-    H[0, :] = np.sqrt(S[0]) * np.abs(V[0, :])
-
-    for j in range(1, n_components):
-        x, y = U[:, j], V[j, :]
-
-        # extract positive and negative parts of column vectors
-        x_p, y_p = np.maximum(x, 0), np.maximum(y, 0)
-        x_n, y_n = np.abs(np.minimum(x, 0)), np.abs(np.minimum(y, 0))
-
-        # and their norms
-        x_p_nrm, y_p_nrm = norm(x_p), norm(y_p)
-        x_n_nrm, y_n_nrm = norm(x_n), norm(y_n)
-
-        m_p, m_n = x_p_nrm * y_p_nrm, x_n_nrm * y_n_nrm
-
-        # choose update
-        if m_p > m_n:
-            u = x_p / x_p_nrm
-            v = y_p / y_p_nrm
-            sigma = m_p
-        else:
-            u = x_n / x_n_nrm
-            v = y_n / y_n_nrm
-            sigma = m_n
-
-        lbd = np.sqrt(S[j] * sigma)
-        W[:, j] = lbd * u
-        H[j, :] = lbd * v
-
-    W[W < eps] = 0
-    H[H < eps] = 0
-
-    if init == "nndsvd":
-        pass
-    elif init == "nndsvda":
-        avg = np.mean(X)
-        W[W == 0] = avg
-        H[H == 0] = avg
-    elif init == "nndsvdar":
-        rng = check_random_state(random_state)
-        #avg = X.mean()
-        avg = np.mean(X)
-        W[W == 0] = abs(avg * rng.randn(len(W[W == 0])) / 100)
-        H[H == 0] = abs(avg * rng.randn(len(H[H == 0])) / 100)
-    elif init == "alexandrov-lab-custom":
-         min_X = np.min(X[X>0])
-         H[H <= min_X] = min_X
-         W[W <= min_X] = min_X
+def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
+    if true_sigs.shape[1]>=est_sigs.shape[1]:
+        mat1 = est_sigs
+        mat2 = true_sigs
     else:
-        raise ValueError(
-            'Invalid init parameter: got %r instead of one of %r' %
-            (init, (None, 'random', 'nndsvd', 'nndsvda', 'nndsvdar')))
+        mat1 = true_sigs
+        mat2 = est_sigs
+    
+    con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
+    for i in range(0, mat1.shape[1]):
+        for j in range(0,mat2.shape[1]):
+            if dist=="cos":
+                con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
+            elif dist=="cor":
+                con_mat[i, j] = cor_sim(mat1[:,i], mat2[:,j])  #used custom function
+    
+    
+    
+    con_mat_copy = con_mat.copy() # to get the nearest signature/cluster
+    
+    
+    
+    idxPair= {} 
+    a_b_value_pairs = [] # a and b are intra-cluster distance (a) and the mean nearest-cluster distance (b)
+    
+        
+    diffRank = np.zeros([len(con_mat), 2])-100   
+    for i in range(len(con_mat)):
+        centroid = con_mat[i]
+        value_order= np.argsort(centroid)
+        first_highest_value_idx = value_order[-1]
+        second_highest_value_idx = value_order[-2]
+        diffRank[i,0] =  i
+        diffRank[i, 1] = centroid[first_highest_value_idx]-centroid[second_highest_value_idx]
+    diffRank = diffRank[diffRank[:,1].argsort(kind='mergesort')]
+    diffRank = diffRank.astype(int)
+    #print(diffRank)
+      
+    
+    for x in range(len(diffRank)-1,-1, -1):
+        
+        i = diffRank[x,0]
+        j = con_mat[i,:].argmax()
+        a = con_mat[i,:].max()
+        con_mat_copy[i,j]=-1       #assigning the lowest posiblevalue so that the option will not be chosen
+        b = con_mat_copy[i,:].max()
+        con_mat[i,:]=-1
+        con_mat[:,j]=-1
+        
+        if verbose:
+            print(a)
+        if true_sigs.shape[1]>=est_sigs.shape[1]:
+            if a >cutoff : 
+                idxPair[i] = j
+            else:
+                idxPair[i] = -i  # to set a pattern for the false positives
+        else:
+            if a >cutoff : 
+                idxPair[j] = i
+            else:
+                idxPair[j] = -j  # to set a pattern for the false positives
+        a_b_value_pairs.append([a,b])
+    
+    
+    
+    
+    silhoette_value = []
+    true_positives = 0
+    for values in a_b_value_pairs:
+        if verbose:
+            print(values[0])
+            print(values[1])
+            print("\n")
+        a =1-values[0]  #converting similarity to distance
+        b = 1-values[1]
+        if 1-a <cutoff :
+            silhoette = 0.0
+           
+        else:
+            silhoette = (b-a)/max(a,b)
+            true_positives = true_positives + 1
+        #print(silhoette)
+        silhoette_value.append(silhoette)
+        
+    silhoette_value = np.array(silhoette_value )
+    
+    #print("##################################### FINAL RESULTS ###################################")
+    
+    if verbose:      
+        print(np.mean(silhoette_value))
+       
+        print(np.mean(silhoette_value)*mat1.shape[1]/mat2.shape[1])
+    #print(silhoette_value)
+    
+    
+    if true_positives < est_sigs.shape[1]:
+        false_positives = est_sigs.shape[1]-true_positives 
+    else: 
+        false_positives = 0
+       
+    if true_positives < true_sigs.shape[1]:
+        false_negatives= true_sigs.shape[1]-true_positives  
+    else:
+        false_negatives= 0
+        
+    number_of_ground_truth_signatures = true_sigs.shape[1]
+    number_of_detected_signature = est_sigs.shape[1]
+    try:
+        precision = round(true_positives/(true_positives+false_positives),2)
+        recall = round(true_positives/(true_positives+false_negatives),2)
+        f1_score = round(2*precision*recall/(precision+recall),2)
+    except:
+        precision = 0
+        recall = 0
+        f1_score = 0
+    
+    return number_of_ground_truth_signatures,  number_of_detected_signature, true_positives, false_positives,  false_negatives, precision, recall, f1_score, idxPair
 
-    return W, H    
+
+
+

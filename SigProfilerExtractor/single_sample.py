@@ -718,7 +718,8 @@ def add_remove_signatures(W,
                           background_sigs = [], 
                           permanent_sigs = [], 
                           candidate_sigs="all", 
-                          penalty = 0.05, 
+                          add_penalty = 0.05, 
+                          remove_penalty=0.01,
                           check_rule_negatives =[],
                           checkrule_penalty = 1.00, 
                           allsigids = False, 
@@ -767,7 +768,7 @@ def add_remove_signatures(W,
             background_sigs = add_connected_sigs(background_sigs, list(allsigids))
             
             add_exposures, add_distance, _ = add_signatures(W, M[:,np.newaxis], presentSignatures=copy.deepcopy(background_sigs), toBeAdded=loop_sig, 
-                                                  metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=penalty) 
+                                                  metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=add_penalty) 
             if verbose:
                 print("\n\n\n################## Add Index {} ########################".format(j)) 
                 print(np.nonzero(add_exposures)[0])
@@ -775,7 +776,7 @@ def add_remove_signatures(W,
                 print(add_distance)
                 
                 
-            remove_exposures, remove_distance, _ = remove_all_single_signatures(W, add_exposures, M, background_sigs = always_background, metric="l2", verbose = False, cutoff=0.01)
+            remove_exposures, remove_distance, _ = remove_all_single_signatures(W, add_exposures, M, background_sigs = always_background, metric="l2", verbose = False, cutoff=remove_penalty)
             if verbose:
                 print("\n################## Remove ########################")
                 print(np.nonzero(remove_exposures)[0])
@@ -787,7 +788,7 @@ def add_remove_signatures(W,
             else:
                 distance = remove_distance
                 exposures = remove_exposures
-                
+            
             if distance < layer_original_distance:
                 selected_signatures = np.nonzero(exposures)[0]
                 layer_original_distance = distance 

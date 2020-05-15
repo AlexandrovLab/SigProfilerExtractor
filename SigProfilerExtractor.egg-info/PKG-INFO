@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: SigProfilerExtractor
-Version: 1.0.9
+Version: 1.0.10
 Summary: Extracts mutational signatures from mutational catalogues
 Home-page: https://github.com/AlexandrovLab/SigProfilerExtractor.git
 Author: S Mishu Ashiqul Islam
@@ -198,6 +198,19 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
                 Signature_assaignment_logfile.txt
                 Signature_plot[MutatutionContext]_plots_Decomposed_Solution.pdf
                 
+        ### Activity stacked bar plot
+            Generates a stacked bar plot showing activities in individuals
+            
+            Parameters: 
+                    
+                activity_file: The standard output activity file showing the number of, or percentage of mutations attributed to  
+                each sample. The row names should be samples while the column names should be signatures.
+                output_file: path and full name of the output pdf file, including ".pdf"
+                bin_size(optional): Number of samples plotted per page, recommended: 50
+                
+            Example:
+                 $ python plotActivity.py 50 sig_attribution_sample.txt test_out.pdf
+        
         ### GPU support
         ```
         If CUDA out of memory exceptions occur, it will be necessary to reduce the number of CPU processes used (the `cpu` parameter).

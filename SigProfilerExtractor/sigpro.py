@@ -141,7 +141,10 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
             sysdata.write("COSMIC MATCH\n")
             sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
-            sysdata.write("\tnnls_penalty: {}\n".format(excecution_parameters["nnls_penalty"]))
+            sysdata.write("\tnnls_add_penalty: {}\n".format(excecution_parameters["nnls_add_penalty"]))
+            sysdata.write("\tnnls_remove_penalty: {}\n".format(excecution_parameters["nnls_remove_penalty"]))
+            sysdata.write("\tinitial_remove_penalty: {}\n".format(excecution_parameters["initial_remove_penalty"]))
+            sysdata.write("\treffit_denovo_signatures: {}\n".format(excecution_parameters["reffit_denovo_signatures"]))
             
             
             sysdata.write("\n-------Analysis Progress------- \n")
@@ -170,7 +173,10 @@ def sigProfilerExtractor(input_type,
                          max_nmf_iterations=1000000, 
                          nmf_test_conv= 10000, 
                          nmf_tolerance= 1e-15, 
-                         nnls_penalty=0.05, 
+                         nnls_add_penalty=0.05, 
+                         nnls_remove_penalty=0.01,
+                         initial_remove_penalty=0.05,
+                         reffit_denovo_signatures=False,
                          clustering_distance="cosine",
                          get_all_signature_matrices= False): 
     memory_usage()
@@ -348,7 +354,10 @@ def sigProfilerExtractor(input_type,
                         "max_NMF_iterations":max_nmf_iterations,
                         "NMF_test_conv": nmf_test_conv,
                         "NMF_tolerance": nmf_tolerance,
-                        "nnls_penalty":nnls_penalty,
+                        "nnls_add_penalty":nnls_add_penalty,
+                        "nnls_remove_penalty":nnls_remove_penalty,
+                        "initial_remove_penalty":initial_remove_penalty,
+                        "reffit_denovo_signatures":reffit_denovo_signatures,
                         "dist":clustering_distance,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
@@ -370,7 +379,8 @@ def sigProfilerExtractor(input_type,
     mtype=context_type
     #init=nmf_init
     wall=get_all_signature_matrices
-    penalty=nnls_penalty
+    add_penalty=nnls_add_penalty
+    remove_penalty=nnls_remove_penalty
     genome_build=opportunity_genome
     refgen=reference_genome
     
@@ -890,12 +900,14 @@ def sigProfilerExtractor(input_type,
         allgenomes = pd.DataFrame(allgenomes)
         
         
-        
-        
+        if reffit_denovo_signatures==True:
+            denovo_exposureAvg="none"
+        else:
+            denovo_exposureAvg = exposureAvg
         
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
-                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, signature_stats = signature_stats, penalty=penalty)    
+                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = denovo_exposureAvg, signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution
@@ -917,7 +929,7 @@ def sigProfilerExtractor(input_type,
             genomes = np.array(genomes)
             
             
-        if processAvg.shape[0]==288: #collapse the 1596 context into 96 only for the deocmposition 
+        if processAvg.shape[0]==288: #collapse the 288 context into 96 only for the deocmposition 
             processAvg = pd.DataFrame(processAvg, index=index)
             processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
             genomes = pd.DataFrame(genomes, index=index)
@@ -926,7 +938,7 @@ def sigProfilerExtractor(input_type,
             processAvg = np.array(processAvg)
             genomes = np.array(genomes)
             
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context)
+        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=add_penalty, remove_penalty=remove_penalty, mutation_context=mutation_context)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
         globalsigs = final_signatures["globalsigs"]
@@ -946,7 +958,7 @@ def sigProfilerExtractor(input_type,
         
         
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, penalty=penalty, genome_build=genome_build)
+                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build)
         
         """#make the decomposition plots
         if m=="SBS96" or m=="96":
