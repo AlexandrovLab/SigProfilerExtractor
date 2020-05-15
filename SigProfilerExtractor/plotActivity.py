@@ -97,7 +97,7 @@ artifacts_sigs = pd.DataFrame(np.array([['SBS27', '#C8C8C8'],
 # artifacts_sigs = pd.read_table('artifacts_sigs.txt')
 # with open('additional_colors.txt', 'r') as f: colors = f.read().splitlines()
 ##########################################
-
+#function to plot Sample Activities
 def plotActivity(activity_file, output_file = "Activity_in_samples.pdf", bin_size = 50, log = False):
     size = int(bin_size)
     inputDF = pd.read_table(activity_file,index_col = 0)

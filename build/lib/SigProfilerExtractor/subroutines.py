@@ -19,7 +19,7 @@ from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
 from SigProfilerExtractor import SigProfilerPlotting_plot_png as plotE
-from SigProfilerExtractor import plotactivity as plot_ac
+from SigProfilerExtractor import plotActivity as plot_ac
 from SigProfilerExtractor import tmbplot as tmb
 import string 
 import os

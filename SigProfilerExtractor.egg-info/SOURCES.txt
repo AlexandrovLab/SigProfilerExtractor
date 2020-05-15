@@ -12,7 +12,7 @@ SigProfilerExtractor/decomposition.py
 SigProfilerExtractor/nmf_cpu.py
 SigProfilerExtractor/nmf_gpu.py
 SigProfilerExtractor/piebar_figures.py
-SigProfilerExtractor/plotactivity.py
+SigProfilerExtractor/plotActivity.py
 SigProfilerExtractor/sigpro.py
 SigProfilerExtractor/single_sample.py
 SigProfilerExtractor/subroutines.py
