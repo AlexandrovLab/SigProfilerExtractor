@@ -144,7 +144,7 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             sysdata.write("\tnnls_add_penalty: {}\n".format(excecution_parameters["nnls_add_penalty"]))
             sysdata.write("\tnnls_remove_penalty: {}\n".format(excecution_parameters["nnls_remove_penalty"]))
             sysdata.write("\tinitial_remove_penalty: {}\n".format(excecution_parameters["initial_remove_penalty"]))
-            sysdata.write("\treffit_denovo_signatures: {}\n".format(excecution_parameters["reffit_denovo_signatures"]))
+            sysdata.write("\trefit_denovo_signatures: {}\n".format(excecution_parameters["refit_denovo_signatures"]))
             
             
             sysdata.write("\n-------Analysis Progress------- \n")
@@ -176,7 +176,7 @@ def sigProfilerExtractor(input_type,
                          nnls_add_penalty=0.05, 
                          nnls_remove_penalty=0.01,
                          initial_remove_penalty=0.05,
-                         reffit_denovo_signatures=False,
+                         refit_denovo_signatures=False,
                          clustering_distance="cosine",
                          get_all_signature_matrices= False): 
     memory_usage()
@@ -357,7 +357,7 @@ def sigProfilerExtractor(input_type,
                         "nnls_add_penalty":nnls_add_penalty,
                         "nnls_remove_penalty":nnls_remove_penalty,
                         "initial_remove_penalty":initial_remove_penalty,
-                        "reffit_denovo_signatures":reffit_denovo_signatures,
+                        "refit_denovo_signatures":refit_denovo_signatures,
                         "dist":clustering_distance,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
@@ -383,7 +383,7 @@ def sigProfilerExtractor(input_type,
     remove_penalty=nnls_remove_penalty
     genome_build=opportunity_genome
     refgen=reference_genome
-    
+    refit_denovo_signatures
     
     
     #setting seeds
@@ -900,7 +900,7 @@ def sigProfilerExtractor(input_type,
         allgenomes = pd.DataFrame(allgenomes)
         
         
-        if reffit_denovo_signatures==True:
+        if refit_denovo_signatures==True:
             denovo_exposureAvg="none"
         else:
             denovo_exposureAvg = exposureAvg
