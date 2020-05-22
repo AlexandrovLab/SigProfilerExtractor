@@ -1211,7 +1211,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     newsig = list() # will create the letter based id of newsignatures
     newsigmatrixidx = list() # will create the original id of newsignature to help to record the original matrix
     fh = open(directory+"/comparison_with_global_ID_signatures.csv", "w")
-    fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, KL Divergence, Cosine Similarity, Correlarion\n")
+    fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, KL Divergence, Cosine Similarity, Correlation\n")
     fh.close()
     dictionary = {}
     
@@ -1260,6 +1260,9 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             #print("\n\n\n\n\n\n\n\n")
         # for other contexts     
         else:
+            lognote = open(directory+"/decomposition_logfile.txt", "a")  
+            lognote.write("\n\n\n\n######################## Decomposing "+j+" ########################\n"  )
+            lognote.close()
             _, exposures,L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
                                                                                                          signatures[:,i], 
                                                                                                          metric="l2", 
@@ -1965,7 +1968,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     #plt tmb
     tmb_exposures = pd.melt(exposures)
-    tmb.plotTMB(tmb_exposures, layer_directory+"/"+solution_type+"_"+"TMB_plot.pdf", scale="genome", Yrange="adapt")
+    tmb.plotTMB(tmb_exposures, scale="genome", Yrange="adapt", output= layer_directory+"/"+solution_type+"_"+"TMB_plot.pdf")
     del tmb_exposures
     #plot activities
     plot_ac.plotActivity(layer_directory+"/"+solution_type+"_"+"Activities_"+signature_type+".txt", output_file = layer_directory+"/"+solution_type+"_"+"Activity_in_samples.pdf", bin_size = 50, log = False)

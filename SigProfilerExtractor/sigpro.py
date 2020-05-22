@@ -887,6 +887,7 @@ def sigProfilerExtractor(input_type,
             print ("The {} folder could not be created".format("output"))
         
         # make the texts for signature plotting
+       
         signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Stability", "float")
         signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
         # make de novo solution(processAvg, allgenomes, layer_directory1)
@@ -912,7 +913,7 @@ def sigProfilerExtractor(input_type,
         #try:
         # create the folder for the final solution/ Decomposed Solution
         
-        layer_directory2 = output+"/Suggested_Solution/Decomposed_Solution"
+        layer_directory2 = output+"/Suggested_Solution/COSMIC_"+mutation_type+"_Decomposed_Solution"
         try:
             if not os.path.exists(layer_directory2):
                 os.makedirs(layer_directory2)

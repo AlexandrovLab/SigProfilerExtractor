@@ -14,7 +14,7 @@ import os
 
 
 
-def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, genome_build="GRCh37", verbose=False):
+def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, genome_build="GRCh37", refit_denovo_signatures=True, verbose=False):
 
     
     """
@@ -55,14 +55,22 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
     
     processAvg = pd.read_csv(signatures, sep = "\t", index_col=0) 
     exposureAvg = pd.read_csv(activities, sep = "\t", index_col = 0)
+    genomes = pd.read_csv(samples, sep = "\t", index_col = 0)
+    
+    mutation_type = str(genomes.shape[0])
+    m=mutation_type
+    
+    index = genomes.index
+    colnames = genomes.columns
+    listOfSignatures = processAvg.columns
     
     
     
     processAvg = np.array(processAvg)
     
     
-    genomes = pd.read_csv(samples, sep = "\t", index_col = 0)
-    mutation_type = str(genomes.shape[0])
+    
+    
     #creating list of mutational type to sync with the vcf type input
     if mutation_type == "78":
         mutation_context = "DBS78"
@@ -74,11 +82,51 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
     signature_names = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype = mutation_context)
     exposureAvg.columns=signature_names   
     
-    index = genomes.index
-    m=mutation_type
-    layer_directory2 = output
-    if not os.path.exists(layer_directory2):
-        os.makedirs(layer_directory2)
+    
+    
+    
+    
+    # create the folder for the final solution/ De Novo Solution
+    
+    try:
+        if not os.path.exists(output):
+            os.makedirs(output)
+    except: 
+        print ("The {} folder could not be created".format("output"))
+    
+    # make the texts for signature plotting
+    layer_directory1 = output+"/De_Novo_Solution"
+    try:
+        if not os.path.exists(layer_directory1):
+            os.makedirs(layer_directory1)
+    except: 
+        print ("The {} folder could not be created".format("De_Novo_Solution"))
+    
+    
+   
+    
+    
+   
+    listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_context)
+    genomes = pd.DataFrame(genomes)
+    
+    
+    if refit_denovo_signatures==True:
+        denovo_exposureAvg="none"
+    else:
+        denovo_exposureAvg = np.array(exposureAvg)
+    
+    exposureAvg = sub.make_final_solution(processAvg, genomes, listOfSignatures, layer_directory1, m, index, \
+                   colnames,denovo_exposureAvg  = denovo_exposureAvg, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty)    
+
+    
+    
+    layer_directory2 = output+"/Decompose_Solution"
+    try:
+        if not os.path.exists(layer_directory2):
+            os.makedirs(layer_directory2)
+    except: 
+        print ("The {} folder could not be created".format("Decompose_Solution"))
     
     
     if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
