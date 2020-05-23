@@ -126,7 +126,7 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
         if not os.path.exists(layer_directory2):
             os.makedirs(layer_directory2)
     except: 
-        print ("The {} folder could not be created".format("Decompose_Solution"))
+        print ("The {} folder could not be created".format("Decomposed_Solution"))
     
     
     if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 

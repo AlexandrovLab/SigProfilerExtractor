@@ -1728,10 +1728,10 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     
     #Get the type of Signatures
-    if m == 83:
-        signature_type = "INDEL"
-    elif m==78:
-        signature_type = "DINUC"
+    if m == 83 or m=="83":
+        signature_type = "INDEL83"
+    elif m==78 or m=="78":
+        signature_type = "DINUC78"
     else:
         signature_type = "SBS"+str(m)
     
@@ -1981,19 +1981,24 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     all_similarities.to_csv(layer_directory+"/"+solution_type+"_Samples_stats_"+signature_type+".txt", sep="\t")
     
     
-    if type(process_std_error) != str:
-        process_std_error= pd.DataFrame(process_std_error)
-        processSTE = process_std_error.set_index(index)
-        processSTE.columns = allsigids
-        processSTE = processSTE.rename_axis("MutationType", axis="columns")
-        processSTE.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_SEM_Error_"+signature_type+".txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
-    
-    if type(signature_stats)!=str:
-        signature_stats = signature_stats.set_index(allsigids)
-        signature_stats = signature_stats.rename_axis("Signatures", axis="columns")
-        signature_stats.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_stats_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
-        signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
-        signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
+    if solution_type == "De_Novo_Solution":
+        try:
+            process_std_error= pd.DataFrame(process_std_error)
+            processSTE = process_std_error.set_index(index)
+            processSTE.columns = allsigids
+            processSTE = processSTE.rename_axis("MutationType", axis="columns")
+            processSTE.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_SEM_Error_"+signature_type+".txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
+        except:
+            pass
+    if solution_type == "De_Novo_Solution":
+        try: 
+            signature_stats = signature_stats.set_index(allsigids)
+            signature_stats = signature_stats.rename_axis("Signatures", axis="columns")
+            signature_stats.to_csv(layer_directory+"/"+solution_type+"_"+"Signatures_stats_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
+            signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
+            signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
+        except:
+            pass
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
