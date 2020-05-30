@@ -167,7 +167,7 @@ def sigProfilerExtractor(input_type,
                          gpu=False, 
                          nmf_init="alexandrov-lab-custom", 
                          precision= "single", 
-                         matrix_normalization= "100X", 
+                         matrix_normalization= "gmm", 
                          seeds= "random", 
                          min_nmf_iterations= 10000, 
                          max_nmf_iterations=1000000, 
@@ -176,8 +176,9 @@ def sigProfilerExtractor(input_type,
                          nnls_add_penalty=0.05, 
                          nnls_remove_penalty=0.01,
                          initial_remove_penalty=0.05,
-                         refit_denovo_signatures=False,
+                         refit_denovo_signatures=True,
                          clustering_distance="cosine",
+                         export_probabilities=True,
                          get_all_signature_matrices= False): 
     memory_usage()
     """
@@ -255,6 +256,8 @@ def sigProfilerExtractor(input_type,
     nnls_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample. 
     
     get_all_signature_matrices: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
+    
+    export_probabilities: A Boolen. Defualt is True. If False, then doesn't create the probability matrix
     
     Returns
     -------
@@ -359,6 +362,7 @@ def sigProfilerExtractor(input_type,
                         "initial_remove_penalty":initial_remove_penalty,
                         "refit_denovo_signatures":refit_denovo_signatures,
                         "dist":clustering_distance,
+                        "export_probabilities":export_probabilities,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
     
@@ -384,7 +388,11 @@ def sigProfilerExtractor(input_type,
     genome_build=opportunity_genome
     refgen=reference_genome
     refit_denovo_signatures
-    
+    #set the squence type ("genome" or "exome") for the tmb plot inside the make_final_solution function
+    if exome==False:
+        sequence="genome"
+    if exome==True:
+        sequence="exome"
     
     #setting seeds
     if seeds=="random":
@@ -803,7 +811,7 @@ def sigProfilerExtractor(input_type,
             information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchycal approach
             
             ################################# Export the results ###########################################################    
-            sub.export_information(loopResults, m, layer_directory, index, colnames, wall=wall)
+            sub.export_information(loopResults, m, layer_directory, index, colnames, wall=wall, sequence=sequence)
             
           
             
@@ -892,8 +900,7 @@ def sigProfilerExtractor(input_type,
         signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
         # make de novo solution(processAvg, allgenomes, layer_directory1)
         
-        
-       
+   
         
         
        
@@ -908,7 +915,7 @@ def sigProfilerExtractor(input_type,
         
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
-                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = denovo_exposureAvg, signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty)    
+                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = denovo_exposureAvg, signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, sequence=sequence)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution
@@ -959,7 +966,7 @@ def sigProfilerExtractor(input_type,
         
         
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build)
+                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, sequence=sequence,export_probabilities=export_probabilities)
         
         """#make the decomposition plots
         if m=="SBS96" or m=="96":
