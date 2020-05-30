@@ -159,7 +159,7 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
        >>> path_to_example_table = sig.importdata("matrix")
        >>> data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog matrix/table
        >>> sig.sigProfilerExtractor("matrix", "example_output", data, opportunity_genome="GRCh38", minimum_signatures=1,            maximum_signatures=3)
-     >>>if __name__="__main__":
+    >>>if __name__="__main__":
        >>>main_function()
     
     To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
