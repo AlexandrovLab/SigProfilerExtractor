@@ -143,19 +143,24 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
     --------
 
     >>> from SigProfilerExtractor import sigpro as sig
-    
-    # to get input from vcf files
-    >>> path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
-    >>> data = path_to_example_folder_containing_vcf_files # you can put the path to your folder containing the vcf samples
-    >>> sig.sigProfilerExtractor("vcf", "example_output", data, minimum_signatures=1, maximum_signatures=3)
+    >>>def main_function():
+        # to get input from vcf files
+        >>> path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
+        >>> data = path_to_example_folder_containing_vcf_files # you can put the path to your folder containing the vcf     samples
+        >>> sig.sigProfilerExtractor("vcf", "example_output", data, minimum_signatures=1, maximum_signatures=3)
+    >>>if __name__="__main__":
+       >>>main_function()
     
     Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
     Check the current working directory for the "example_output" folder.
     
-    # to get input from table format (mutation catalog matrix)
-    >>> path_to_example_table = sig.importdata("matrix")
-    >>> data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog         matrix/table
-    >>> sig.sigProfilerExtractor("matrix", "example_output", data, opportunity_genome="GRCh38", minimum_signatures=1, maximum_signatures=3)
+    >>>def main_function():    
+       # to get input from table format (mutation catalog matrix)
+       >>> path_to_example_table = sig.importdata("matrix")
+       >>> data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog matrix/table
+       >>> sig.sigProfilerExtractor("matrix", "example_output", data, opportunity_genome="GRCh38", minimum_signatures=1,            maximum_signatures=3)
+     >>>if __name__="__main__":
+       >>>main_function()
     
     To get help on the parameters and outputs of the "sigProfilerExtractor" function, please write down the following line:
     
