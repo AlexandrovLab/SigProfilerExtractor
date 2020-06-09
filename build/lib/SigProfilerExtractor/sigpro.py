@@ -165,7 +165,7 @@ def sigProfilerExtractor(input_type,
                          batch_size=1, 
                          cpu=-1, 
                          gpu=False, 
-                         nmf_init="alexandrov-lab-custom", 
+                         nmf_init="nndsvd_min", 
                          precision= "single", 
                          matrix_normalization= "gmm", 
                          seeds= "random", 
@@ -227,8 +227,8 @@ def sigProfilerExtractor(input_type,
     
     matrix_normalization: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is "log2". Other options are "gmm", "100X" or "no_normalization".         
     
-    nmf_init: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'
-              Default is 'alexandrov-lab-custom'.
+    nmf_init: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'
+              Default is 'nndsvd_min'.
     
     precision: A string. Values should be single or double. Default is single.
     

@@ -46,6 +46,7 @@ class NMF:
         #torch.cuda.set_device(gpu_id)
         
         
+            
         if seed is None:
             seed = datetime.now().timestamp()
 
@@ -108,7 +109,7 @@ class NMF:
             for i in range(self._V.shape[0]):
                 vin = np.mat(self._V.cpu().numpy()[i])
                 W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 2})
-        elif init_method == 'alexandrov-lab-custom':
+        elif init_method =='nndsvd_min':
            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
            nv = nndsvd.Nndsvd()
