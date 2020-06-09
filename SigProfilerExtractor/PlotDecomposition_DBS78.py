@@ -3,6 +3,8 @@
 Created: February 21, 2020
 @author: Mark Barnes
 """
+import reportlab
+import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4, landscape
 from reportlab.platypus import Image
@@ -36,7 +38,7 @@ GRAPH_X_COORD = (WIDTH_LETTER) - WIDTH_GRAPH
 GRAPH_Y_COORD = (HEIGHT_LETTER - HEIGHT_GAP)
 TEXT_X_COORD = GRAPH_X_COORD + WIDTH_GRAPH - 50
 TEXT_Y_COORD = (HEIGHT_LETTER - HEIGHT_GAP) + 63.75
-
+reportlab.rl_config.TTFSearchPath.append(os.getcwd()+ '/src/Fonts/')
 pdfmetrics.registerFont(TTFont('Arial-Bold', 'Arial Bold.ttf'))
 
 # Pairs are (x-coordinate, y-coordinate)
