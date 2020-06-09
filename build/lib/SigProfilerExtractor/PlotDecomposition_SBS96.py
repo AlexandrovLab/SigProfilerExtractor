@@ -4,7 +4,6 @@ Created: February 21, 2020
 @author: Mark Barnes
 """
 import reportlab
-import os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter, A4, landscape
 from reportlab.lib import utils
@@ -13,7 +12,7 @@ from reportlab.pdfbase import pdfmetrics
 import SigProfilerExtractor as cosmic
 # imports for dashed line
 from reportlab.lib.colors import black
-
+paths = cosmic.__path__[0]
 # Page Formatting
 inch = 72
 # USING LETTER LANDSCAPE DIMENSIONS
@@ -37,7 +36,7 @@ GRAPH_Y_COORD = (HEIGHT_LETTER - HEIGHT_GAP)
 TEXT_X_COORD = GRAPH_X_COORD + WIDTH_GRAPH - 50
 TEXT_Y_COORD = (HEIGHT_LETTER - HEIGHT_GAP) + 63.75
 
-reportlab.rl_config.TTFSearchPath.append(os.getcwd()+ '/src/Fonts/')
+reportlab.rl_config.TTFSearchPath.append(paths+'/src/Fonts/')
 pdfmetrics.registerFont(TTFont('Arial-Bold', 'Arial Bold.ttf'))
 #print(pdfmetrics.sorted_list())
 
