@@ -8,7 +8,8 @@ Created on Sun Oct  7 15:21:55 2018
 from scipy.cluster import hierarchy
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
-import nimfa 
+#import nimfa 
+from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import pandas as pd
 from sklearn import metrics
@@ -18,7 +19,7 @@ from multiprocessing import current_process
 from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
-from SigProfilerExtractor import SigProfilerPlotting_plot_png as plotE
+from SigProfilerExtractor import PlotDecomposition as sp
 from SigProfilerExtractor import plotActivity as plot_ac
 from SigProfilerExtractor import tmbplot as tmb
 import string 
@@ -32,11 +33,11 @@ from scipy.stats import  ranksums
 from SigProfilerExtractor import single_sample as ss
 #from sklearn.cluster import KMeans
 from SigProfilerExtractor import nmf_cpu
-from sklearn.decomposition import NMF
+#from sklearn.decomposition import NMF
 from sklearn import mixture
 from scipy.spatial.distance import cdist
 from scipy.spatial.distance import correlation as cor
-
+import shutil
 #import mkl
 #mkl.set_num_threads(40)
 #from numba import jit
@@ -1149,12 +1150,12 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", add_penalty=0.05, remove_penalty=0.01, mutation_context=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", add_penalty=0.05, remove_penalty=0.01, mutation_context=None, make_decomposition_plots=True):
     
     if not os.path.exists(directory+"/Solution_Stats"):
         os.makedirs(directory+"/Solution_Stats")
     # open the log file for signature decomposition 
-    lognote = open(directory+"/Solution_Stats"+"/decomposition_logfile.txt", "w") 
+    lognote = open(directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", "w") 
     lognote.write("############################ Signature Decomposition Details ################################\n\n\n")
     lognote.write("Context Type: {}\n".format(mtype))
     lognote.write("Genome Build: {}\n".format(genome_build))
@@ -1179,29 +1180,36 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         signames = sigDatabase.columns 
         
         
+        
     elif signatures.shape[0]==78:
         if genome_build=="GRCh37":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="GRCh37").iloc[:,1:]
+            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="GRCh37", index_col=0)
         elif genome_build=="GRCh38":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="GRCh38").iloc[:,1:]
+            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="GRCh38", index_col=0)
         elif genome_build=="mm9":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm9").iloc[:,1:]
+            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm9",index_col=0)
         elif genome_build=="mm10":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm10").iloc[:,1:]
+            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm10",index_col=0)
             
         signames = sigDatabase.columns
         
     elif signatures.shape[0]==83:
-        sigDatabase = pd.read_csv(paths+"/data/sigProfiler_ID_signatures.csv", sep=",").iloc[:,1:]
+        sigDatabase = pd.read_csv(paths+"/data/sigProfiler_ID_signatures.csv", sep=",",index_col=0)
         signames = sigDatabase.columns
     else:
-        sigDatabase = np.random.rand(signatures.shape[0],2)
-        signames = list(range(signatures.shape[0]))
+        sigDatabase = pd.DataFrame(signatures)
+        sigDatabase.columns=sigDatabase.columns.astype(str)
+        sigDatabase.index=sigDatabase.index.astype(str)
+        signames=sigDatabase.columns
+        
+        
         
     sigDatabases = sigDatabase
     letters = list(string.ascii_uppercase)
     letters.extend([i+b for i in letters for b in letters])
     letters = letters[0:signatures.shape[1]]
+    
+    
     
     
     # replace the probability data of the process matrix with the number of mutation
@@ -1225,7 +1233,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
         # Only for context SBS96
         if signatures.shape[0]==96:
-            lognote = open(directory+"/Solution_Stats/decomposition_logfile.txt", "a")  
+            lognote = open(directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", "a")  
             lognote.write("\n\n\n\n######################## Decomposing "+j+" ########################\n"  )
             lognote.close()
             if genome_build=="mm9" or genome_build=="mm10":
@@ -1253,7 +1261,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          remove_penalty = remove_penalty,
                                                                                                          check_rule_negatives = check_rule_negatives, 
                                                                                                          checkrule_penalty = check_rule_penalty, 
-                                                                                                         directory = directory+"/Solution_Stats/decomposition_logfile.txt", 
+                                                                                                         directory = directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", 
                                                                                                          verbose=False)
             #print(exposures)
             #print("######################################################################")
@@ -1262,9 +1270,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             #print("\n\n\n\n\n\n\n\n")
         # for other contexts     
         else:
-            lognote = open(directory+"/decomposition_logfile.txt", "a")  
+            lognote = open(directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", "a")  
             lognote.write("\n\n\n\n######################## Decomposing "+j+" ########################\n"  )
             lognote.close()
+            
             _, exposures,L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
                                                                                                          signatures[:,i], 
                                                                                                          metric="l2", 
@@ -1275,7 +1284,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          remove_penalty = remove_penalty,
                                                                                                          check_rule_negatives = [], 
                                                                                                          checkrule_penalty = [], 
-                                                                                                         directory = directory+"/Solution_Stats/decomposition_logfile.txt", 
+                                                                                                         directory = directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", 
                                                                                                          verbose=False)
         #print(signames[np.nonzero(exposures)], similarity)
         
@@ -1289,6 +1298,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         count =0
         decomposed_signatures = []
         contribution_percentages = []
+        
         for j in np.nonzero(exposures)[0]:
             listofinformation[count*3] = signames[j]
             listofinformation[count*3+1] = round(exposure_percentages[count],2)
@@ -1296,8 +1306,55 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             listofinformation[count*3+2]="%"
             decomposed_signatures.append(signames[j])
             count+=1
-        ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist]+[L2dist]+[kldiv]+[similarity]+[correlation])
+        ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist*100]+[L2dist*100]+[kldiv]+[similarity]+[correlation])
         activity_percentages.append(contribution_percentages)
+        
+        
+        
+        
+        #print(sigDatabases)
+        
+        #print(sigDatabases_DF)
+        weights=[]
+        basis_names=[]
+        nonzero_exposures=exposures[np.nonzero(exposures)]
+        denovo_name=mutation_context+letters[i]
+        for info in range(0, len(listofinformation), 3):
+            #print(info)
+            sigName=listofinformation[info]
+            sigWeigt=str(listofinformation[info+1])+"%"
+            weights.append(sigWeigt)
+            basis_names.append(sigName)
+        
+        denovo_signames=[]
+        for letter in letters:
+            denovo_signames.append(mutation_context+letter)
+       
+        
+        signatures_DF=pd.DataFrame(signatures)
+        signatures_DF.columns=denovo_signames
+        signatures_DF.index = sigDatabases.index 
+        sigDatabases_DF=sigDatabases.reset_index()
+        signatures_DF = signatures_DF.reset_index()
+        
+        
+        if mtype=="1536":
+            mtype_par="96"
+        elif mtype=="288":
+            mtype_par="288"
+        elif mtype=="96":
+            mtype_par="96"
+        elif mtype=="DINUC" or mtype=="78":
+            mtype_par="78"
+        elif mtype=="INDEL" or mtype=="83":
+            mtype_par="83"
+        else:
+            mtype_par="none"
+        
+        
+        if mtype_par!="none" and make_decomposition_plots==True:
+            sp.run_PlotDecomposition(signatures_DF, denovo_name, sigDatabases_DF, basis_names, weights, nonzero_exposures, directory+"/Decomposition_Polts", "test", mtype_par)
+            print("Decompoisiton Plot made for {}\n".format(denovo_name))
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
@@ -1359,6 +1416,15 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     # close the lognote
     lognote.close()
     
+    #delete the folder with sub_plots from the Decomposition_Polts
+    if mtype_par!="none" and make_decomposition_plots==True:
+        if mtype_par=="78":
+            shutil.rmtree(directory+"/Decomposition_Polts/DBS_sub_plots")
+        elif mtype_par=="83":
+            shutil.rmtree(directory+"/Decomposition_Polts/ID_sub_plots")
+        elif mtype_par=="96":
+            shutil.rmtree(directory+"/Decomposition_Polts/SBS_sub_plots")
+        
     #return values
     return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary, 
             "background_sigs": background_sigs, "activity_percentages": activity_percentages} 
@@ -1713,9 +1779,11 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         plot.plotDBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "78", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="INDEL" or m=="83":
         plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
-    else:
+    elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
-     
+    else:
+        custom_signatures_plot(processes, signature_subdirectory)
+        
         
 # =============================================================================
 #     processAvg = pd.read_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", sep="\t", index_col=0)
@@ -1735,6 +1803,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
+    solution_prefix = solution_type.split("_")
+    solution_prefix = "_".join(solution_prefix[0:2])
     
     if not os.path.exists(layer_directory+"/Signatures"):
         os.makedirs(layer_directory+"/Signatures")
@@ -1745,7 +1815,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
           
     
     # Create the lognote file
-    lognote = open(layer_directory+"/Solution_Stats"+"/Signature_assaignment_logfile.txt", "w")
+    lognote = open(layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", "w")
     lognote.write("************************ Stepwise Description of Signature Assaignment to Samples ************************")
     lognote.close()
     
@@ -1777,7 +1847,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 print("\n\n\n\n\n                                        ################ Sample "+str(r+1)+ " #################")
                      
             # Record information to lognote
-            lognote = open(layer_directory+"/Solution_Stats"+"/Signature_assaignment_logfile.txt", "a")
+            lognote = open(layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", "a")
             lognote.write("\n\n\n\n\n                    ################ Sample "+str(r+1)+ " #################\n") 
             
             sample_exposure = np.array(denovo_exposureAvg.iloc[:,r])
@@ -1862,7 +1932,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                                                                                                   remove_penalty=remove_penalty,
                                                                                                   check_rule_negatives = check_rule_negatives, 
                                                                                                   checkrule_penalty = check_rule_penalty, 
-                                                                                                  directory = layer_directory+"/Solution_Stats/Signature_assaignment_logfile.txt", 
+                                                                                                  directory = layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", 
                                                                                                  verbose=False)
                  
                 if verbose==True:
@@ -1870,7 +1940,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                     print(exposureAvg[:, r])
                     print("L2%: ", L2dist)
                 # Recond the information in the log file
-                lognote = open(layer_directory+"/Solution_Stats"+"/Signature_assaignment_logfile.txt", "a")
+                lognote = open(layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", "a")
                 lognote.write("####################################### Composition After Add-Remove #######################################\n")
                 exposures = pd.DataFrame(exposureAvg[:, r],  index=allsigids).T
                 lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
@@ -1913,7 +1983,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             for g in range(allgenomes.shape[1]):
                 
                 # Record information to lognote
-                lognote = open(layer_directory+"/Solution_Stats"+"/Signature_assaignment_logfile.txt", "a")
+                lognote = open(layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", "a")
                 lognote.write("\n\n\n\n\n                    ################ Sample "+str(g+1)+ " #################\n")
                               
                 
@@ -1949,14 +2019,14 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                                                                                                   remove_penalty=remove_penalty,
                                                                                                   check_rule_negatives = [], 
                                                                                                   checkrule_penalty = check_rule_penalty, 
-                                                                                                  directory = layer_directory+"/Solution_Stats/Signature_assaignment_logfile.txt", 
+                                                                                                  directory = layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", 
                                                                                                  verbose=False)
                 if verbose==True:
                     print("####################################### Composition After Add-Remove #######################################\n") 
                     print(exposureAvg[:, g])
                     print("L2%: ", L2dist)
                 # Recond the information in the log file
-                lognote = open(layer_directory+"/Solution_Stats"+"/Signature_assaignment_logfile.txt", "a")
+                lognote = open(layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assaignment_log.txt", "a")
                 lognote.write("####################################### Composition After Add-Remove #######################################\n")
                 exposures = pd.DataFrame(exposureAvg[:, g],  index=allsigids).T
                 lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
@@ -1970,11 +2040,14 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             
         
     
+    
+    
+    
     processAvg= pd.DataFrame(processAvg.astype(float))
     processes = processAvg.set_index(index)
     processes.columns = allsigids
     processes = processes.rename_axis("MutationsType", axis="columns")
-    processes.to_csv(layer_directory+"/Signatures"+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
+    processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
     
      
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
@@ -1987,23 +2060,23 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
-    exposures.to_csv(layer_directory+"/Activities"+"/"+solution_type+"_"+"Activities_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
+    exposures.to_csv(layer_directory+"/Activities"+"/"+solution_prefix+"_"+"Activities.txt", "\t", index_label=[exposures.columns.name]) 
     
     
     #plt tmb
     tmb_exposures = pd.melt(exposures)
-    tmb.plotTMB(tmb_exposures, scale=sequence, Yrange="adapt", output= layer_directory+"/Activities"+"/"+solution_type+"_"+"TMB_plot.pdf")
+    tmb.plotTMB(tmb_exposures, scale=sequence, Yrange="adapt", output= layer_directory+"/Activities"+"/"+solution_prefix+"_"+"TMB_plot.pdf")
     del tmb_exposures
     
     #plot activities
-    plot_ac.plotActivity(layer_directory+"/Activities"+"/"+solution_type+"_"+"Activities_"+signature_type+".txt", output_file = layer_directory+"/Activities/"+solution_type+"_"+"Activity_in_samples.pdf", bin_size = 50, log = False)
+    plot_ac.plotActivity(layer_directory+"/Activities"+"/"+solution_prefix+"_"+"Activities.txt", output_file = layer_directory+"/Activities/"+solution_prefix+"_"+"Activities.pdf", bin_size = 50, log = False)
     
     
     # Calcutlate the similarity matrices
     est_genomes = np.dot(processAvg, exposureAvg)
     all_similarities, cosine_similarities = calculate_similarities(allgenomes, est_genomes, allcolnames)
     all_similarities.iloc[:,[3,5]] = all_similarities.iloc[:,[3,5]].astype(str) + '%'
-    all_similarities.to_csv(layer_directory+"/Solution_Stats/"+solution_type+"_Samples_stats_"+signature_type+".txt", sep="\t")
+    all_similarities.to_csv(layer_directory+"/Solution_Stats/"+solution_prefix+"_Samples_Stats.txt", sep="\t")
     
      
     if solution_type == "De_Novo_Solution":
@@ -2012,14 +2085,14 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             processSTE = process_std_error.set_index(index)
             processSTE.columns = allsigids
             processSTE = processSTE.rename_axis("MutationType", axis="columns")
-            processSTE.to_csv(layer_directory+"/Signatures"+"/"+solution_type+"_"+"Signatures_SEM_Error_"+signature_type+".txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
+            processSTE.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures_SEM_Error.txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
         except:
             pass
     if solution_type == "De_Novo_Solution":
         try: 
             signature_stats = signature_stats.set_index(allsigids)
             signature_stats = signature_stats.rename_axis("Signatures", axis="columns")
-            signature_stats.to_csv(layer_directory+"/Solution_Stats"+"/"+solution_type+"_"+"Signatures_stats_"+signature_type+".txt", "\t", index_label=[exposures.columns.name]) 
+            signature_stats.to_csv(layer_directory+"/Solution_Stats"+"/"+solution_prefix+"_"+"Signatures_Stats.txt", "\t", index_label=[exposures.columns.name]) 
             signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
             signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
         except:
@@ -2033,16 +2106,16 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     ########################################### PLOT THE SIGNATURES ################################################
     
     if m=="DINUC" or m=="78":
-        plot.plotDBS(layer_directory+"/Signatures/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signatures"+"/Signature_plot" , solution_type, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        #plotE.plotDBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        
+        plot.plotDBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+            
     elif m=="INDEL" or m=="83":
-        plot.plotID(layer_directory+"/Signatures/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signatures"+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        #plotE.plotID(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot" , solution_type, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-    else:
-        plot.plotSBS(layer_directory+"/Signatures/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signatures"+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        #plotE.plotSBS(layer_directory+"/"+solution_type+"_"+"Signatures_"+signature_type+".txt", layer_directory+"/Signature_plot", solution_type, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations, path=layer_directory )
+        plot.plotID(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
         
+    elif m=="96" or m=="288" or m=="384" or m=="1536":
+        plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+        
+    else:
+        custom_signatures_plot(processes, layer_directory+"/Signatures")
       
         
     #processAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", sep="\t", index_col=0)
@@ -2112,16 +2185,48 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     pre_mean = np.inf  
     
     
+  
     
-    
+   
     if mtype=="DBS78" or mtype=="ID83":
         data_over_thresh_hold = data[data["Stability"]>=0.8]
     else:
         data_over_thresh_hold = data[data["Stability"]+data["avgStability"]>=1.0]
-    idx_within_thresh_hold=data_over_thresh_hold.shape[0]-1
-    signatures_within_thresh_hold=data_over_thresh_hold.iloc[data_over_thresh_hold.shape[0]-1,0]
+        
+    #if all solutions are under the thresh-hold 
+    if data_over_thresh_hold.shape[0]==0:
+        idx_within_thresh_hold=0
+        signatures_within_thresh_hold=data.iloc[data.shape[0]-1,0]
+    else:
+        idx_within_thresh_hold=data_over_thresh_hold.shape[0]-1
+        signatures_within_thresh_hold=data_over_thresh_hold.iloc[data_over_thresh_hold.shape[0]-1,0]
+        
+    solutions_over_thresh_hold_stability=data_over_thresh_hold.shape[0]
+    
+   
+    
+    
+    
+    #create "Stable Solution" column
+    stable_solution=[]
+    
+    #create probability list
+    probabilities=["N/A"]*len(all_similarities_list)
+    
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
+        
+      if mtype=="DBS78" or mtype=="ID83":
+          if data.iloc[values,1]>=0.8:
+              stable_solution.append("Yes")
+          else:
+              stable_solution.append("No")        
+      else:
+          if data.iloc[values,1]+data.iloc[values,1]>=1.0:
+              stable_solution.append("Yes")
+          else:
+              stable_solution.append("No")
+              
       all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6,7]]
       avg_stability=data["avgStability"][values]
       min_stability=data["Stability"][values]
@@ -2166,21 +2271,25 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     #record the statistical test between the l2_of the current and previous signatures first
     init_l2_dist = all_similarities["L2_Norm_%"]
     init_mean = all_similarities["L2_Norm_%"].mean()
-   
-    #select the final solution
-    while True:
-        idx_within_thresh_hold=idx_within_thresh_hold-1
-        signatures_within_thresh_hold =signatures_within_thresh_hold-1
-        all_similarities = all_similarities_list[idx_within_thresh_hold].iloc[:,[1,3,5,6,7]]
-        current_l2_dist = all_similarities["L2_Norm_%"]
-        current_mean = all_similarities["L2_Norm_%"].mean()
-        
-        wiltest = ranksums(np.array(init_l2_dist), np.array(current_l2_dist))[1]
-        
-        
-        if (wiltest<0.05) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
-            final_solution=signatures_within_thresh_hold+1
-            break
+    probabilities[idx_within_thresh_hold]="Most Stab Sigs"
+    
+    #select the final solution. Don't go to the while loop if there is not more than 1 signatures over thresh-hold
+    if solutions_over_thresh_hold_stability>1:
+        while True:
+            idx_within_thresh_hold=idx_within_thresh_hold-1
+            signatures_within_thresh_hold =signatures_within_thresh_hold-1
+            
+            
+            all_similarities = all_similarities_list[idx_within_thresh_hold].iloc[:,[1,3,5,6,7]]
+            current_l2_dist = all_similarities["L2_Norm_%"]
+            current_mean = all_similarities["L2_Norm_%"].mean()
+            
+            wiltest = ranksums(np.array(init_l2_dist), np.array(current_l2_dist))[1]
+            probabilities[idx_within_thresh_hold]="{:.2e}".format(wiltest)
+            
+            if (wiltest<0.05) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
+                final_solution=signatures_within_thresh_hold+1
+                break
        
         
         
@@ -2188,8 +2297,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     data = data.assign(**{'Mean Sample L1%': mean_l1, 
                           'Maximum Sample L1%': maximum_l1, 
                           'Mean Sample L2%': mean_l2, 
-                          'Maximum Sample L2%': maximum_l2, 
-                          'Significant Decrease of L2':wilcoxontest, 
+                          'Maximum Sample L2%': maximum_l2,  
                           'Mean Sample KL': mean_kl, 
                           'Maximum Sample KL': maximum_kl,
                           "Mean Cosine Distance":mean_cosine_dist,
@@ -2279,8 +2387,9 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     data.index = index
     
     # add % signs
-    
-    data.iloc[:,1:6] = data.iloc[:,1:6].astype(str) + '%'
+    data.insert(1,'Stable Solution', stable_solution) 
+    data.insert(2,'P-value', probabilities) 
+    data.iloc[:,3:7] = data.iloc[:,3:7].astype(str) + '%'
     return alternative_solution, data
 ######################################## Plot Samples ####################################################
 def plot_csv_sbs_samples(filename, output_path, project, mtype="96", percentage=False, custom_text_upper=" " ):
@@ -2419,4 +2528,30 @@ def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
 
 
 
+def custom_signatures_plot(signatures, output):
+    with PdfPages(output+'/Custom_Signature_Plots.pdf') as pdf:
+        plt.figure(figsize=(10, 3))
+        plt.bar(list(range(1,1+len(signatures.iloc[:,0]))),signatures.iloc[:,0])
+        plt.title('Custom Signature {}'.format(0+1))
+        plt.xticks([])
+        plt.xlabel("Mutation Types")
+        plt.ylabel("Probabilities")
+        pdf.savefig()  # saves the current figure into a pdf page
+        plt.close()
+        
+        
+        
+        for i in range(1,signatures.shape[1]):
+            # if LaTeX is not installed or error caught, change to `usetex=False`
+            plt.rc('text', usetex=False)
+            plt.figure(figsize=(10, 3))
+            plt.bar(list(range(1, 1+len(signatures.iloc[:,i]))),signatures.iloc[:,i])
+            plt.title('Custom Signature {}'.format(i+1))
+            plt.xticks([])
+            plt.xlabel("Mutation Types")
+            plt.ylabel("Probabilities")
+            pdf.attach_note("signature plots")  
+                                               
+            pdf.savefig()
+            plt.close()
 

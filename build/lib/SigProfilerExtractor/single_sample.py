@@ -217,7 +217,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
         notToBeAdded = list(set(list(range(W.shape[1])))-set(toBeAdded)) # get the indices of the signatures to be excluded
         
         #print(len(notToBeAdded))
-    originalSimilarity = 100 # it can be also written as oldsimilarity. wanted to put a big number
+    originalSimilarity = np.inf # it can be also written as oldsimilarity. wanted to put a big number
     maxmutation = round(np.sum(genome))
     init_listed_idx = presentSignatures 
     
@@ -283,8 +283,8 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
         
     while True:
         
-        bestDifference = -100  #### wanted to put a big initila number
-        bestSimilarity = 100 #### actually bestdistance
+        bestDifference = -np.inf  #### wanted to put a big initila number
+        bestSimilarity = np.inf #### actually bestdistance
         loopRecord = [["newExposure place-holder"], ["signatures place-holder"], ["best loop signature place-holder"]]
         
         for sig in init_nonlisted_idx:
@@ -355,7 +355,6 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
             difference = originalSimilarity -  newSimilarity 
             
             # record the best values so far that creates the best difference
-           
             if difference>bestDifference:
                 bestDifference = difference
                 bestSimilarity = newSimilarity
@@ -391,6 +390,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
      
     #print("Good so far")
     #print(finalRecord)
+    
     dictExposure= {"similarity":finalRecord[0], "exposures":finalRecord[1], "signatures": finalRecord[2]}  
     addExposure = np.zeros([W.shape[1]])
     addExposure[dictExposure["signatures"]]=dictExposure["exposures"]
@@ -735,7 +735,7 @@ def add_remove_signatures(W,
     if candidate_sigs == "all":
         candidate_sigs = list(range(W.shape[1]))
     #first add each signatures
-    original_distance = 100
+    original_distance = np.inf # a big number
     layer = 0
     
     # check the cosine_similarity with 4 signatures (highest)
@@ -753,7 +753,7 @@ def add_remove_signatures(W,
             print("\n\n\n\n!!!!!!!!!!!!!!!!!!STARTING LAYER: ", layer)
         lognote.write("\n\n!!!!!!!!!!!!!!!!!!!!!!!!! LAYER: {} !!!!!!!!!!!!!!!!!!!!!!!!!\n".format(layer))
         layer=layer+1
-        layer_original_distance = 100
+        layer_original_distance = np.inf  #a big number
         sigsToBeAdded = list(set(candidate_sigs)-set(background_sigs))
         #set the signature's name 
         if type(allsigids) != bool:

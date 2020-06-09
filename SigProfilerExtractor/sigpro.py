@@ -179,6 +179,7 @@ def sigProfilerExtractor(input_type,
                          refit_denovo_signatures=True,
                          clustering_distance="cosine",
                          export_probabilities=True,
+                         make_decomposition_plots=True,
                          get_all_signature_matrices= False): 
     memory_usage()
     """
@@ -257,7 +258,9 @@ def sigProfilerExtractor(input_type,
     
     get_all_signature_matrices: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
     
-    export_probabilities: A Boolen. Defualt is True. If False, then doesn't create the probability matrix
+    export_probabilities: A Boolean. Defualt is True. If False, then doesn't create the probability matrix.
+    
+    make_decompostion_plots: A Boolean. Defualt is True. If False, then doesn't create the decomposition plots.
     
     Returns
     -------
@@ -363,6 +366,7 @@ def sigProfilerExtractor(input_type,
                         "refit_denovo_signatures":refit_denovo_signatures,
                         "dist":clustering_distance,
                         "export_probabilities":export_probabilities,
+                        "make_decompostion_plots":make_decomposition_plots,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
     
@@ -946,7 +950,7 @@ def sigProfilerExtractor(input_type,
             processAvg = np.array(processAvg)
             genomes = np.array(genomes)
             
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=add_penalty, remove_penalty=remove_penalty, mutation_context=mutation_context)
+        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=add_penalty, remove_penalty=remove_penalty, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
         globalsigs = final_signatures["globalsigs"]
