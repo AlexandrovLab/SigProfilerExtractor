@@ -58,3 +58,17 @@ SigProfilerExtractor/data/vcftest/PD4248a.vcf
 SigProfilerExtractor/src/.DS_Store
 SigProfilerExtractor/src/Accolade_fermante.png
 SigProfilerExtractor/src/CREDIT.md
+SigProfilerExtractor/src/Fonts/Arial Bold.ttf
+SigProfilerExtractor/src/FormatFiles/Sample_Files.DBS1248.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.DBS186.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.DBS2976.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.DBS78.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.ID28.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.ID415.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.ID83.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.SBS1536.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.SBS24.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.SBS384.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.SBS6.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.SBS6144.all
+SigProfilerExtractor/src/FormatFiles/Sample_Files.SBS96.all

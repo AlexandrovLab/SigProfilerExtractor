@@ -1,5 +1,6 @@
 include README.rst
 include SigProfilerExtractor/data/*
 include SigProfilerExtractor/data/vcftest/*
-include SigProfilerExtractor/src
+include SigProfilerExtractor/src/FormatFiles/*
+include SigProfilerExtractor/src/Fonts/*
 include SigProfilerExtractor/src/*
