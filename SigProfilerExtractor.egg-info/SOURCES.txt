@@ -55,3 +55,6 @@ SigProfilerExtractor/data/vcftest/PD4194a.vcf
 SigProfilerExtractor/data/vcftest/PD4198a.vcf
 SigProfilerExtractor/data/vcftest/PD4199a.vcf
 SigProfilerExtractor/data/vcftest/PD4248a.vcf
+SigProfilerExtractor/src/.DS_Store
+SigProfilerExtractor/src/Accolade_fermante.png
+SigProfilerExtractor/src/CREDIT.md
