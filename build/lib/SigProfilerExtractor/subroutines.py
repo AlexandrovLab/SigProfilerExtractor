@@ -1341,7 +1341,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         if mtype=="1536":
             mtype_par="96"
         elif mtype=="288":
-            mtype_par="288"
+            mtype_par="96"
         elif mtype=="96":
             mtype_par="96"
         elif mtype=="DINUC" or mtype=="78":
