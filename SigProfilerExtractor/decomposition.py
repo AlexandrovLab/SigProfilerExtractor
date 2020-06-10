@@ -14,7 +14,7 @@ import os
 
 
 
-def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, genome_build="GRCh37", refit_denovo_signatures=True, verbose=False):
+def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, verbose=False):
 
     
     """
