@@ -2215,14 +2215,13 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
-        
       if mtype=="DBS78" or mtype=="ID83":
           if data.iloc[values,1]>=0.8:
               stable_solution.append("Yes")
           else:
               stable_solution.append("No")        
       else:
-          if data.iloc[values,1]+data.iloc[values,1]>=1.0:
+          if data.iloc[values,1]+data.iloc[values,3]>=1.0:
               stable_solution.append("Yes")
           else:
               stable_solution.append("No")
