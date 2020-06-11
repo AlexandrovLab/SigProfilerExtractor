@@ -2189,16 +2189,20 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
    
     if mtype=="DBS78" or mtype=="ID83":
+        true_indeces=data["Stability"]>=0.8
         data_over_thresh_hold = data[data["Stability"]>=0.8]
+        list_of_idx_over_thresh_hold = [i for i, val in enumerate(true_indeces) if val] 
     else:
+        true_indeces = data["Stability"]+data["avgStability"]>=1.0
         data_over_thresh_hold = data[data["Stability"]+data["avgStability"]>=1.0]
+        list_of_idx_over_thresh_hold = [i for i, val in enumerate(true_indeces) if val] 
         
     #if all solutions are under the thresh-hold 
     if data_over_thresh_hold.shape[0]==0:
         idx_within_thresh_hold=0
         signatures_within_thresh_hold=data.iloc[data.shape[0]-1,0]
     else:
-        idx_within_thresh_hold=data_over_thresh_hold.shape[0]-1
+        idx_within_thresh_hold=list_of_idx_over_thresh_hold[-1]
         signatures_within_thresh_hold=data_over_thresh_hold.iloc[data_over_thresh_hold.shape[0]-1,0]
         
     solutions_over_thresh_hold_stability=data_over_thresh_hold.shape[0]
@@ -2273,9 +2277,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     probabilities[idx_within_thresh_hold]="Most Stab Sigs"
     
     #select the final solution. Don't go to the while loop if there is not more than 1 signatures over thresh-hold
+    strating_idx=len(list_of_idx_over_thresh_hold)-1
     if solutions_over_thresh_hold_stability>1:
         while True:
-            idx_within_thresh_hold=idx_within_thresh_hold-1
+            idx_within_thresh_hold=list_of_idx_over_thresh_hold[strating_idx-1]
             signatures_within_thresh_hold =signatures_within_thresh_hold-1
             
             
@@ -2289,8 +2294,8 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
             if (wiltest<0.05) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
                 final_solution=signatures_within_thresh_hold+1
                 break
-       
-        
+            strating_idx=strating_idx-1
+           
         
     data.iloc[:,2] = np.round(data.iloc[:,2]*100, 2)
     data = data.assign(**{'Mean Sample L1%': mean_l1, 
