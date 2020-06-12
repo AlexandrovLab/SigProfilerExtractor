@@ -2281,7 +2281,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     if solutions_over_thresh_hold_stability>1:
         while True:
             idx_within_thresh_hold=list_of_idx_over_thresh_hold[strating_idx-1]
-            signatures_within_thresh_hold =signatures_within_thresh_hold-1
+            signatures_within_thresh_hold =signatures_within_thresh_hold-(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #get the difference between current and previous stable signatures
             
             
             all_similarities = all_similarities_list[idx_within_thresh_hold].iloc[:,[1,3,5,6,7]]
@@ -2292,7 +2292,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
             probabilities[idx_within_thresh_hold]="{:.2e}".format(wiltest)
             
             if (wiltest<0.05) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
-                final_solution=signatures_within_thresh_hold+1
+                final_solution=signatures_within_thresh_hold+(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #select the previous stable signatures
                 break
             strating_idx=strating_idx-1
            
@@ -2394,6 +2394,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     data.insert(1,'Stable Solution', stable_solution) 
     data.insert(2,'P-value', probabilities) 
     data.iloc[:,3:7] = data.iloc[:,3:7].astype(str) + '%'
+    data = data.reset_index()
+    columns_list=list(data.columns)
+    columns_list[0]="Signatures"
+    data.columns=columns_list
     return alternative_solution, data
 ######################################## Plot Samples ####################################################
 def plot_csv_sbs_samples(filename, output_path, project, mtype="96", percentage=False, custom_text_upper=" " ):
