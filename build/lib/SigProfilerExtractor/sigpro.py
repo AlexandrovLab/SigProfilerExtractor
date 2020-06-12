@@ -836,7 +836,7 @@ def sigProfilerExtractor(input_type,
         ################################################################################################################    
         # Print the Stabiltity vs Reconstruction Error as get the solution as well
         solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mutation_type)
-        all_stats.insert(0, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
+        all_stats.insert(1, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
         all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
         
         # add more information to results_stat.csv
@@ -972,25 +972,8 @@ def sigProfilerExtractor(input_type,
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
                                 remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, sequence=sequence,export_probabilities=export_probabilities)
         
-        """#make the decomposition plots
-        if m=="SBS96" or m=="96":
-            from SigProfilerExtractor import SPEDecomposition_SBS96 as decomp
-            #decomp.gen_decomposition(out_put)
-        elif m=="SBS1536" or m=="1536":
-            from SigProfilerExtractor import SPEDecomposition_SBS1536 as decomp
-        elif m=="DBS78" or m=="78":
-            from SigProfilerExtractor import SPEDecomposition_DBS78 as decomp
-        elif m=="ID83" or m=="83":
-            from SigProfilerExtractor import SPEDecomposition_DBS78 as decomp
-        else:
-            pass"""
-     
             
-        #except:
-            #print("\nWARNING!!! We apolozize we don't have a global signature database for the mutational context you provided. We have a database only for SBS96, DINUC and INDELS.\nTherefore no result for signature Decomposition is generated." )
-            #shutil.rmtree(layer_directory2)
-                
-            
+           
            
     
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")

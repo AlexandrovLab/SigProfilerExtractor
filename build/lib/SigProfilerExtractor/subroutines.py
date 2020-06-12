@@ -23,6 +23,7 @@ from SigProfilerExtractor import PlotDecomposition as sp
 from SigProfilerExtractor import plotActivity as plot_ac
 from SigProfilerExtractor import tmbplot as tmb
 import string 
+import PyPDF2
 import os
 import scipy
 os.environ["MKL_NUM_THREADS"] = "1" 
@@ -1416,14 +1417,13 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     # close the lognote
     lognote.close()
     
+    merge_pdf(directory+"/Decomposition_Polts", directory+"/"+mutation_context+"_Decomposition_plots" )
+    
     #delete the folder with sub_plots from the Decomposition_Polts
     if mtype_par!="none" and make_decomposition_plots==True:
-        if mtype_par=="78":
-            shutil.rmtree(directory+"/Decomposition_Polts/DBS_sub_plots")
-        elif mtype_par=="83":
-            shutil.rmtree(directory+"/Decomposition_Polts/ID_sub_plots")
-        elif mtype_par=="96":
-            shutil.rmtree(directory+"/Decomposition_Polts/SBS_sub_plots")
+        merge_pdf(directory+"/Decomposition_Polts", directory+"/"+mutation_context+"_Decomposition_plots" )
+        shutil.rmtree(directory+"/Decomposition_Polts")
+        
         
     #return values
     return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary, 
@@ -2562,4 +2562,29 @@ def custom_signatures_plot(signatures, output):
                                                
             pdf.savefig()
             plt.close()
+            
+            
+# merge the decomposition plots
+def merge_pdf(input_folder, output_file):
+    pdf2merge = []
+    for filename in os.listdir(input_folder):
+        #print(filename)
+        if filename.endswith('.pdf'):
+            pdf2merge.append(filename)
+            
+    pdf2merge.sort()
+    
+    
+    pdfWriter = PyPDF2.PdfFileWriter()
+    for filename in pdf2merge:
+        pdfFileObj = open(input_folder+"/"+filename,'rb')
+        pdfReader = PyPDF2.PdfFileReader(pdfFileObj)
+        for pageNum in range(pdfReader.numPages):
+            pageObj = pdfReader.getPage(pageNum)
+            pdfWriter.addPage(pageObj)
+            
+    pdfOutput = open(output_file+'.pdf', 'wb')
+    pdfWriter.write(pdfOutput)
+    #Outputting the PDF
+    pdfOutput.close()
 
