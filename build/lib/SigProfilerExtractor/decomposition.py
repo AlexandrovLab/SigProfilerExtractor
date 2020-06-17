@@ -111,13 +111,10 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
     genomes = pd.DataFrame(genomes)
     
     
-    if refit_denovo_signatures==True:
-        denovo_exposureAvg="none"
-    else:
-        denovo_exposureAvg = np.array(exposureAvg)
-    
-    exposureAvg = sub.make_final_solution(processAvg, genomes, listOfSignatures, layer_directory1, m, index, \
-                   colnames,denovo_exposureAvg  = denovo_exposureAvg, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty)    
+   
+    denovo_exposureAvg = np.array(exposureAvg.T)
+    exposureAvg = sub.make_final_solution(processAvg, genomes, listOfSignatures, layer_directory1, m, index,\
+                   colnames,denovo_exposureAvg  = denovo_exposureAvg, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures)    
 
     
     
@@ -145,7 +142,7 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
         processAvg = np.array(processAvg)
             
     
-    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty)    
+    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, make_decomposition_plots=make_decomposition_plots)    
     #final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
     # extract the global signatures and new signatures from the final_signatures dictionary
     globalsigs = final_signatures["globalsigs"]
@@ -162,7 +159,7 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
     
     
     result = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                            remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg ,  background_sigs=background_sigs, verbose=verbose, genome_build=genome_build, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty)
+                            cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg ,  background_sigs=background_sigs, verbose=verbose, genome_build=genome_build, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty,refit_denovo_signatures=False)
 
     return result
 

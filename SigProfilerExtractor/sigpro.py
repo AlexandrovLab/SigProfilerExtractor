@@ -912,14 +912,11 @@ def sigProfilerExtractor(input_type,
         allgenomes = pd.DataFrame(allgenomes)
         
         
-        if refit_denovo_signatures==True:
-            denovo_exposureAvg="none"
-        else:
-            denovo_exposureAvg = exposureAvg
-        
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
-                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = denovo_exposureAvg, signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, sequence=sequence)    
+                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
+                       signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
+                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures,sequence=sequence)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution
@@ -970,7 +967,7 @@ def sigProfilerExtractor(input_type,
         
         
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                remove_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, sequence=sequence,export_probabilities=export_probabilities)
+                                cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, sequence=sequence,export_probabilities=export_probabilities)
         
             
            
