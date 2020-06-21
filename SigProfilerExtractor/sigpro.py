@@ -837,6 +837,7 @@ def sigProfilerExtractor(input_type,
         # Print the Stabiltity vs Reconstruction Error as get the solution as well
         solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mutation_type)
         all_stats.insert(1, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
+        all_stats=all_stats.set_index(["Signatures"])
         all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
         
         # add more information to results_stat.csv

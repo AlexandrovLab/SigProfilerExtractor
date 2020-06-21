@@ -128,11 +128,14 @@ def fit_signatures(W, genome, metric="l2"):
     normalised_weights = weights/sum(weights)
     solution = normalised_weights*sum(genome)
     
+    
+    
     #print(W1)
     #convert the newExposure vector into list type structure
     newExposure = list(solution)
     
-    
+    # compute the estimated genome
+    est_genome = np.dot(W, np.array(newExposure))
     # get the maximum value of the new Exposure
     maxcoef = max(newExposure)
     idxmaxcoef = newExposure.index(maxcoef)
@@ -143,8 +146,7 @@ def fit_signatures(W, genome, metric="l2"):
     if np.sum(newExposure)!=maxmutation:
         newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
      
-    # compute the estimated genome
-    est_genome = np.dot(W, newExposure)
+    
     
     if metric=="cosine":
         newSimilarity = cos_sim(genome, est_genome)
@@ -406,8 +408,12 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
 
 
 
-def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cutoff=0.05, background_sigs = [], verbose=False):
+def remove_all_single_signatures(W, H, genomes, metric="l2", solver = "nnls", cutoff=0.05, background_sigs = [], verbose=False):
     # make the empty list of the successfull combinations
+    signature_ids=sub.make_letter_ids(idlenth = W.shape[1], mtype = "Signature ")
+    
+    current_signatures=signature_ids
+    #print(current_signatures)
     successList = [0,[],0] 
     background_sig = copy.deepcopy(background_sigs)
     if metric == "cosine":
@@ -433,6 +439,7 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
         else:
             return oldExposures, originalSimilarity, cos_sim(genomes, np.dot(W,H))    #first value is the exprosure, second value is the similarity (based on the similarity matic), third value is the cosine similarity
     # The while loop starts here
+    current_signatures=sub.get_items_from_index(signature_ids,np.nonzero(oldExposures)[0])
     while Flag: 
         
         # get the list of the indices those already have zero values
@@ -457,7 +464,7 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
         Winit = W[:,selectableIdx]
         
         # set the initial cos_similarity or other similarity distance
-        record  = [100, [], 1]   #
+        record  = [np.inf, [], 1]   #
         # get the number of current nonzeros
         l= Winit.shape[1]
         
@@ -470,7 +477,7 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
             
             loopSelection = list(range(l))
             del loopSelection[i]
-            #print (loopSelection)
+            
             W1 = Winit[:,loopSelection]
            
             
@@ -495,6 +502,7 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
                 ### using NNLS algorithm 
                 reg = nnls(W1,genomes)
                 weights = reg[0]
+                newSample = np.dot(W1, weights)
                 normalised_weights = weights/sum(weights)
                 solution = normalised_weights*sum(genomes)                
                 newExposure = list(solution)
@@ -504,24 +512,25 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
             
             #insert zeros in the required position the newExposure matrix
             initialZerosIdx.sort()
+            
             for zeros in initialZerosIdx:
                 newExposure.insert(zeros, 0)
             
             # get the maximum value the new Exposure
-            maxcoef = max(newExposure)
-            idxmaxcoef = newExposure.index(maxcoef)
+            #maxcoef = max(newExposure)
+            #idxmaxcoef = newExposure.index(maxcoef)
             
-            newExposure = np.round(newExposure)
+            #newExposure = np.round(newExposure)
             
             
-            if np.sum(newExposure)!=maxmutation:
-                newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
+            #if np.sum(newExposure)!=maxmutation:
+                #newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
                 
+            newExposure=np.array(newExposure)
             
-            newSample = np.dot(W, newExposure)
             if verbose==True:
-                print(newExposure)
-            
+                #print(newExposure)
+                print("\nRemoving {}".format(current_signatures[i]))
             if metric == "cosine":
                 newSimilarity = 1-cos_sim(genomes, newSample) 
                 if verbose==True:
@@ -530,7 +539,7 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
                 newSimilarity = np.linalg.norm(genomes-newSample, ord=2)/np.linalg.norm(genomes, ord=2)
                 if verbose==True:
                     print("newSimilarity",newSimilarity) 
-            difference =  newSimilarity -originalSimilarity 
+            difference =  newSimilarity-originalSimilarity 
             
             if verbose==True:
                 print("difference", difference) 
@@ -540,12 +549,19 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
                 #print("difference", difference)
             if verbose==True:
                 print("--------------------------------------")
+            
         if verbose==True:    
-            print("\n") 
-            print("Selected Exposure")
-            print(record[1])
+            print("\n############################\n############################") 
+            #print("Selected Exposure")
+            #print(record[1])
+            selected_sigs=sub.get_items_from_index(signature_ids,np.nonzero(record[1])[0])
+            dropped_sig=list(set(current_signatures)-set(selected_sigs))
+            print("Dropped Signature: {}".format(dropped_sig))
+            current_signatures=selected_sigs
             print("New Similarity", record[2])
-            print("****************************")
+            print("Similarity Difference: {}".format(record[2]-originalSimilarity))
+            print("Current Signatures: {}".format(selected_sigs))
+            print("****************************\n****************************\n\n")
             #print ("This loop's selection is {}".format(record))
         
         if record[0]>cutoff:   
@@ -556,6 +572,9 @@ def remove_all_single_signatures(W, H, genomes, metric="ls", solver = "nnls", cu
         else:
             successList = record
             background_sig = get_changed_background_sig_idx(list(record[1]), background_sig)
+           
+        originalSimilarity=record[2]
+        
         #print("The loop selection is {}".format(successList))
         
         #print (Flag)

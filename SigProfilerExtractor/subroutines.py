@@ -76,7 +76,7 @@ def format_integer(number, thousand_separator=','):
             result = char + result
     return result
 
-def make_letter_ids(idlenth = 10, mtype = None):
+def make_letter_ids(idlenth = 10, mtype = "SBS96"):
     
     listOfSignatures = []
     letters = list(string.ascii_uppercase)
@@ -1354,8 +1354,18 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
         
         if mtype_par!="none" and make_decomposition_plots==True:
-            sp.run_PlotDecomposition(signatures_DF, denovo_name, sigDatabases_DF, basis_names, weights, nonzero_exposures, directory+"/Decomposition_Polts", "test", mtype_par)
-            print("Decompoisiton Plot made for {}\n".format(denovo_name))
+            # Get the names of the columns for each dataframe
+            cosmic_col_names = signatures_DF.columns
+            denovo_col_names = sigDatabases_DF.columns
+            # Get the name for the MutationTypes column
+            cosmic_mut_types_col = cosmic_col_names[0]
+            denovo_mut_types_col =  denovo_col_names[0]
+            # create lists of implemented columns
+            basis_cols = basis_names.copy()
+            basis_cols.insert(0,cosmic_mut_types_col)
+            denovo_cols = [denovo_mut_types_col, denovo_name]
+            sp.run_PlotDecomposition(signatures_DF[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures, directory+"/Decomposition_Plots", "test", mtype_par)
+            print("Decompositon Plot made for {}\n".format(denovo_name))
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
@@ -1421,8 +1431,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     
     #delete the folder with sub_plots from the Decomposition_Polts
     if mtype_par!="none" and make_decomposition_plots==True:
-        merge_pdf(directory+"/Decomposition_Polts", directory+"/"+mutation_context+"_Decomposition_plots" )
-        shutil.rmtree(directory+"/Decomposition_Polts")
+        merge_pdf(directory+"/Decomposition_Plots", directory+"/"+mutation_context+"_Decomposition_Plots" )
+        shutil.rmtree(directory+"/Decomposition_Plots")
         
         
     #return values
@@ -2223,7 +2233,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     #create probability list
     probabilities=["N/A"]*len(all_similarities_list)
-    
+    stable_solutions=["NO"]*len(all_similarities_list)
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
       if mtype=="DBS78" or mtype=="ID83":
@@ -2282,7 +2292,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     init_l2_dist = all_similarities["L2_Norm_%"]
     init_mean = all_similarities["L2_Norm_%"].mean()
     probabilities[idx_within_thresh_hold]="Most Stab Sigs"
-    
+    stable_solutions[idx_within_thresh_hold]="YES"
     #select the final solution. Don't go to the while loop if there is not more than 1 signatures over thresh-hold
     list_of_idx_over_thresh_hold=selected_resorted_idx
     strating_idx=len(list_of_idx_over_thresh_hold)-1
@@ -2299,7 +2309,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
             
             wiltest = ranksums(np.array(init_l2_dist), np.array(current_l2_dist))[1]
             probabilities[idx_within_thresh_hold]="{:.2e}".format(wiltest)
-            
+            stable_solutions[idx_within_thresh_hold]="YES"
             if (wiltest<0.05) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
                 final_solution=signatures_within_thresh_hold+(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #select the previous stable signatures
                 break
@@ -2402,7 +2412,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     data.index = index
     
     # add % signs
-    data.insert(1,'Stable Solution', stable_solution) 
+    data.insert(1,'Considerable Solution', stable_solution) 
     data.insert(2,'P-value', probabilities) 
     data.iloc[:,3:7] = data.iloc[:,3:7].astype(str) + '%'
     data = data.reset_index()
