@@ -2223,30 +2223,14 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
         
     
     
-    
-   
-    
-    
-    
-    #create "Stable Solution" column
-    stable_solution=[]
+
     
     #create probability list
     probabilities=["N/A"]*len(all_similarities_list)
     stable_solutions=["NO"]*len(all_similarities_list)
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction
-      if mtype=="DBS78" or mtype=="ID83":
-          if data.iloc[values,1]>=0.8:
-              stable_solution.append("Yes")
-          else:
-              stable_solution.append("No")        
-      else:
-          if data.iloc[values,1]+data.iloc[values,3]>=1.0:
-              stable_solution.append("Yes")
-          else:
-              stable_solution.append("No")
-              
+            
       all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6,7]]
       avg_stability=data["avgStability"][values]
       min_stability=data["Stability"][values]
@@ -2411,8 +2395,9 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     index[solution] = index[solution]+"*" 
     data.index = index
     
+    
     # add % signs
-    data.insert(1,'Considerable Solution', stable_solution) 
+    data.insert(1,'Considerable Solution', stable_solutions) 
     data.insert(2,'P-value', probabilities) 
     data.iloc[:,3:7] = data.iloc[:,3:7].astype(str) + '%'
     data = data.reset_index()

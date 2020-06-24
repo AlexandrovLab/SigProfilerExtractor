@@ -248,11 +248,12 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
         if solver == "slsqp":
             sol = minimize(parameterized_objective2_custom, x0, args=(W1, genome),  bounds=bnds, constraints =cons1, tol=1e-30)
             newExposure = list(sol.x)
-        
+            est_genome = np.dot(W1, np.array(newExposure))
         if solver == "nnls":
         ### using NNLS algorithm        
             reg = nnls(W1, genome[:,0])
             weights = reg[0]
+            est_genome = np.dot(W1, weights)
             normalised_weights = weights/sum(weights)
             solution = normalised_weights*sum(np.sum(genome, axis=0))
             newExposure = list(solution)
@@ -272,8 +273,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
         if np.sum(newExposure)!=maxmutation:
             newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
          
-        # compute the estimated genome
-        est_genome = np.dot(W1, newExposure)
+        
         if metric=="cosine":
             originalSimilarity = 1-cos_sim(genome[:,0], est_genome )
         elif metric=="l2":    
@@ -321,9 +321,12 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
                 #the optimization step
                 sol = minimize(parameterized_objective2_custom, x0, args=(W1, genome),  bounds=bnds, constraints =cons1, tol=1e-30)
                 newExposure = list(sol.x)
+                # compute the estimated genome
+                est_genome = np.dot(W1, np.array(newExposure))
             if solver == "nnls":
                 reg = nnls(W1, genome[:,0])
                 weights = reg[0]
+                est_genome = np.dot(W1, weights)
                 normalised_weights = weights/sum(weights)
                 solution = normalised_weights*sum(genome)
                 newExposure = list(solution) #for nnls
@@ -342,8 +345,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
             if np.sum(newExposure)!=maxmutation:
                 newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
              
-            # compute the estimated genome
-            est_genome = np.dot(W1, newExposure)
+            
             
             if metric=='cosine':
                 newSimilarity = 1-cos_sim(genome[:,0], est_genome)
