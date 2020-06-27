@@ -26,6 +26,7 @@ SigProfilerExtractor.egg-info/top_level.txt
 SigProfilerExtractor/data/.DS_Store
 SigProfilerExtractor/data/21_breast_WGS_substitutions.mat
 SigProfilerExtractor/data/Accolade_fermante.png
+SigProfilerExtractor/data/CNV_signatures.txt
 SigProfilerExtractor/data/DBS_signatures_genome_builds.xlsx
 SigProfilerExtractor/data/SBS_signatures_genome_builds.xlsx
 SigProfilerExtractor/data/Samples.txt

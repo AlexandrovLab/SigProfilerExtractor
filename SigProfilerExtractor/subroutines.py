@@ -1151,7 +1151,7 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", add_penalty=0.05, remove_penalty=0.01, mutation_context=None, make_decomposition_plots=True):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True):
     
     if not os.path.exists(directory+"/Solution_Stats"):
         os.makedirs(directory+"/Solution_Stats")
@@ -1193,15 +1193,23 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm10",index_col=0)
             
         signames = sigDatabase.columns
+        connected_sigs=False
         
     elif signatures.shape[0]==83:
         sigDatabase = pd.read_csv(paths+"/data/sigProfiler_ID_signatures.csv", sep=",",index_col=0)
         signames = sigDatabase.columns
+        connected_sigs=False
+        
+    elif signatures.shape[0]==48:
+        sigDatabase = pd.read_csv(paths+"/data/CNV_signatures.txt", sep="\t",index_col=0)
+        signames = sigDatabase.columns
+        connected_sigs=False
     else:
         sigDatabase = pd.DataFrame(signatures)
         sigDatabase.columns=sigDatabase.columns.astype(str)
         sigDatabase.index=sigDatabase.index.astype(str)
         signames=sigDatabase.columns
+        connected_sigs=False
         
         
         
@@ -1263,6 +1271,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          check_rule_negatives = check_rule_negatives, 
                                                                                                          checkrule_penalty = check_rule_penalty, 
                                                                                                          directory = directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", 
+                                                                                                         connected_sigs=connected_sigs,
                                                                                                          verbose=False)
             #print(exposures)
             #print("######################################################################")
@@ -1286,6 +1295,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          check_rule_negatives = [], 
                                                                                                          checkrule_penalty = [], 
                                                                                                          directory = directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", 
+                                                                                                         connected_sigs=connected_sigs,
                                                                                                          verbose=False)
         #print(signames[np.nonzero(exposures)], similarity)
         
@@ -1810,7 +1820,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  cosmic_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
                         remove_penalty=0.01, initial_remove_penalty=0.05, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
-                        refit_denovo_signatures=True, verbose=False):
+                        refit_denovo_signatures=True, connected_sigs=True, verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -1839,8 +1849,10 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     #Get the type of Signatures
     if m == 83 or m=="83":
         signature_type = "INDEL83"
+        connected_sigs=False
     elif m==78 or m=="78":
         signature_type = "DINUC78"
+        connected_sigs=False
     else:
         signature_type = "SBS"+str(m)
     
@@ -1948,6 +1960,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                                                                                                   remove_penalty=remove_penalty,
                                                                                                   check_rule_negatives = check_rule_negatives, 
                                                                                                   checkrule_penalty = check_rule_penalty, 
+                                                                                                  connected_sigs=connected_sigs,
                                                                                                   directory = layer_directory+"/Solution_Stats/"+solution_prefix+"_Signature_Assignment_log.txt", 
                                                                                                  verbose=False)
                  

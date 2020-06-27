@@ -125,6 +125,7 @@ def fit_signatures(W, genome, metric="l2"):
     ### using NNLS algorithm 
     reg = nnls(W,genome)
     weights = reg[0]
+    est_genome = np.dot(W, weights)
     normalised_weights = weights/sum(weights)
     solution = normalised_weights*sum(genome)
     
@@ -134,8 +135,7 @@ def fit_signatures(W, genome, metric="l2"):
     #convert the newExposure vector into list type structure
     newExposure = list(solution)
     
-    # compute the estimated genome
-    est_genome = np.dot(W, np.array(newExposure))
+    
     # get the maximum value of the new Exposure
     maxcoef = max(newExposure)
     idxmaxcoef = newExposure.index(maxcoef)
@@ -181,6 +181,7 @@ def fit_signatures_pool(total_genome, W, index):
     ### using NNLS algorithm 
     reg = nnls(W,genome)
     weights = reg[0]
+    est_genome = np.dot(W, weights)
     normalised_weights = weights/sum(weights)
     solution = normalised_weights*sum(genome)
     
@@ -199,8 +200,7 @@ def fit_signatures_pool(total_genome, W, index):
     if np.sum(newExposure)!=maxmutation:
         newExposure[idxmaxcoef] = round(newExposure[idxmaxcoef])+maxmutation-sum(newExposure)
      
-    # compute the estimated genome
-    est_genome = np.dot(W, newExposure)
+    
     
     newSimilarity = cos_sim(genome, est_genome)
     
@@ -418,14 +418,20 @@ def remove_all_single_signatures(W, H, genomes, metric="l2", solver = "nnls", cu
     #print(current_signatures)
     successList = [0,[],0] 
     background_sig = copy.deepcopy(background_sigs)
+    
+    #setting the base_similarity
+    base_H_index = list(np.nonzero(H)[0])
+    reg = nnls(W[:,base_H_index],genomes)
+    base_weights = reg[0]
+    
     if metric == "cosine":
         # get the cos_similarity with sample for the oringinal W and H[:,i]
-        originalSimilarity= 1-cos_sim(genomes, np.dot(W, H))
+        originalSimilarity= 1-cos_sim(genomes, np.dot(W[:,base_H_index], base_weights))
         if verbose==True:
             print("originalSimilarity", 1-originalSimilarity)
     elif metric == "l2":
        
-        originalSimilarity = np.linalg.norm(genomes-np.dot(W, H) , ord=2)/np.linalg.norm(genomes, ord=2)
+        originalSimilarity = np.linalg.norm(genomes-np.dot(W[:,base_H_index], base_weights) , ord=2)/np.linalg.norm(genomes, ord=2)
         if verbose==True:
             print("originalSimilarity", originalSimilarity)
     # make the original exposures of specific sample round
@@ -542,7 +548,8 @@ def remove_all_single_signatures(W, H, genomes, metric="l2", solver = "nnls", cu
                 if verbose==True:
                     print("newSimilarity",newSimilarity) 
             difference =  newSimilarity-originalSimilarity 
-            
+            if difference<0:
+                difference=cutoff+1e-100
             if verbose==True:
                 print("difference", difference) 
             if difference<record[0]:
@@ -745,11 +752,12 @@ def add_remove_signatures(W,
                           checkrule_penalty = 1.00, 
                           allsigids = False, 
                           directory = os.getcwd()+"/Signature_assaignment_logfile.txt", 
+                          connected_sigs=True,
                           verbose=False):
     
     lognote = open(directory, 'a')
  
-    
+    maxmutation=np.sum(np.array(sample))
     
     always_background = copy.deepcopy(permanent_sigs)
     M = sample   
@@ -786,10 +794,12 @@ def add_remove_signatures(W,
             loop_sig = [i] 
             
             background_sigs = list(set(background_sigs).union(set(always_background)))
-            background_sigs = add_connected_sigs(background_sigs, list(allsigids))
+            if connected_sigs==True:
+                background_sigs = add_connected_sigs(background_sigs, list(allsigids))
             
             add_exposures, add_distance, _ = add_signatures(W, M[:,np.newaxis], presentSignatures=copy.deepcopy(background_sigs), toBeAdded=loop_sig, 
-                                                  metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=1.00, cutoff=add_penalty) 
+                                                  metric="l2", verbose=False, check_rule_negatives=check_rule_negatives, check_rule_penalty=checkrule_penalty, cutoff=add_penalty) 
+            
             if verbose:
                 print("\n\n\n################## Add Index {} ########################".format(j)) 
                 print(np.nonzero(add_exposures)[0])
@@ -798,6 +808,7 @@ def add_remove_signatures(W,
                 
                 
             remove_exposures, remove_distance, _ = remove_all_single_signatures(W, add_exposures, M, background_sigs = always_background, metric="l2", verbose = False, cutoff=remove_penalty)
+            
             if verbose:
                 print("\n################## Remove ########################")
                 print(np.nonzero(remove_exposures)[0])
@@ -836,6 +847,17 @@ def add_remove_signatures(W,
             correlation,_=scipy.stats.pearsonr(M, N)
             correlation=round(correlation,2)
             break
+    
+    
+    # get the maximum value of the new Exposure
+    maxcoef = np.max(finalactivities)
+    idxmaxcoef = list(finalactivities).index(maxcoef)
+    
+    finalactivities = np.round(finalactivities)
+    
+    # We may need to tweak the maximum value of the new exposure to keep the total number of mutation equal to the original mutations in a genome
+    if np.sum(finalactivities)!=maxmutation:
+        finalactivities[idxmaxcoef] = round(finalactivities[idxmaxcoef])+maxmutation-np.sum(finalactivities) 
         
     if verbose:
         print("\n########################## Final ###########################")        
