@@ -795,10 +795,15 @@ def sigProfilerExtractor(input_type,
             
             #Get total mutationation for each signature in reverse order and order the signatures from high to low mutation barden
             signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
+            
             sorted_idx = np.argsort(-signature_total_mutations)
             processAvg = np.take(processAvg, sorted_idx, axis=1)
             exposureAvg = np.take(exposureAvg, sorted_idx, axis=0)
             signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
+            processStd=np.take(processStd, sorted_idx, axis=1)
+            exposureStd=np.take(exposureStd, sorted_idx, axis=0)
+            clusterSilhouetteCoefficients=np.take(clusterSilhouetteCoefficients, sorted_idx, axis=0)
+            
             
             signature_stats = pd.DataFrame({"Stability": clusterSilhouetteCoefficients, "Total Mutations": signature_total_mutations})
             minimum_stabilities.append(round(np.mean(clusterSilhouetteCoefficients),2)) #here minimum stability is the average stability !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
