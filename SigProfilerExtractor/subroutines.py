@@ -38,6 +38,7 @@ from SigProfilerExtractor import nmf_cpu
 from sklearn import mixture
 from scipy.spatial.distance import cdist
 from scipy.spatial.distance import correlation as cor
+from scipy.optimize import linear_sum_assignment
 import shutil
 #import mkl
 #mkl.set_num_threads(40)
@@ -967,57 +968,20 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist=
    
         
     if dist=="cosine":
-        con_mat = 1-cdist(mat1.T, mat2.T, "cosine")
+        con_mat = cdist(mat1.T, mat2.T, "cosine")
     elif dist=="correlation":
-        con_mat = 1-cdist(mat1.T, mat2.T, "correlation")
+        con_mat = cdist(mat1.T, mat2.T, "correlation")
         
     
         
     
-    maximums = np.argmax(con_mat, axis = 1) #the indices of maximums
-    uniques = np.unique(maximums) #unique indices having the maximums
+    row_ind, col_ind = linear_sum_assignment(con_mat)
 
+    idxPair=[]
+    for i, j in zip(row_ind, col_ind):
+        idxPair.append([i,j])
         
-    lstCluster=[]
-    lstClusterT=[]
-    idxPair= []  
-    
-    # check if more than one centroids have their maximums in the same indices
-    if len(maximums)==1000000000000:#!=len(uniques):
-        diffRank = np.zeros([len(con_mat), 2])    
-        for i in range(len(con_mat)):
-            centroid = con_mat[i]
-            value_order= np.argsort(centroid)
-            first_highest_value_idx = value_order[-1]
-            second_highest_value_idx = value_order[-2]
-            diffRank[i,0] =  i
-            diffRank[i, 1] = centroid[first_highest_value_idx]-centroid[second_highest_value_idx]
-        diffRank = diffRank[diffRank[:,1].argsort(kind='mergesort')]
-        diffRank = diffRank.astype(int)
-        
-  
-    
-        for a in range(len(diffRank)-1,-1, -1):
-            i = diffRank[a,0]
-            j = con_mat[i,:].argmax()
-            con_mat[i,:]=-100
-            con_mat[:,j]=-100
-            lstCluster.append([mat1[:,i], mat2[:,j]])
-            idxPair.append([i,j])   #for debugging
-            lstClusterT.append([mat1T[i,:], mat2T[j, :]])
-    
-    
-    else:
-        for a in range(0,mat1.shape[1]):
-        
-            i,j=np.unravel_index(con_mat.argmax(), con_mat.shape) 
-            lstCluster.append([mat1[:,i], mat2[:,j]])
-            idxPair.append([i,j])   #for debugging
-            lstClusterT.append([mat1T[i,:], mat2T[j, :]])
-            con_mat[i,:]=-100
-            con_mat[:,j]=-100
-        
-    return lstCluster, idxPair, lstClusterT
+    return idxPair
          
 
 
@@ -1040,7 +1004,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
         #print(i)
         statidx = idxIter[iteration_number]
         loopidx = list(range(statidx, statidx+processes))
-        lstCluster, idxPair, lstClusterT = pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],dist=dist, gpu=gpu)
+        idxPair= pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],dist=dist, gpu=gpu)
         
         for cluster_items in idxPair:
             cluster_number = cluster_items[0]
