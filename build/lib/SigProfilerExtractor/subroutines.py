@@ -1137,9 +1137,9 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
     avgSilhouetteCoefficients = -1  # intial avgSilhouetteCoefficients 
     
     #do the parallel clustering 
-    result_list = parallel_clustering(Wall, Hall, totalprocess, iterations=500,  n_cpu=-1,  dist=dist, gpu=gpu)
+    result_list = parallel_clustering(Wall, Hall, totalprocess, iterations=50,  n_cpu=-1,  dist=dist, gpu=gpu)
     
-    for i in range(500):  # using 10 iterations to get the best clustering 
+    for i in range(50):  # using 10 iterations to get the best clustering 
         
         temp_processAvg, temp_exposureAvg, temp_processSTE,  temp_exposureSTE, temp_avgSilhouetteCoefficients, temp_clusterSilhouetteCoefficients = result_list[i][0], result_list[i][1], result_list[i][2], result_list[i][3], result_list[i][4], result_list[i][5]
         
