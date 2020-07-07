@@ -2216,7 +2216,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
             highest_stable_idx = selection_data.index[0]
             print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
         highest_stable_signature=list(selection_data["Total Signatures"])[highest_stable_idx]
-        selection_data=selection_data.sort_values(by=["total_stab"], ascending=False)
+        selection_data=selection_data.sort_values(by=['avgStability'], ascending=False)
         resorted_idx=list(selection_data.index)
         default_idx=resorted_idx.index(highest_stable_idx)
         selected_resorted_idx=resorted_idx[0:default_idx+1]
