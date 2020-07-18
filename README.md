@@ -199,8 +199,8 @@ Estimate the optimum solution (rank) among different number of solutions (ranks)
    
         
     Example:
-    
-         >>>ibs.estimate_solution(base_csvfile="All_solutions_stat.csv", 
+         >>>from SigProfilerExtractor import estimate_best_solution as ebs
+         >>>ebs.estimate_solution(base_csvfile="All_solutions_stat.csv", 
                     All_solution="All_Solutions", 
                     genomes="Samples.txt", 
                     output="results", 

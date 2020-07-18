@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: SigProfilerExtractor
-Version: 1.0.13.9
+Version: 1.0.14
 Summary: Extracts mutational signatures from mutational catalogues
 Home-page: https://github.com/AlexandrovLab/SigProfilerExtractor.git
 Author: S Mishu Ashiqul Islam
@@ -207,8 +207,8 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
            
                 
             Example:
-            
-                 >>>ibs.estimate_solution(base_csvfile="All_solutions_stat.csv", 
+                 >>>from SigProfilerExtractor import estimate_best_solution as ebs
+                 >>>ebs.estimate_solution(base_csvfile="All_solutions_stat.csv", 
                             All_solution="All_Solutions", 
                             genomes="Samples.txt", 
                             output="results", 
