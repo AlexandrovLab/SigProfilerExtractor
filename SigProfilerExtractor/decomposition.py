@@ -15,7 +15,7 @@ import os
 
 
 
-def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False):
+def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False):
 
     
     """
@@ -123,7 +123,7 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
    
     denovo_exposureAvg = np.array(exposureAvg.T)
     exposureAvg = sub.make_final_solution(processAvg, genomes, listOfSignatures, layer_directory1, m, index,\
-                   colnames,denovo_exposureAvg  = denovo_exposureAvg, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty, connected_sigs=connected_sigs, refit_denovo_signatures=refit_denovo_signatures)    
+                   colnames,denovo_exposureAvg  = denovo_exposureAvg, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty, de_novo_fit_penalty=de_novo_fit_penalty, connected_sigs=connected_sigs, refit_denovo_signatures=refit_denovo_signatures)    
 
     
     

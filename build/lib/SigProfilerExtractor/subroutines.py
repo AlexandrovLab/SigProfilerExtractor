@@ -1195,7 +1195,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     allsignatures = np.array([])
     newsig = list() # will create the letter based id of newsignatures
     newsigmatrixidx = list() # will create the original id of newsignature to help to record the original matrix
-    fh = open(directory+"/De_Novo_map_to_COSMIC_SBS96.csv", "w")
+    fh = open(directory+"/De_Novo_map_to_COSMIC_"+mutation_context+".csv", "w")
     fh.write("De novo extracted, Global NMF Signatures, L1 Error %, L2 Error %, KL Divergence, Cosine Similarity, Correlation\n")
     fh.close()
     dictionary = {}
@@ -1355,7 +1355,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         new_signature_thresh_hold = 0.8
         if  similarity>new_signature_thresh_hold and cosine_similarity_with_four_signatures > new_signature_thresh_hold: ########### minimum signtatures and cosine similarity needs to be fitted to become a unique signature 
             allsignatures = np.append(allsignatures, np.nonzero(exposures))
-            fh = open(directory+"/De_Novo_map_to_COSMIC_SBS96.csv", "a")
+            fh = open(directory+"/De_Novo_map_to_COSMIC_"+mutation_context+".csv", "a")
             fh.write(strings%(ListToTumple))
             fh.close()
             
@@ -1364,8 +1364,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         else:
             newsig.append(mutation_context+letters[i])
             newsigmatrixidx.append(i)
-            fh = open(directory+"/De_Novo_map_to_COSMIC_SBS96.csv", "a")
-            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 0, 1, 0))
+            fh = open(directory+"/De_Novo_map_to_COSMIC_"+mutation_context+".csv", "a")
+            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 0, 1, 0))
             fh.close()
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
@@ -1373,7 +1373,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)
-    if mtype == "96":
+    if mtype == "96" or mtype=="288" or mtype=="1536":
         different_signatures = list(set().union(different_signatures, [0,4]))
         different_signatures.sort()
     
@@ -1396,7 +1396,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         #print('{}: {}'.format(k, v))
         
     #only for SBS96
-    if mtype == "96" or mtype =="1536":        
+    if mtype == "96" or mtype=="288" or mtype=="1536":        
         background_sigs = get_indeces(list(detected_signatures), ['SBS1', 'SBS5'])
     
     #for other contexts
@@ -1768,6 +1768,8 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         plot.plotDBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "78", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="INDEL" or m=="83":
         plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+    elif m=="CNV" or m=="48":
+        plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "48", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
@@ -1788,7 +1790,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
 #############################################################################################################
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  cosmic_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
-                        remove_penalty=0.01, initial_remove_penalty=0.05, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
+                        remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
                         refit_denovo_signatures=True, connected_sigs=True, pcawg_rule=False, verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
@@ -2011,7 +2013,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 
                 #remove signatures 
                 exposureAvg[:,g],L2dist,cosine_sim = ss.remove_all_single_signatures(processAvg, exposureAvg[:, g], allgenomes[:,g], metric="l2", \
-                           solver = "nnls", cutoff=0.02, background_sigs= [], verbose=False)
+                           solver = "nnls", cutoff=de_novo_fit_penalty, background_sigs= [], verbose=False)
                 if verbose==True:
                     print("############################## Composition After Remove ############################### ")
                     print(pd.DataFrame(exposureAvg[:, g],  index=allsigids).T)  
@@ -2112,7 +2114,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             
     elif m=="INDEL" or m=="83":
         plot.plotID(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        
+    elif m=="CNV" or m=="48":
+         plot.plotCNV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "48", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
         
@@ -2175,76 +2178,51 @@ def dendrogram(data, threshold, layer_directory):
 
 
 ######################################## Plot the reconstruction error vs stabilities and select the optimum number of signature ####################################################   
-def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
+def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= ""):
     
-    
-    data = pd.read_csv(csvfile, sep=",")
-    
-    
+    if input_type=="csvfile":
+        data = pd.read_csv(csvfile, sep=",")
+    elif input_type=="dataframe":
+        data=csvfile
+        
     #exracting and preparing other similiry matrices from the all_similarities_list
     mean_cosine_dist=[]; max_cosine_dist=[]; mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; mean_correlation=[]; minimum_correlation=[]; #all_mean_l2=[];
     #median_l1= Median L1 , maximum _l1 = Maximum L1, median_l2= Median L2 , maximum _l2 = Maximum L2, median_kl= Median KL , maximum _kl = Maximum KL, wilcoxontest = Wilcoxontest significance (True or False); all_med_l2=[] = list of all Median L2
-    
-    
     #statistical test we need to set a previous L2 (pre_l2) which have a same length as the sample number
     pre_l2_dist = np.zeros([all_similarities_list[0].shape[0]])
     pre_mean = np.inf  
+    selection_data=data.copy()
+    selection_data["total_stab"]=data["Stability"]+data['avgStability']
     
+    try:
+        selection_data_to_sort=selection_data[selection_data["total_stab"]>=combined_stability]
+        selection_data_to_sort=selection_data_to_sort[selection_data_to_sort["Stability"]>=min_stability]
+        selection_data_to_sort=selection_data_to_sort[selection_data_to_sort['avgStability']>=stability]
+        highest_stable_idx = selection_data_to_sort.index[-1]
+    except: #if there is no solution over thresh-hold
+        highest_stable_idx = selection_data.index[0]
+        print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
     
-  
-    
-    
-    if mtype=="DBS78" or mtype=="ID83":
-        selection_data=data.copy()
-        try:
-            highest_stable_idx = selection_data[selection_data["Stability"]>=0.8].index[-1]
-        except: #if there is no solution over thresh-hold
-            highest_stable_idx = selection_data.index[0]
-            print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
-        highest_stable_signature=list(selection_data["Total Signatures"])[highest_stable_idx]
-        selection_data=selection_data.sort_values(by=["Stability"], ascending=False)
-        resorted_idx=list(selection_data.index)
-        default_idx=resorted_idx.index(highest_stable_idx)
-        selected_resorted_idx=resorted_idx[0:default_idx+1]
-        selected_resorted_idx.sort()
-    else:
-        selection_data=data.copy()
-        selection_data["total_stab"]=data["Stability"]+data['avgStability']
-        try:
-            highest_stable_idx = selection_data[selection_data["total_stab"]>=1.0].index[-1]
-        except: #if there is no solution over thresh-hold
-            highest_stable_idx = selection_data.index[0]
-            print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
-        highest_stable_signature=list(selection_data["Total Signatures"])[highest_stable_idx]
-        selection_data=selection_data.sort_values(by=['avgStability'], ascending=False)
-        resorted_idx=list(selection_data.index)
-        default_idx=resorted_idx.index(highest_stable_idx)
-        selected_resorted_idx=resorted_idx[0:default_idx+1]
-        selected_resorted_idx.sort()
-        
-   
+    highest_stable_signature=list(selection_data["Total Signatures"])[highest_stable_idx]
+    selection_data=selection_data_to_sort.sort_values(by=['avgStability', 'Total Signatures'], ascending=[False, True])
+    resorted_idx=list(selection_data.index)
+    default_idx=resorted_idx.index(highest_stable_idx)
+    selected_resorted_idx=resorted_idx[0:default_idx+1]
+    selected_resorted_idx.sort()
     idx_within_thresh_hold=highest_stable_idx 
     signatures_within_thresh_hold=highest_stable_signature
-        
-    
-    
-
-    
     #create probability list
     probabilities=["N/A"]*len(all_similarities_list)
     stable_solutions=["NO"]*len(all_similarities_list)
     
-    for values in range(len(all_similarities_list)): # loop through the opposite direction
-            
+    for values in range(len(all_similarities_list)): # loop through the opposite direction     
       all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6,7]]
       avg_stability=data["avgStability"][values]
       min_stability=data["Stability"][values]
       thresh_hold=avg_stability+min_stability
-      
       #record the statistical test between the l2_of the current and previous signatures first
       cur_l2_dist = all_similarities["L2_Norm_%"]
       cur_mean = all_similarities["L2_Norm_%"].mean()
-     
       wiltest = ranksums(np.array(cur_l2_dist), np.array(pre_l2_dist))[1]
       
       
@@ -2261,8 +2239,6 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
           #all_mean_l2.append(pre_mean)
           #pre_l2_dist = cur_l2_dist
       cosine_distance=1-all_similarities["Cosine Similarity"]
-      
-      
       mean_cosine_dist.append(round(cosine_distance.mean(),3))
       max_cosine_dist.append(round(cosine_distance.max(),3))
       mean_l1.append(round(all_similarities["L1_Norm_%"].mean(),2))
@@ -2287,15 +2263,11 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     strating_idx=len(list_of_idx_over_thresh_hold)-1
     if len(list_of_idx_over_thresh_hold)>1:
         while True:
-        
             idx_within_thresh_hold=list_of_idx_over_thresh_hold[strating_idx-1]
             signatures_within_thresh_hold =signatures_within_thresh_hold-(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #get the difference between current and previous stable signatures
-            
-            
             all_similarities = all_similarities_list[idx_within_thresh_hold].iloc[:,[1,3,5,6,7]]
             current_l2_dist = all_similarities["L2_Norm_%"]
             current_mean = all_similarities["L2_Norm_%"].mean()
-            
             wiltest = ranksums(np.array(init_l2_dist), np.array(current_l2_dist))[1]
             probabilities[idx_within_thresh_hold]="{:.2e}".format(wiltest)
             stable_solutions[idx_within_thresh_hold]="YES"
@@ -2342,7 +2314,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
    
     # Create some mock data
     
-    t = np.array(data.index)
+    t = np.array(data.index).astype(int)
     
     #data1 = np.array(data.iloc[:,2])  #reconstruction error
     data1 = np.array(mean_cosine_dist)
@@ -2394,8 +2366,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, mtype= ""):
     
     plt.close()
     
+    
     #put * in the selected solution
-    index = list(data.index.astype(str))
+    index = data.index.astype(int)
+    index = list(index.astype(str))
     solution = get_indeces(index, [str(alternative_solution)])[0]
     index[solution] = index[solution]+"*" 
     data.index = index

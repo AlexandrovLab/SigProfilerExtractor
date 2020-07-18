@@ -72,6 +72,8 @@ INPUT DATA:-
      
     **exome**: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
+    **context_type**: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
+                      is the DINULEOTIDE context and ID is INDEL context.
     
     NMF REPLICATES:-
     
@@ -112,23 +114,37 @@ INPUT DATA:-
 
     **batch_size**: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing. Default is 1.
               
+    
+    SOLUTION ESTIMATION THRESH-HOLDS:-
+
+    **stability**: Float, optional. Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. 
+
+    **min_stability**: Float, optional. Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. 
+
+    **combined_stability**: Float, optional. Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. 
               
-    COSMIC:-
     
-    **nnls_add_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the strong thresh-hold cutoff to be assigned signatures to a sample. 
+    DECOMPOSITION:-
     
-     **nnls_remove_penalty**: Float, optional. Takes any positive float. Default is 0.01. Defines the weak thresh-hold cutoff to be assigned signatures to a sample.
+    **de_novo_fit_penalty**: Float, optional. Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to be assigned denovo signatures to a sample. 
+    
+    **nnls_add_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to be assigned COSMIC signatures to a sample. 
+    
+    **nnls_remove_penalty**: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample.
      
-    **initial_remove_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak thresh-hold cutoff to be assigned signatures to a sample.
+    **initial_remove_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample.
     
-    **refit_denovo_signatures** Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
+    **refit_denovo_signatures**: Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
     
-      **context_type**: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
-            is the DINULEOTIDE context and ID is INDEL context. 
+    **make_decomposition_plots**: Boolean, optional. Defualt is True. If True, Denovo to Cosmic sigantures decompostion plots will be created as a part the results.
+     
     
     OTHERS:-
     
     **get_all_signature_matrices**: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
+    
+    **export_probabilities**: A Boolean. Defualt is True. If False, then doesn't create the probability matrix.
+    
     
     Returns
     -------
@@ -167,27 +183,63 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
     >>> help(sig.sigProfilerExtractor)
 ```
 
+### Estimation of the optimum solution
+Estimate the optimum solution (rank) among different number of solutions (ranks): 
+    
+    Parameters: 
+        
+        base_csvfile: A string. Defualt is "All_solutions_stat.csv". Path to a  csv file that contains the statistics of all solutions. 
+        All_solution: A string. Default is "All_Solutions". Path to a folder that contains the results of all solutions.
+        genomes: A string. Default is Samples.txt. Path to a tab delimilted file that contains the mutation counts for all genomes given to different mutation types.
+        output: A string. Default is "results". Path to the output folder.
+        title: A sting, optional. Default is "Selection_Plot". This sets the title of the selection_plot.pdf
+        stability: Float, optional. Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. 
+        min_stability: Float, optional. Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. 
+        combined_stability: Float, optional. Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. 
+   
+        
+    Example:
+    
+         >>>ibs.estimate_solution(base_csvfile="All_solutions_stat.csv", 
+                    All_solution="All_Solutions", 
+                    genomes="Samples.txt", 
+                    output="results", 
+                    title="Selection_Plot",
+                    stability=0.8, 
+                    min_stability=0.2, 
+                    combined_stability=1.25):
+       
+         
+     Values:
+        The files below will be generated in the output folder--
+        
+        "All_solutions_stat.csv": a  csv file that contains the statistics of all solutions.
+        "selection_plot.pdf": a plot that depict the Stability and Mean Sample Cosine Distance for different solutions.
+
+
+
 ### decompose
     Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
     
     Parameters: 
         
-        signatures: A string. Path to a  tab delimited file that contains the signaure table where the rows are mutation                         types and colunms are signature IDs. 
-        activities: A string. Path to a tab delimilted file that contains the activity table where the rows are sample IDs                       and colunms are signature IDs.
-        samples: A string. Path to a tab delimilted file that contains the activity table where the rows are mutation types                  and colunms are sample IDs.
+        signatures: A string. Path to a  tab delimited file that contains the signaure table where the rows are mutation types and colunms are signature IDs. 
+        activities: A string. Path to a tab delimilted file that contains the activity table where the rows are sample IDs and colunms are signature IDs.
+        samples: A string. Path to a tab delimilted file that contains the activity table where the rows are mutation types and colunms are sample IDs.
         output: A string. Path to the output folder.
-        nnls_add_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the strong thresh-hold                                   cutoff to be assigned signatures to a sample. 
-        nnls_remove_penalty: Float, optional. Takes any positive float. Default is 0.01. Defines the weak thresh-hold cutoff                              to be assigned signatures to a sample.
-        initial_remove_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak thresh-                                 hold cutoff to be assigned signatures to a sample.
+        de_novo_fit_penalty: Float, optional. Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to be assigned denovo signatures to a sample.
+        nnls_add_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to be assigned COSMIC signatures to a sample.  
+        nnls_remove_penalty: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample.
+        initial_remove_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample.
         genome_build = A string. The genome type. Example: "GRCh37", "GRCh38", "mm9", "mm10". The default value is "GRCh37"
         verbose = Boolean. Prints statements. Default value is False. 
         
     Example:
          >>>from SigProfilerExtractor import decomposition as decomp
-         >>>signatures = "path/to/dDe_Novo_Solution_Signatures.txt"
+         >>>signatures = "path/to/De_Novo_Solution_Signatures.txt"
          >>>activities="path/to/De_Novo_Solution_Activities.txt"
          >>>samples="path/to/Samples.txt"
-         >>>output="name or path/to/output.txt"
+         >>>output="name or path/to/output"
          >>>decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", verbose=False)   
          
      Values:

@@ -139,11 +139,18 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             else:
                 sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(excecution_parameters["cpu"], multiprocessing.cpu_count()))
             sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
+            
+            sysdata.write("Solution Estimation\n")
+            sysdata.write("\tstability: {}\n".format(excecution_parameters["stability"]))
+            sysdata.write("\tmin_stability: {}\n".format(excecution_parameters["min_stability"]))
+            sysdata.write("\tcombined_stability: {}\n".format(excecution_parameters["combined_stability"]))
+            
             sysdata.write("COSMIC MATCH\n")
             sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
             sysdata.write("\tnnls_add_penalty: {}\n".format(excecution_parameters["nnls_add_penalty"]))
             sysdata.write("\tnnls_remove_penalty: {}\n".format(excecution_parameters["nnls_remove_penalty"]))
             sysdata.write("\tinitial_remove_penalty: {}\n".format(excecution_parameters["initial_remove_penalty"]))
+            sysdata.write("\tde_novo_fit_penalty: {}\n".format(excecution_parameters["de_novo_fit_penalty"])) 
             sysdata.write("\trefit_denovo_signatures: {}\n".format(excecution_parameters["refit_denovo_signatures"]))
             
             
@@ -175,11 +182,15 @@ def sigProfilerExtractor(input_type,
                          nmf_tolerance= 1e-15, 
                          nnls_add_penalty=0.05, 
                          nnls_remove_penalty=0.01,
+                         de_novo_fit_penalty=0.02,
                          initial_remove_penalty=0.05,
                          refit_denovo_signatures=True,
                          clustering_distance="cosine",
                          export_probabilities=True,
                          make_decomposition_plots=True,
+                         stability=0.8, 
+                         min_stability=0.2, 
+                         combined_stability=1.0,
                          get_all_signature_matrices= False): 
     memory_usage()
     """
@@ -204,8 +215,7 @@ def sigProfilerExtractor(input_type,
        
     opportunity_genome: The build or version of the reference signatures for the reference genome. The default opportunity genome is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input reference genome value.    
      
-    context_type: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is ["96", "DINUC" , "ID"], where "96" is the SBS96 context, "DINUC"
-            is the DINULEOTIDE context and ID is INDEL context. 
+    context_type: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "SBS96,DBS78,ID83". 
     
     exome: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
@@ -251,16 +261,38 @@ def sigProfilerExtractor(input_type,
     batch_size: An integer. Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed
               by each CPU during the parallel processing. Default is 1.
               
-              
-    OTHERS:-
     
-    nnls_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the thresh-hold cutoff to be assigned signatures to a sample. 
+    SOLUTION ESTIMATION THRESH-HOLDS:-
+
+    stability: A float. Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. 
+
+    min_stability: A float. Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. 
+
+    combined_stability: A float. Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered.            
+    
+    
+    DECOMPOSITION:-
+    
+    de_novo_fit_penalty: Float, optional. Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to be assigned denovo signatures to a sample. 
+    
+    nnls_add_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to be assigned COSMIC signatures to a sample. 
+    
+    nnls_remove_penalty: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample.
+     
+    initial_remove_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample.
+    
+    refit_denovo_signatures: Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
+    
+    make_decomposition_plots: Boolean, optional. Defualt is True. If True, Denovo to Cosmic sigantures decompostion plots will be created as a part the results.
+
+    
+    OTHERS:-
     
     get_all_signature_matrices: A Boolean. If true, the Ws and Hs from all the NMF iterations are generated in the output.
     
     export_probabilities: A Boolean. Defualt is True. If False, then doesn't create the probability matrix.
     
-    make_decompostion_plots: A Boolean. Defualt is True. If False, then doesn't create the decomposition plots.
+
     
     Returns
     -------
@@ -363,10 +395,14 @@ def sigProfilerExtractor(input_type,
                         "nnls_add_penalty":nnls_add_penalty,
                         "nnls_remove_penalty":nnls_remove_penalty,
                         "initial_remove_penalty":initial_remove_penalty,
+                        "de_novo_fit_penalty":de_novo_fit_penalty,
                         "refit_denovo_signatures":refit_denovo_signatures,
                         "dist":clustering_distance,
                         "export_probabilities":export_probabilities,
                         "make_decompostion_plots":make_decomposition_plots,
+                        "stability":stability, 
+                        "min_stability":min_stability, 
+                        "combined_stability":combined_stability,
                         "get_all_signature_matrices":get_all_signature_matrices}
     
     
@@ -840,7 +876,7 @@ def sigProfilerExtractor(input_type,
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
         ################################################################################################################    
         # Print the Stabiltity vs Reconstruction Error as get the solution as well
-        solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mutation_type)
+        solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mtype=mutation_type, stability=stability, min_stability=min_stability, combined_stability=combined_stability)
         all_stats.insert(1, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
         all_stats=all_stats.set_index(["Signatures"])
         all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
@@ -922,7 +958,7 @@ def sigProfilerExtractor(input_type,
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                        signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
                        signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
-                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures,sequence=sequence)    
+                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution

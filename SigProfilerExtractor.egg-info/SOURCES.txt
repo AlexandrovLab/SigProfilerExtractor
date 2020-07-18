@@ -9,6 +9,7 @@ SigProfilerExtractor/PlotDecomposition_SBS96.py
 SigProfilerExtractor/SigProfilerPlottingMatrix.py
 SigProfilerExtractor/__init__.py
 SigProfilerExtractor/decomposition.py
+SigProfilerExtractor/estimate_best_solution.py
 SigProfilerExtractor/nmf_cpu.py
 SigProfilerExtractor/nmf_gpu.py
 SigProfilerExtractor/plotActivity.py
