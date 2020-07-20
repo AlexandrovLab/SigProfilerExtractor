@@ -227,19 +227,19 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "1536":
 		spd_1536.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics)
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "6144":
 		print("Need to add support for SBS6144 Decomposition")
 	elif mtype == "28":
 		print("Need to add support for ID28 Decomposition")
 	elif mtype == "83":
 		spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics)
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "415":
 		print("Need to add support for ID415 Decomposition")
 	elif mtype == "78":
 		spd_78.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics)
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "186":
 		print("Need to add support for DBS186 Decomposition")
 	elif mtype == "1248":
@@ -291,9 +291,6 @@ def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
 
 	present_sigs=np.array(basis_mtx[basis_names])
 	reconstructed_mtx = np.dot(present_sigs,nonzero_exposures)
-
-	statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
-
 
 	statistics = calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
 	gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
