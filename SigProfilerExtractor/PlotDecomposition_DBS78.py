@@ -159,6 +159,7 @@ def plot_6_plus(bases, output_path, project, c_draw):
 #	c_draw 		- (Canvas) The canvas to draw the graph decomposition on.
 #	statistics 	- (Pandas Dataframe) Dataframe w/ calculations
 def draw_statistics(c_draw, statistics, sig_version, custom_text):
+	
 	cos_sim = statistics["Cosine Similarity"][0]
 	cor_coeff = statistics["Correlation Coefficient"][0]
 	l1_norm_percent = statistics["L1 Norm %"][0]
@@ -277,7 +278,7 @@ def gen_plot(de_novo, bases, output_path, project, c, reconstruction, statistics
 	elif (num_bases > 5):
 		plot_6_plus(bases, output_path, project, c)
 
-	# THIS IS THE LEFT SIDE, IT DOES NOT CHANGE POSITION
+	# THIS IS THE LEFT SIDE
 	if reconstruction:
 		recon_png = output_path+"/DBS_sub_plots/"+de_novo+"_reconstruction_"+project+".png"
 		c.drawImage(output_path+"/DBS_sub_plots/"+de_novo+"_"+project+".png", \
@@ -306,7 +307,7 @@ def gen_plot(de_novo, bases, output_path, project, c, reconstruction, statistics
 # iterate over the csv file and generate plots accordingly
 def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	reconstruction, statistics, sig_version=None, custom_text=None):
-
+	
 	output_plot_to_crop = output_path+"/"+denovo_name+"_decomposition_"+project+"_to_crop.pdf"
 	output_plot_cropped = output_path+"/"+denovo_name+"_decomposition_"+project+".pdf"
 	c = canvas.Canvas(output_plot_to_crop, pagesize=letter)

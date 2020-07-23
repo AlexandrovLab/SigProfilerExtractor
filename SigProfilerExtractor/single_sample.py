@@ -402,7 +402,7 @@ def add_signatures(W, genome, cutoff=0.05, presentSignatures=[], toBeAdded="all"
     if metric == "cosine":
         return  addExposure, cos_sim(genome[:,0], np.dot(W,addExposure)), cos_sim(genome[:,0], np.dot(W,addExposure)) #first value is the exprosure, second value is the similarity (based on the similarity matic), third value is the cosine similarity
     elif metric == "l2":
-        return  addExposure, np.linalg.norm(genome[:,0]-np.dot(W, addExposure) , ord=2)/np.linalg.norm(genome[:,0], ord=2), cos_sim(genome[:,0], np.dot(W,addExposure)) #first value is the exprosure, second value is the similarity (based on the similarity matic), third value is the cosine similarity
+        return  addExposure, originalSimilarity, cos_sim(genome[:,0], np.dot(W,addExposure)) #first value is the exprosure, second value is the similarity (based on the similarity matic), third value is the cosine similarity
 
 
 
@@ -581,8 +581,7 @@ def remove_all_single_signatures(W, H, genomes, metric="l2", solver = "nnls", cu
         else:
             successList = record
             background_sig = get_changed_background_sig_idx(list(record[1]), background_sig)
-           
-        originalSimilarity=record[2]
+            originalSimilarity=record[2]
         
         #print("The loop selection is {}".format(successList))
         

@@ -214,7 +214,7 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	reconstruction: (Boolean) 			True to generate plot w/ reconstruction
 	statistics: 	(Pandas Dataframe) 	Output from calculate_similarities()
 	"""
-
+	
 	if mtype == "6":
 		print("Need to add support for SBS6 Decomposition")
 	elif mtype == "24":
@@ -285,6 +285,7 @@ def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
 	-------
 	None.
 	"""
+	
 	gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype)
 	reconstructed_mtx = gen_reconstructed_png(denovo_name, basis_mtx, basis_names, \
 		weights, output_path, project, mtype)
@@ -292,7 +293,7 @@ def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
 	present_sigs=np.array(basis_mtx[basis_names])
 	reconstructed_mtx = np.dot(present_sigs,nonzero_exposures)
 
-	statistics = calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
+	statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
 	gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		mtype, reconstruction=True, statistics=statistics, sig_version=sig_version, \
 		custom_text=custom_text)

@@ -276,7 +276,7 @@ def gen_plot(de_novo, bases, output_path, project, c, reconstruction, statistics
 	elif (num_bases > 5):
 		plot_6_plus(bases, output_path, project, c)
 
-	# THIS IS THE LEFT SIDE, IT DOES NOT CHANGE POSITION
+	# THIS IS THE LEFT SIDE
 	if reconstruction:
 		recon_png = output_path+"/ID_sub_plots/"+de_novo+"_reconstruction_"+project+".png"
 		c.drawImage(output_path+"/ID_sub_plots/"+de_novo+"_"+project+".png", WIDTH_GAP, LAYOUT_2_GRAPH[0][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
