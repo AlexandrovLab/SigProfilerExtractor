@@ -198,7 +198,8 @@ def gen_reconstructed_png(denovo_name, basis_mtx, basis_names, weights, output_p
 	return reconstruction_mtx
 
 
-def gen_decomposition(denovo_name, basis_names, weights, output_path, project, mtype, reconstruction=False, statistics=None):
+def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
+	mtype, reconstruction=False, statistics=None, sig_version=None, custom_text=None):
 	"""
 	Generate the correct plot based on mtype.
 
@@ -213,28 +214,32 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, m
 	reconstruction: (Boolean) 			True to generate plot w/ reconstruction
 	statistics: 	(Pandas Dataframe) 	Output from calculate_similarities()
 	"""
-
+	
 	if mtype == "6":
 		print("Need to add support for SBS6 Decomposition")
 	elif mtype == "24":
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "96":
 		#print("Need to add support for SBS96 Decomposition")
-		spd_96.gen_decomposition(denovo_name, basis_names, weights, output_path, project, reconstruction, statistics)
+		spd_96.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "384":
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "1536":
-		spd_1536.gen_decomposition(denovo_name, basis_names, weights, output_path, project, reconstruction, statistics)
+		spd_1536.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "6144":
 		print("Need to add support for SBS6144 Decomposition")
 	elif mtype == "28":
 		print("Need to add support for ID28 Decomposition")
 	elif mtype == "83":
-		spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, project, reconstruction, statistics)
+		spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "415":
 		print("Need to add support for ID415 Decomposition")
 	elif mtype == "78":
-		spd_78.gen_decomposition(denovo_name, basis_names, weights, output_path, project, reconstruction, statistics)
+		spd_78.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "186":
 		print("Need to add support for DBS186 Decomposition")
 	elif mtype == "1248":
@@ -244,47 +249,51 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, m
 
 
 
-def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, weights, nonzero_exposures, output_path, project, mtype):
-    """
-    Generates a decomposition plot of the denovo_mtx using the basis_mtx.
-    
-    Parameters:
-    ----------
-    
-    denovo_mtx: Pandas Dataframe. This format represents the catalog of mutations seperated by tab.
-    
-    denovo_name: String. The name of the one sample in denovo_mtx to decompose.
-    
-    basis_mtx: Pandas Dataframe. This format represents the catalog of mutations seperated by tab.
-    
-    basis_names: List of Strings. The names of the samples in denovo_mtx that
-    the denovo_name sample from denovo_mtx is decomposed into.
-    ie. basis_names=["SBS1", "SBS5", "SBS15", "SBS20"]
-    
-    weights: List of Strings. The percentile weight corresponding to each basis
-    in basis_names. Refer to example function call below for more detail.
-    ie. weights=["11.58%", "42.38%", "16.46%", "29.58%"]
-    
-    output_path: String. Path to where to store the output.
-    
-    roject: String. This string is appended to the file name output.
-    
-    mtype: String. The context of the data. Valid values include: "96", "1536","78", and "83".
-    
-    Returns:
-    -------
-    None.
-    """
-    
-    gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype)
-    reconstructed_mtx = gen_reconstructed_png(denovo_name, basis_mtx, basis_names, weights, output_path, project, mtype)
-    
-    
-    present_sigs=np.array(basis_mtx[basis_names])
-    reconstructed_mtx = np.dot(present_sigs,nonzero_exposures)
-    
-    statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
-    
-    
-    statistics = calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
-    gen_decomposition(denovo_name, basis_names, weights, output_path, project, mtype, reconstruction=True, statistics=statistics)
+def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
+		weights, nonzero_exposures, output_path, project, mtype, sig_version=None, custom_text=None):
+	"""
+	Generates a decomposition plot of the denovo_mtx using the basis_mtx.
+
+	Parameters:
+	----------
+
+	denovo_mtx: Pandas Dataframe. This format represents the catalog of mutations seperated by tab.
+
+	denovo_name: String. The name of the one sample in denovo_mtx to decompose.
+
+	basis_mtx: Pandas Dataframe. This format represents the catalog of mutations seperated by tab.
+
+	basis_names: List of Strings. The names of the samples in denovo_mtx that
+	the denovo_name sample from denovo_mtx is decomposed into.
+	ie. basis_names=["SBS1", "SBS5", "SBS15", "SBS20"]
+
+	weights: List of Strings. The percentile weight corresponding to each basis
+	in basis_names. Refer to example function call below for more detail.
+	ie. weights=["11.58%", "42.38%", "16.46%", "29.58%"]
+
+	output_path: String. Path to where to store the output.
+
+	project: String. This string is appended to the file name output.
+
+	mtype: String. The context of the data. Valid values include: "96", "1536","78", and "83".
+
+	sig_version: String. The version of signatures being used.
+
+	custom_text: String. A custom message displayed on decomposition plot.
+
+	Returns:
+	-------
+	None.
+	"""
+	
+	gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype)
+	reconstructed_mtx = gen_reconstructed_png(denovo_name, basis_mtx, basis_names, \
+		weights, output_path, project, mtype)
+
+	present_sigs=np.array(basis_mtx[basis_names])
+	reconstructed_mtx = np.dot(present_sigs,nonzero_exposures)
+
+	statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
+	gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
+		mtype, reconstruction=True, statistics=statistics, sig_version=sig_version, \
+		custom_text=custom_text)
