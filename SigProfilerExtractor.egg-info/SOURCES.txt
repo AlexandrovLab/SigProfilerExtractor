@@ -5,6 +5,7 @@ SigProfilerExtractor/PlotDecomposition.py
 SigProfilerExtractor/PlotDecomposition_DBS78.py
 SigProfilerExtractor/PlotDecomposition_ID83.py
 SigProfilerExtractor/PlotDecomposition_SBS1536.py
+SigProfilerExtractor/PlotDecomposition_SBS288.py
 SigProfilerExtractor/PlotDecomposition_SBS96.py
 SigProfilerExtractor/SigProfilerPlottingMatrix.py
 SigProfilerExtractor/__init__.py

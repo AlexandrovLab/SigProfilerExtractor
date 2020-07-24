@@ -134,13 +134,13 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
             
             DECOMPOSITION:-
             
-            **de_novo_fit_penalty**: Float, optional. Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to be assigned denovo signatures to a sample. 
+            **de_novo_fit_penalty**: Float, optional. Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to assign denovo signatures to a sample. 
             
-            **nnls_add_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to be assigned COSMIC signatures to a sample. 
+            **nnls_add_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to assign COSMIC signatures to a sample. 
             
-            **nnls_remove_penalty**: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample.
+            **nnls_remove_penalty**: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to assign COSMIC signatures to a sample.
              
-            **initial_remove_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample.
+            **initial_remove_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to COSMIC assign signatures to a sample.
             
             **refit_denovo_signatures**: Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
             
@@ -200,7 +200,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
                 All_solution: A string. Default is "All_Solutions". Path to a folder that contains the results of all solutions.
                 genomes: A string. Default is Samples.txt. Path to a tab delimilted file that contains the mutation counts for all genomes given to different mutation types.
                 output: A string. Default is "results". Path to the output folder.
-                title: A sting, optional. Default is "Selection_Plot". This sets the title of the selection_plot.pdf
+                title: A string, optional. Default is "Selection_Plot". This sets the title of the selection_plot.pdf
                 stability: Float, optional. Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. 
                 min_stability: Float, optional. Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. 
                 combined_stability: Float, optional. Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. 

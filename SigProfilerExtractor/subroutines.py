@@ -1117,7 +1117,7 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
     
     originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
@@ -1179,7 +1179,12 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         connected_sigs=False
         
         
-        
+    if type(signature_database)==pd.core.frame.DataFrame:
+        if signatures.shape[0]==signature_database.shape[0]:
+            sigDatabase=signature_database
+            signames = sigDatabase.columns 
+            #make_decomposition_plots=False
+            del signature_database    
     sigDatabases = sigDatabase.reset_index()
     letters = list(string.ascii_uppercase)
     letters.extend([i+b for i in letters for b in letters])
@@ -2191,6 +2196,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
         selection_data_to_sort=selection_data_to_sort[selection_data_to_sort['avgStability']>=stability]
         highest_stable_idx = selection_data_to_sort.index[-1]
     except: #if there is no solution over thresh-hold
+        selection_data_to_sort=selection_data
         highest_stable_idx = selection_data.index[0]
         print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
     

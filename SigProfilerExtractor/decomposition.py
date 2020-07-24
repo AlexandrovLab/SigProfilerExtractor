@@ -15,7 +15,7 @@ import os
 
 
 
-def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False):
+def decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False):
 
     
     """
@@ -151,7 +151,7 @@ def decompose(signatures, activities, samples, output, nnls_add_penalty=0.05, nn
         processAvg = np.array(processAvg)
             
     
-    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, mutation_context=mutation_context, add_penalty=nnls_add_penalty, connected_sigs=connected_sigs,remove_penalty=nnls_remove_penalty, make_decomposition_plots=make_decomposition_plots)    
+    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=nnls_add_penalty, connected_sigs=connected_sigs,remove_penalty=nnls_remove_penalty, make_decomposition_plots=make_decomposition_plots)    
     #final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
     # extract the global signatures and new signatures from the final_signatures dictionary
     globalsigs = final_signatures["globalsigs"]
