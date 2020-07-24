@@ -144,9 +144,7 @@ def matrix_is_formatted(mtx, mtype):
 def genSBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
 	
 	if mtype == "1536" or mtype == "288":
-		print("Plotting denovo matrix")
 		sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
-		print("Plotting basis matrix")
 		sigPlt.plotSBS(basis_mtx, output_path, project, "96", True)
 	elif mtype == "96":
 		sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
