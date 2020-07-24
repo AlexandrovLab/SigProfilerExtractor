@@ -23,11 +23,12 @@ import numpy as np
 import scipy.stats
 from SigProfilerExtractor import SigProfilerPlottingMatrix as sigPlt
 from SigProfilerExtractor import PlotDecomposition_SBS96 as spd_96
+from SigProfilerExtractor import PlotDecomposition_SBS288 as spd_288
 from SigProfilerExtractor import PlotDecomposition_SBS1536 as spd_1536
 from SigProfilerExtractor import PlotDecomposition_DBS78 as spd_78
 from SigProfilerExtractor import PlotDecomposition_ID83 as spd_83
 # Global Variables
-SBS_CONTEXTS = ["6", "24", "96", "384", "1536", "6144"]
+SBS_CONTEXTS = ["6", "24", "96", "288", "384", "1536", "6144"]
 DBS_CONTEXTS = ["78", "186", "1248", "2976"]
 ID_CONTEXTS = ["28", "83", "415"]
 mtype_options = ["6", "24", "96", "384", "1536", "6144", "28", \
@@ -42,6 +43,12 @@ def calculate_similarities(denovo, denovo_name, est_denovo):
 		index = denovo.iloc[:,0]
 		denovo_tmp = pd.DataFrame(denovo, index=index)
 		denovo_tmp = denovo.groupby(denovo_tmp.index.str[1:8]).sum()
+		denovo = pd.DataFrame(denovo_tmp)
+		denovo = denovo.reset_index()
+	elif denovo.shape[0]==288:
+		index = denovo.iloc[:,0]
+		denovo_tmp = pd.DataFrame(denovo, index=index)
+		denovo_tmp = denovo.groupby(denovo_tmp.index.str[2:9]).sum()
 		denovo = pd.DataFrame(denovo_tmp)
 		denovo = denovo.reset_index()
 
@@ -135,10 +142,13 @@ def matrix_is_formatted(mtx, mtype):
 
 
 def genSBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
-	if mtype == "1536":
+	
+	if mtype == "1536" or mtype == "288":
+		print("Plotting denovo matrix")
 		sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
+		print("Plotting basis matrix")
 		sigPlt.plotSBS(basis_mtx, output_path, project, "96", True)
-	else:
+	elif mtype == "96":
 		sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
 		sigPlt.plotSBS(basis_mtx, output_path, project, mtype, True)
 
@@ -183,7 +193,7 @@ def gen_reconstructed_png(denovo_name, basis_mtx, basis_names, weights, output_p
 	recon_plot = pd.Series(recon_plot, name=denovo_name)
 	reconstruction_mtx = pd.concat([mut_col, recon_plot], axis=1)
 	if mtype in SBS_CONTEXTS:
-		if mtype == "1536":
+		if mtype == "1536" or mtype == "288":
 			sigPlt.plotSBS(reconstruction_mtx, output_path, "reconstruction_" + project, "96", True)
 		else:
 			sigPlt.plotSBS(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
@@ -220,8 +230,10 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	elif mtype == "24":
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "96":
-		#print("Need to add support for SBS96 Decomposition")
 		spd_96.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+			project, reconstruction, statistics, sig_version, custom_text)
+	elif mtype == "288":
+		spd_288.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "384":
 		print("Need to add support for SBS24 Decomposition")
