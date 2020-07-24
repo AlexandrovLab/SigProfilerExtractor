@@ -55,6 +55,7 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
     """
     
     processAvg = pd.read_csv(signatures, sep = "\t", index_col=0) 
+    originalProcessAvg=processAvg
     exposureAvg = pd.read_csv(activities, sep = "\t", index_col = 0)
     genomes = pd.read_csv(samples, sep = "\t", index_col = 0)
     
@@ -151,7 +152,7 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
         processAvg = np.array(processAvg)
             
     
-    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=nnls_add_penalty, connected_sigs=connected_sigs,remove_penalty=nnls_remove_penalty, make_decomposition_plots=make_decomposition_plots)    
+    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=nnls_add_penalty, connected_sigs=connected_sigs,remove_penalty=nnls_remove_penalty, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)    
     #final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
     # extract the global signatures and new signatures from the final_signatures dictionary
     globalsigs = final_signatures["globalsigs"]
