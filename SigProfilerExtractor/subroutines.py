@@ -1787,7 +1787,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  cosmic_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
                         remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
-                        refit_denovo_signatures=True, connected_sigs=True, pcawg_rule=False, verbose=False):
+                        refit_denovo_signatures=True, mutation_context="SBS96", connected_sigs=True, pcawg_rule=False, verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -2034,7 +2034,10 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     processes = processAvg.set_index(index)
     processes.columns = allsigids
     processes = processes.rename_axis("MutationsType", axis="columns")
-    processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
+    if cosmic_sigs==False:
+        processes.to_csv(layer_directory+"/Signatures"+"/"+mutation_context+"_"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
+    else:
+        processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
     
      
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
@@ -2085,7 +2088,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             processSTE = process_std_error.set_index(index)
             processSTE.columns = allsigids
             processSTE = processSTE.rename_axis("MutationType", axis="columns")
-            processSTE.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures_SEM_Error.txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
+            processSTE.to_csv(layer_directory+"/Signatures"+"/"+mutation_context+"_"+solution_prefix+"_"+"Signatures_SEM_Error.txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
         except:
             pass
     if solution_type == "De_Novo_Solution":

@@ -958,7 +958,7 @@ def sigProfilerExtractor(input_type,
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                        signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
                        signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
-                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence)    
+                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence, mutation_context=mutation_context)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution
