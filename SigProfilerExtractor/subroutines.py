@@ -1117,9 +1117,8 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True):
     
-    originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
         os.makedirs(directory+"/Solution_Stats")
     # open the log file for signature decomposition 
@@ -1178,14 +1177,18 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         signames=sigDatabase.columns
         connected_sigs=False
         
-        
     if type(signature_database)==pd.core.frame.DataFrame:
         if signatures.shape[0]==signature_database.shape[0]:
             sigDatabase=signature_database
             signames = sigDatabase.columns 
             #make_decomposition_plots=False
-            del signature_database    
-    sigDatabases = sigDatabase.reset_index()
+            del signature_database 
+        
+        
+        
+        
+        
+    sigDatabases = sigDatabase
     letters = list(string.ascii_uppercase)
     letters.extend([i+b for i in letters for b in letters])
     letters = letters[0:signatures.shape[1]]
@@ -1294,6 +1297,12 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         ListToTumple = tuple([mtype, letters[i]]+listofinformation+[L1dist*100]+[L2dist*100]+[kldiv]+[similarity]+[correlation])
         activity_percentages.append(contribution_percentages)
         
+        
+        
+        
+        #print(sigDatabases)
+        
+        #print(sigDatabases_DF)
         weights=[]
         basis_names=[]
         nonzero_exposures=exposures[np.nonzero(exposures)]
@@ -1310,13 +1319,17 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             denovo_signames.append(mutation_context+letter)
        
         
-        sigDatabases_DF=sigDatabases
+        signatures_DF=pd.DataFrame(signatures/5000)
+        signatures_DF.columns=denovo_signames
+        signatures_DF.index = sigDatabases.index 
+        sigDatabases_DF=sigDatabases.reset_index()
+        signatures_DF = signatures_DF.reset_index()
         
         
         if mtype=="1536":
-            mtype_par="1536"
+            mtype_par="96"
         elif mtype=="288":
-            mtype_par="288"
+            mtype_par="96"
         elif mtype=="96":
             mtype_par="96"
         elif mtype=="DINUC" or mtype=="78":
@@ -1329,17 +1342,17 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
         if mtype_par!="none" and make_decomposition_plots==True:
             # Get the names of the columns for each dataframe
-            denovo_col_names = originalProcessAvg.columns
-            cosmic_col_names = sigDatabases_DF.columns
+            cosmic_col_names = signatures_DF.columns
+            denovo_col_names = sigDatabases_DF.columns
             # Get the name for the MutationTypes column
             cosmic_mut_types_col = cosmic_col_names[0]
             denovo_mut_types_col =  denovo_col_names[0]
             # create lists of implemented columns
             basis_cols = basis_names.copy()
             basis_cols.insert(0,cosmic_mut_types_col)
-            denovo_cols=[denovo_mut_types_col, denovo_name]
+            denovo_cols = [denovo_mut_types_col, denovo_name]
             
-            sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory+"/Decomposition_Plots", "test", mtype_par)
+            sp.run_PlotDecomposition(signatures_DF[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory+"/Decomposition_Plots", "test", mtype_par)
             print("Decompositon Plot made for {}\n".format(denovo_name))
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
@@ -1787,7 +1800,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  cosmic_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
                         remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
-                        refit_denovo_signatures=True, mutation_context="SBS96", connected_sigs=True, pcawg_rule=False, verbose=False):
+                        refit_denovo_signatures=True, connected_sigs=True, pcawg_rule=False, verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -2034,10 +2047,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     processes = processAvg.set_index(index)
     processes.columns = allsigids
     processes = processes.rename_axis("MutationsType", axis="columns")
-    if cosmic_sigs==False:
-        processes.to_csv(layer_directory+"/Signatures"+"/"+mutation_context+"_"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
-    else:
-        processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
+    processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
     
      
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
@@ -2088,7 +2098,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
             processSTE = process_std_error.set_index(index)
             processSTE.columns = allsigids
             processSTE = processSTE.rename_axis("MutationType", axis="columns")
-            processSTE.to_csv(layer_directory+"/Signatures"+"/"+mutation_context+"_"+solution_prefix+"_"+"Signatures_SEM_Error.txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
+            processSTE.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures_SEM_Error.txt", "\t", float_format='%.2E', index_label=[processes.columns.name]) 
         except:
             pass
     if solution_type == "De_Novo_Solution":
@@ -2199,7 +2209,6 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
         selection_data_to_sort=selection_data_to_sort[selection_data_to_sort['avgStability']>=stability]
         highest_stable_idx = selection_data_to_sort.index[-1]
     except: #if there is no solution over thresh-hold
-        selection_data_to_sort=selection_data
         highest_stable_idx = selection_data.index[0]
         print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
     
@@ -2572,3 +2581,4 @@ def merge_pdf(input_folder, output_file):
     pdfWriter.write(pdfOutput)
     #Outputting the PDF
     pdfOutput.close()
+

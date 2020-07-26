@@ -933,7 +933,7 @@ def sigProfilerExtractor(input_type,
         
        
         # create the folder for the final solution/ De Novo Solution
-        layer_directory1 = output+"/Suggested_Solution/De_Novo_Solution"
+        layer_directory1 = output+"/Suggested_Solution/"+mutation_context+"_De_Novo_Solution"
         try:
             if not os.path.exists(layer_directory1):
                 os.makedirs(layer_directory1)
@@ -958,7 +958,7 @@ def sigProfilerExtractor(input_type,
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                        signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
                        signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
-                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence, mutation_context=mutation_context)    
+                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence)    
           
         #try:
         # create the folder for the final solution/ Decomposed Solution
@@ -969,8 +969,6 @@ def sigProfilerExtractor(input_type,
                 os.makedirs(layer_directory2)
         except: 
             print ("The {} folder could not be created".format("output"))
-            
-        originalProcessAvg=pd.DataFrame(processAvg, index=index)
         
         if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
             processAvg = pd.DataFrame(processAvg, index=index)
@@ -990,9 +988,8 @@ def sigProfilerExtractor(input_type,
             index = genomes.index
             processAvg = np.array(processAvg)
             genomes = np.array(genomes)
-        
-        originalProcessAvg.columns = listOfSignatures    
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=add_penalty, remove_penalty=remove_penalty, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
+            
+        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=add_penalty, remove_penalty=remove_penalty, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
         globalsigs = final_signatures["globalsigs"]
@@ -1031,3 +1028,5 @@ def sigProfilerExtractor(input_type,
 
 
      
+
+
