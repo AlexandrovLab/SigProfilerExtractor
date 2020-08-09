@@ -114,8 +114,8 @@ def fit_signatures(W, genome, metric="l2"):
     
     #the optimization step
     #set the bounds and constraints
-    bnds = create_bounds([], genome, W.shape[1]) 
-    cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]}
+    #bnds = create_bounds([], genome, W.shape[1]) 
+    #cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]}
     
     
     #sol = scipy.optimize.minimize(parameterized_objective2_custom, x0, args=(W, genome),  bounds=bnds, constraints =cons1, tol=1e-30)
@@ -157,7 +157,7 @@ def fit_signatures(W, genome, metric="l2"):
 
 # to do the calculation, we need: W, samples(one column), H for the specific sample, tolerence
 # Fit signatures with multiprocessing
-def fit_signatures_pool(total_genome, W, index):
+def fit_signatures_pool(total_genome, W, index, metric="l2"):
     genome = total_genome[:,index]
     genome = np.array(genome)
     maxmutation = round(np.sum(genome))
@@ -170,8 +170,8 @@ def fit_signatures_pool(total_genome, W, index):
     
     #the optimization step
     #set the bounds and constraints
-    bnds = create_bounds([], genome, W.shape[1]) 
-    cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]}
+    #bnds = create_bounds([], genome, W.shape[1]) 
+    #cons1 ={'type': 'eq', 'fun': constraints1, 'args':[genome]}
     
     
     #sol = scipy.optimize.minimize(parameterized_objective2_custom, x0, args=(W, genome),  bounds=bnds, constraints =cons1, tol=1e-30)
@@ -202,7 +202,10 @@ def fit_signatures_pool(total_genome, W, index):
      
     
     
-    newSimilarity = cos_sim(genome, est_genome)
+    if metric=="cosine":
+        newSimilarity = cos_sim(genome, est_genome)
+    else:
+        newSimilarity = np.linalg.norm(genome-est_genome , ord=2)/np.linalg.norm(genome, ord=2)
     
     return (newExposure, newSimilarity)
 

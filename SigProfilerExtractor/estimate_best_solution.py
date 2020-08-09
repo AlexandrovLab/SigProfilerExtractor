@@ -20,11 +20,13 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
                     title="Selection_Plot",
                     stability=0.8, 
                     min_stability=0.2, 
-                    combined_stability=1.0):
+                    combined_stability=1.0,
+                    statistics=True,
+                    select=None):
     
     
     
-    base_csvfile = pd.read_csv("All_solutions_stat.csv", sep=",", index_col=0)
+    base_csvfile = pd.read_csv(base_csvfile, sep=",", index_col=0)
     signatures=list(base_csvfile.index)
     genomes=pd.read_csv(genomes, sep="\t", index_col=0)
     colnames=genomes.columns
@@ -66,6 +68,7 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
             os.makedirs(layer_directory)
     except: 
         print ("The {} folder could not be created".format("output"))
+        
     solution, all_stats= sub.stabVsRError(csvfile, 
                                           layer_directory, 
                                           title, all_similarities_list, 
@@ -73,12 +76,18 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
                                           stability=stability, 
                                           min_stability=min_stability, 
                                           combined_stability=combined_stability, 
-                                          mtype=mtype)
+                                          mtype=mtype,
+                                          statistics=statistics,
+                                          select=select)
     
     all_stats.insert(1, 'Stability (Avg Silhouette)', csvfile["avgStability"]) 
     all_stats=all_stats.set_index(["Signatures"])
     all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
-    print("\nSelected Solution: ", solution)
+    #print("\nSelected Solution: ", solution)
+    
+   
+        
+    return(solution)
 
 
 

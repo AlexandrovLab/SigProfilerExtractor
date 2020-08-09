@@ -472,6 +472,27 @@ def sigProfilerExtractor(input_type,
         else:
             data = pd.read_csv(text_file, sep="\t").iloc[:,:]
         
+        
+        if data.shape[0]==48:
+            paths = cosmic.__path__[0]
+            feature_map=pd.read_csv(paths+"/data/CN_classes_dictionary.txt", sep="\t", header=None)
+            feature_order=pd.read_csv(paths+"/data/CNV_features.tsv", sep="\t", header=None)
+            if list(data.iloc[:,0])==list(feature_order[0]):
+                pass
+            else:
+                orderlist1=list(feature_map[0])
+                orderlist2=list(feature_order[0])
+                #sort the mutation types first step
+                data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist1)
+                data = data.sort_values("Mutation Types")
+                data=data.reset_index()
+                data=data.drop(columns='index')
+                #sort the mutation types second step
+                data["Mutation Types"]=feature_map[1]
+                data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist2)
+                data = data.sort_values("Mutation Types")
+                
+        
         data=data.dropna(axis=1, inplace=False)
         data = data.loc[:, (data != 0).any(axis=0)]
         genomes = data.iloc[:,1:]
@@ -933,7 +954,7 @@ def sigProfilerExtractor(input_type,
         
        
         # create the folder for the final solution/ De Novo Solution
-        layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De_Novo_Solution"
+        layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De-Novo_Solution"
         try:
             if not os.path.exists(layer_directory1):
                 os.makedirs(layer_directory1)

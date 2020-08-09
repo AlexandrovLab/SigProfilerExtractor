@@ -1361,7 +1361,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             newsig.append(mutation_context+letters[i])
             newsigmatrixidx.append(i)
             fh = open(directory+"/De_Novo_map_to_COSMIC_"+mutation_context+".csv", "a")
-            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 0, 1, 0))
+            fh.write("Signature {}-{}, Signature {}-{}, {}, {}, {}, {}, {}\n".format(mtype, letters[i], mtype, letters[i], 0, 0, 0, 1, 1))
             fh.close()
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
@@ -1765,7 +1765,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     elif m=="INDEL" or m=="83":
         plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="CNV" or m=="48":
-        plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "48", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+         plot.plotCNV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
@@ -2111,7 +2111,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     elif m=="INDEL" or m=="83":
         plot.plotID(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     elif m=="CNV" or m=="48":
-         plot.plotCNV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "48", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+         plot.plotCNV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
         
@@ -2174,7 +2174,7 @@ def dendrogram(data, threshold, layer_directory):
 
 
 ######################################## Plot the reconstruction error vs stabilities and select the optimum number of signature ####################################################   
-def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= ""):
+def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= "", statistics=True, select=None):
     
     if input_type=="csvfile":
         data = pd.read_csv(csvfile, sep=",")
@@ -2182,11 +2182,10 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
         data=csvfile
         
     #exracting and preparing other similiry matrices from the all_similarities_list
-    mean_cosine_dist=[]; max_cosine_dist=[]; mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = []; wilcoxontest=[]; mean_correlation=[]; minimum_correlation=[]; #all_mean_l2=[];
+    mean_cosine_dist=[]; max_cosine_dist=[]; mean_l1 = []; maximum_l1 = []; mean_l2 = []; maximum_l2 = []; mean_kl = []; maximum_kl = [];  mean_correlation=[]; minimum_correlation=[]; #all_mean_l2=[];
     #median_l1= Median L1 , maximum _l1 = Maximum L1, median_l2= Median L2 , maximum _l2 = Maximum L2, median_kl= Median KL , maximum _kl = Maximum KL, wilcoxontest = Wilcoxontest significance (True or False); all_med_l2=[] = list of all Median L2
     #statistical test we need to set a previous L2 (pre_l2) which have a same length as the sample number
-    pre_l2_dist = np.zeros([all_similarities_list[0].shape[0]])
-    pre_mean = np.inf  
+    
     selection_data=data.copy()
     selection_data["total_stab"]=data["Stability"]+data['avgStability']
     
@@ -2214,27 +2213,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     
     for values in range(len(all_similarities_list)): # loop through the opposite direction     
       all_similarities = all_similarities_list[values].iloc[:,[1,3,5,6,7]]
-      avg_stability=data["avgStability"][values]
-      min_stability=data["Stability"][values]
-      thresh_hold=avg_stability+min_stability
-      #record the statistical test between the l2_of the current and previous signatures first
-      cur_l2_dist = all_similarities["L2_Norm_%"]
-      cur_mean = all_similarities["L2_Norm_%"].mean()
-      wiltest = ranksums(np.array(cur_l2_dist), np.array(pre_l2_dist))[1]
       
-      
-      if (wiltest<0.05) and (pre_mean-cur_mean>0):
-          wilcoxontest.append("True")
-          #all_mean_l2.append(cur_mean)
-          #pre_l2_dist = cur_l2_dist
-          #pre_mean = cur_mean
-          if thresh_hold>=1.0:
-              pre_l2_dist = cur_l2_dist
-              pre_mean = cur_mean
-      else:
-          wilcoxontest.append("False")
-          #all_mean_l2.append(pre_mean)
-          #pre_l2_dist = cur_l2_dist
       cosine_distance=1-all_similarities["Cosine Similarity"]
       mean_cosine_dist.append(round(cosine_distance.mean(),3))
       max_cosine_dist.append(round(cosine_distance.max(),3))
@@ -2258,7 +2237,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     #select the final solution. Don't go to the while loop if there is not more than 1 signatures over thresh-hold
     list_of_idx_over_thresh_hold=selected_resorted_idx
     strating_idx=len(list_of_idx_over_thresh_hold)-1
-    if len(list_of_idx_over_thresh_hold)>1:
+    if len(list_of_idx_over_thresh_hold)>1 and statistics==True:
         while True:
             idx_within_thresh_hold=list_of_idx_over_thresh_hold[strating_idx-1]
             signatures_within_thresh_hold =signatures_within_thresh_hold-(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #get the difference between current and previous stable signatures
@@ -2275,6 +2254,9 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
            
     else:
         final_solution=signatures_within_thresh_hold
+    
+    if type(select)!=type(None):
+        final_solution=select
         
     data.iloc[:,2] = np.round(data.iloc[:,2]*100, 2)
     data = data.assign(**{'Mean Sample L1%': mean_l1, 
@@ -2406,102 +2388,43 @@ def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
         mat1 = true_sigs
         mat2 = est_sigs
     
-    con_mat = np.zeros((mat1.shape[1],mat2.shape[1]))
-    for i in range(0, mat1.shape[1]):
-        for j in range(0,mat2.shape[1]):
-            if dist=="cos":
-                con_mat[i, j] = cos_sim(mat1[:,i], mat2[:,j])  #used custom function
-            elif dist=="cor":
-                con_mat[i, j] = cor_sim(mat1[:,i], mat2[:,j])  #used custom function
     
     
+    if dist=="cos":
+        con_mat = cdist(mat1.T, mat2.T, "cosine")
+    elif dist=="cor":
+        con_mat = cdist(mat1.T, mat2.T, "correlation")
+        
+  
     
-    con_mat_copy = con_mat.copy() # to get the nearest signature/cluster
+    row_ind, col_ind = linear_sum_assignment(con_mat)
+    #print(con_mat[row_ind, col_ind].sum())
+    con_mat=1-con_mat
+    idxPair= {}
+    true_positives=0
+    for x,y in zip(row_ind, col_ind):
+        idxPair[x]=y
+        if con_mat[x,y]>=cutoff:
+            true_positives+=1
     
+    computedFalsePositives=mat1.shape[1]-true_positives
+    #print(computedFalsePositives)
+    computedFalseNegatives=computedFalsePositives
+    #print(computedFalseNegatives)
+    if true_sigs.shape[1]>=est_sigs.shape[1]:
+        baseFalsePositives=0
+        baseFalseNegatives=true_sigs.shape[1]-est_sigs.shape[1]
+        
+    elif est_sigs.shape[1]>true_sigs.shape[1]:
+        baseFalsePositives=est_sigs.shape[1]-true_sigs.shape[1]
+        baseFalseNegatives=0
+        
+    false_positives=baseFalsePositives+computedFalsePositives
+    false_negatives=baseFalseNegatives+computedFalseNegatives
     
-    
-    idxPair= {} 
-    a_b_value_pairs = [] # a and b are intra-cluster distance (a) and the mean nearest-cluster distance (b)
     
         
-    diffRank = np.zeros([len(con_mat), 2])-100   
-    for i in range(len(con_mat)):
-        centroid = con_mat[i]
-        value_order= np.argsort(centroid)
-        first_highest_value_idx = value_order[-1]
-        second_highest_value_idx = value_order[-2]
-        diffRank[i,0] =  i
-        diffRank[i, 1] = centroid[first_highest_value_idx]-centroid[second_highest_value_idx]
-    diffRank = diffRank[diffRank[:,1].argsort(kind='mergesort')]
-    diffRank = diffRank.astype(int)
-    #print(diffRank)
-      
-    
-    for x in range(len(diffRank)-1,-1, -1):
         
-        i = diffRank[x,0]
-        j = con_mat[i,:].argmax()
-        a = con_mat[i,:].max()
-        con_mat_copy[i,j]=-1       #assigning the lowest posiblevalue so that the option will not be chosen
-        b = con_mat_copy[i,:].max()
-        con_mat[i,:]=-1
-        con_mat[:,j]=-1
-        
-        if verbose:
-            print(a)
-        if true_sigs.shape[1]>=est_sigs.shape[1]:
-            if a >cutoff : 
-                idxPair[i] = j
-            else:
-                idxPair[i] = -i  # to set a pattern for the false positives
-        else:
-            if a >cutoff : 
-                idxPair[j] = i
-            else:
-                idxPair[j] = -j  # to set a pattern for the false positives
-        a_b_value_pairs.append([a,b])
-    
-    
-    
-    
-    silhoette_value = []
-    true_positives = 0
-    for values in a_b_value_pairs:
-        if verbose:
-            print(values[0])
-            print(values[1])
-            print("\n")
-        a =1-values[0]  #converting similarity to distance
-        b = 1-values[1]
-        if 1-a <cutoff :
-            silhoette = 0.0
-           
-        else:
-            silhoette = (b-a)/max(a,b)
-            true_positives = true_positives + 1
-        #print(silhoette)
-        silhoette_value.append(silhoette)
-        
-    silhoette_value = np.array(silhoette_value )
-    
-    #print("##################################### FINAL RESULTS ###################################")
-    
-    if verbose:      
-        print(np.mean(silhoette_value))
-       
-        print(np.mean(silhoette_value)*mat1.shape[1]/mat2.shape[1])
-    #print(silhoette_value)
-    
-    
-    if true_positives < est_sigs.shape[1]:
-        false_positives = est_sigs.shape[1]-true_positives 
-    else: 
-        false_positives = 0
-       
-    if true_positives < true_sigs.shape[1]:
-        false_negatives= true_sigs.shape[1]-true_positives  
-    else:
-        false_negatives= 0
         
     number_of_ground_truth_signatures = true_sigs.shape[1]
     number_of_detected_signature = est_sigs.shape[1]

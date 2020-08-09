@@ -6,7 +6,7 @@ import os
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.0.15'
+VERSION = '1.0.16'
 
 
 with open('README.md') as f:
@@ -37,14 +37,14 @@ setup(name='SigProfilerExtractor',
       license='UCSD',
       packages=['SigProfilerExtractor'],
       install_requires=[
-          'matplotlib>=2.2.2',
+          'matplotlib>=3.3.0',
           'scipy>=1.3.3',
-          'torch>=1.1.0',
+          'torch==1.5.1',
           'numpy>=1.17.4', 
           'pandas>=0.25.3', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.1.15', 
-          'sigProfilerPlotting>=1.1.6', 
+          'SigProfilerMatrixGenerator>=1.1.18', 
+          'sigProfilerPlotting>=1.1.8', 
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.22',
