@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: SigProfilerExtractor
-Version: 1.0.16
+Version: 1.0.17
 Summary: Extracts mutational signatures from mutational catalogues
 Home-page: https://github.com/AlexandrovLab/SigProfilerExtractor.git
 Author: S Mishu Ashiqul Islam

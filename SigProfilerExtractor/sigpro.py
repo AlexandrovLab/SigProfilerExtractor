@@ -512,6 +512,8 @@ def sigProfilerExtractor(input_type,
             mtypes = ["DBS78"]
         elif mtypes[0] == "83":
             mtypes = ["ID83"]
+        elif mtypes[0] == "48":
+            mtypes = ["CNV48"]
         else:
             mtypes = ["SBS"+mtypes[0]]
         
@@ -663,9 +665,11 @@ def sigProfilerExtractor(input_type,
             m = "DINUC"
         elif m.startswith("ID"):
             m = "ID"
+        elif m.startswith("CNV"):
+            m="CNV"
         
         # Determine the types of mutation which will be needed for exporting and copying the files
-        if not (m=="DINUC" or m.startswith("DBS") or m.startswith("ID")):
+        if not (m=="DINUC" or m.startswith("DBS") or m.startswith("ID") or m.startswith("CNV")):
             
             if m.startswith("SBS"):
                 mutation_type = m
@@ -675,8 +679,10 @@ def sigProfilerExtractor(input_type,
         else:
             if m == "DINUC" or m.startswith("DBS"):
                 mutation_type = "DBS78"
-            elif m== "ID" or m.stratswith("ID"):
+            elif m== "ID" or m.startswith("ID"):
                 mutation_type = "ID83"
+            elif m== "CNV" or m.startswith("CNV"):
+                mutation_type = "CNV48"
                 
        
             
