@@ -90,10 +90,10 @@ INPUT DATA:-
     
     NMF ENGINES:-
     
-    **matrix_normalization**: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is value is "100X". Other options are "gmm", "log2", "custom" or "none".           
+    **matrix_normalization**: A string. Method of normalizing the genome matrix before it is analyzed by NMF. Default is value is "gmm". Other options are, "log2", "custom" or "none".           
     
-    **nmf_init**: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'alexandrov-lab-custom'
-              Default is 'alexandrov-lab-custom'.
+    **nmf_init**: A String. The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'
+              Default is 'nndsvd_min'.
     
     **precision**: A string. Values should be single or double. Default is single.
     
@@ -134,7 +134,7 @@ INPUT DATA:-
      
     **initial_remove_penalty**: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to COSMIC assign signatures to a sample.
     
-    **refit_denovo_signatures**: Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
+    **refit_denovo_signatures**: Boolean, optional. Default is True. If True, then refit the denovo signatures with nnls.
     
     **make_decomposition_plots**: Boolean, optional. Defualt is True. If True, Denovo to Cosmic sigantures decompostion plots will be created as a part the results.
      
