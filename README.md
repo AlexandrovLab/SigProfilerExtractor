@@ -70,10 +70,12 @@ INPUT DATA:-
        
     **opportunity_genome**: The build or version of the reference signatures for the reference genome. The default opportunity genome is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input reference genome value.    
      
+       **context_type**: A string of mutaion context name/names separated by comma (",") , optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "96,DINUC,ID", where "96" is the SBS96 context, "DINUC"
+                  is the DINULEOTIDE context and ID is INDEL context.
+                  
     **exome**: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
-   **context_type**: A string of mutaion context name/names separated by comma (",") , optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "96,DINUC,ID", where "96" is the SBS96 context, "DINUC"
-                  is the DINULEOTIDE context and ID is INDEL context.
+ 
     
     NMF REPLICATES:-
     
