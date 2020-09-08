@@ -72,7 +72,7 @@ INPUT DATA:-
      
     **exome**: Boolean, optional. Defines if the exomes will be extracted. The default value is "False".
     
-   context_type**: A string of mutaion context name/names separated by comma (",") , optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "96,DINUC,ID", where "96" is the SBS96 context, "DINUC"
+   **context_type**: A string of mutaion context name/names separated by comma (",") , optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "96,DINUC,ID", where "96" is the SBS96 context, "DINUC"
                   is the DINULEOTIDE context and ID is INDEL context.
     
     NMF REPLICATES:-
