@@ -167,12 +167,12 @@ def sigProfilerExtractor(input_type,
                          exome = False, 
                          minimum_signatures=1,
                          maximum_signatures=25,  
-                         nmf_replicates=100, 
+                         nmf_replicates=500, 
                          resample = True, 
                          batch_size=1, 
                          cpu=-1, 
                          gpu=False, 
-                         nmf_init="nndsvd_min", 
+                         nmf_init="random", 
                          precision= "single", 
                          matrix_normalization= "gmm", 
                          seeds= "random", 
@@ -1019,7 +1019,7 @@ def sigProfilerExtractor(input_type,
             genomes = np.array(genomes)
         
         originalProcessAvg.columns = listOfSignatures    
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=add_penalty, remove_penalty=remove_penalty, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
+        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
         globalsigs = final_signatures["globalsigs"]

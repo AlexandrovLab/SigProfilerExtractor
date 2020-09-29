@@ -552,7 +552,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
             totalMutations = np.sum(bootstrapGenomes, axis=0)
             
-              
+             
             bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
                     
             
@@ -561,6 +561,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             #print(genomes.shape)
         #print(len(genome_list))      
         g = np.array(genome_list)
+        
         W, H, Conv = nmf_fn(g, totalProcesses, init=init, excecution_parameters=excecution_parameters)
         for i in range(len(W)):
             
@@ -600,7 +601,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
             
         bootstrapGenomes=np.array(bootstrapGenomes)
-    
+        print(init)
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
         
         
@@ -1030,8 +1031,6 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
         if dist=="cosine":
             SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='cosine')
         if dist=="correlation":
-            #dummy = np.random.uniform(low=0.000000000005, high=0.00000000001, size=clusters.shape)
-            #clusters=clusters+dummy
             SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='correlation')
         
     except:
@@ -1162,6 +1161,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         signames = sigDatabase.columns
         connected_sigs=False
         
+        
     elif signatures.shape[0]==83:
         sigDatabase = pd.read_csv(paths+"/data/sigProfiler_ID_signatures.csv", sep=",",index_col=0)
         signames = sigDatabase.columns
@@ -1171,6 +1171,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         sigDatabase = pd.read_csv(paths+"/data/CNV_signatures.txt", sep="\t",index_col=0)
         signames = sigDatabase.columns
         connected_sigs=False
+        print(list(signames))
+        print(list(sigDatabase.index))
     else:
         sigDatabase = pd.DataFrame(signatures)
         sigDatabase.columns=sigDatabase.columns.astype(str)
@@ -1178,8 +1180,9 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         signames=sigDatabase.columns
         connected_sigs=False
         
-        
+      
     if type(signature_database)==pd.core.frame.DataFrame:
+        
         if signatures.shape[0]==signature_database.shape[0]:
             sigDatabase=signature_database
             signames = sigDatabase.columns 
@@ -1191,7 +1194,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     letters = letters[0:signatures.shape[1]]
     
     
-    
+     
     
     # replace the probability data of the process matrix with the number of mutation
     for i in range(signatures.shape[1]):
@@ -1371,12 +1374,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     different_signatures=different_signatures.astype(int)
     if mtype == "96" or mtype=="288" or mtype=="1536":
         different_signatures = list(set().union(different_signatures, [0,4]))
-        different_signatures.sort()
-    
-    
-        
-    # add connected signatures   
-    different_signatures = ss.add_connected_sigs(different_signatures, list(signames))
+        different_signatures.sort()    
+      
     
     #get the name of the signatures
     try:
@@ -1394,7 +1393,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     #only for SBS96
     if mtype == "96" or mtype=="288" or mtype=="1536":        
         background_sigs = get_indeces(list(detected_signatures), ['SBS1', 'SBS5'])
-    
+        # add connected signatures   
+        different_signatures = ss.add_connected_sigs(different_signatures, list(signames))
     #for other contexts
     else:
         background_sigs = []
@@ -2217,9 +2217,9 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
       cosine_distance=1-all_similarities["Cosine Similarity"]
       mean_cosine_dist.append(round(cosine_distance.mean(),3))
       max_cosine_dist.append(round(cosine_distance.max(),3))
-      mean_l1.append(round(all_similarities["L1_Norm_%"].mean(),2))
+      mean_l1.append(round(all_similarities["L1_Norm_%"].median(),2))
       maximum_l1.append(round(all_similarities["L1_Norm_%"].max(),2))
-      mean_l2.append(round(all_similarities["L2_Norm_%"].mean(),2))
+      mean_l2.append(round(all_similarities["L2_Norm_%"].median(),2))
       maximum_l2.append(round(all_similarities["L2_Norm_%"].max(),2))
       mean_kl.append(round(all_similarities["KL Divergence"].mean(), 4))
       maximum_kl.append(round(all_similarities["KL Divergence"].max(), 4))
@@ -2231,7 +2231,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     all_similarities = all_similarities_list[idx_within_thresh_hold].iloc[:,[1,3,5,6,7]]
     #record the statistical test between the l2_of the current and previous signatures first
     init_l2_dist = all_similarities["L2_Norm_%"]
-    init_mean = all_similarities["L2_Norm_%"].mean()
+    init_mean = all_similarities["L2_Norm_%"].median()
     probabilities[idx_within_thresh_hold]="Most Stab Sigs"
     stable_solutions[idx_within_thresh_hold]="YES"
     #select the final solution. Don't go to the while loop if there is not more than 1 signatures over thresh-hold
@@ -2243,7 +2243,7 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
             signatures_within_thresh_hold =signatures_within_thresh_hold-(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #get the difference between current and previous stable signatures
             all_similarities = all_similarities_list[idx_within_thresh_hold].iloc[:,[1,3,5,6,7]]
             current_l2_dist = all_similarities["L2_Norm_%"]
-            current_mean = all_similarities["L2_Norm_%"].mean()
+            current_mean = all_similarities["L2_Norm_%"].median()
             wiltest = ranksums(np.array(init_l2_dist), np.array(current_l2_dist))[1]
             probabilities[idx_within_thresh_hold]="{:.2e}".format(wiltest)
             stable_solutions[idx_within_thresh_hold]="YES"

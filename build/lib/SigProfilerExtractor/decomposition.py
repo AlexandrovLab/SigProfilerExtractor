@@ -81,10 +81,10 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
     elif mutation_type=="48":
         mutation_context = "CNV48"
         print("Mutation Type is: CNV")
-        paths = cosmic.__path__[0]
-        sigDatabase = pd.read_csv(paths+"/data/CNV_signatures.txt", sep="\t",index_col=0)
-        genomes=genomes.loc[sigDatabase.index]
-        processAvg=processAvg.loc[sigDatabase.index]
+        #paths = cosmic.__path__[0]
+        #sigDatabase = pd.read_csv(paths+"/data/CNV_signatures.txt", sep="\t",index_col=0)
+        #genomes=genomes.loc[sigDatabase.index]
+        #processAvg=processAvg.loc[sigDatabase.index]
     else:
         mutation_context = "SBS"+mutation_type
         
@@ -152,7 +152,7 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
         processAvg = np.array(processAvg)
             
     
-    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=nnls_add_penalty, connected_sigs=connected_sigs,remove_penalty=nnls_remove_penalty, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)    
+    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=0.05, connected_sigs=connected_sigs,remove_penalty=0.01, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)    
     #final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
     # extract the global signatures and new signatures from the final_signatures dictionary
     globalsigs = final_signatures["globalsigs"]
