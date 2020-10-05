@@ -1342,7 +1342,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             basis_cols.insert(0,cosmic_mut_types_col)
             denovo_cols=[denovo_mut_types_col, denovo_name]
             
-            sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory+"/Decomposition_Plots", "test", mtype_par)
+            sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory, "temporary", mtype_par)
             print("Decompositon Plot made for {}\n".format(denovo_name))
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
@@ -1403,11 +1403,13 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     lognote.close()
     
     
-    
-    #delete the folder with sub_plots from the Decomposition_Polts
+    # merge the subplots, and then remove the individual files
     if mtype_par!="none" and make_decomposition_plots==True:
-        merge_pdf(directory+"/Decomposition_Plots", directory+"/"+mutation_context+"_Decomposition_Plots" )
-        shutil.rmtree(directory+"/Decomposition_Plots")
+        merge_pdf(directory, directory )
+        for name in originalProcessAvg.columns:
+            tmp_plot_name=directory+"/"+name+"_decomposition_temporary.pdf"
+            if os.path.exists(tmp_plot_name):
+        	       os.remove(tmp_plot_name)
         
         
     #return values
@@ -2473,7 +2475,6 @@ def custom_signatures_plot(signatures, output):
 def merge_pdf(input_folder, output_file):
     pdf2merge = []
     for filename in os.listdir(input_folder):
-        #print(filename)
         if filename.endswith('.pdf'):
             pdf2merge.append(filename)
             

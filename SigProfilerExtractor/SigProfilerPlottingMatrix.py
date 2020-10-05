@@ -20,11 +20,15 @@ import argparse
 from collections import OrderedDict
 import pandas as pd
 import numpy as np
+# imports for saving plots to memory
+import io
+from PIL import Image
 
 def plotSBS(matrix_path, output_path, project, plot_type, percentage=False, custom_text_upper=None, custom_text_middle=None, custom_text_bottom=None):
 	plot_custom_text = False
 	sig_probs = False
 	pcawg = False
+	buff_list = dict()
 	if plot_type == '96':
 		first_line=matrix_path.iloc[0,:]
 		if first_line[0][1] == ">":
@@ -253,11 +257,13 @@ def plotSBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 
 
 			[i.set_color("black") for i in plt.gca().get_yticklabels()]
-
-			plt.savefig(output_path + "/SBS_sub_plots/" + sample + "_" + project + ".png", format="png")
-
+			# Save matplot lib as a BytesIO, add to list, and return this list
+			buffer = io.BytesIO()
+			plt.savefig(buffer, format="png")
+			buff_list[sample]=buffer
 			plt.close()
 			sample_count += 1
+		return buff_list
 
 	elif plot_type == '192' or plot_type == '96SB' or plot_type == '384':
 		first_line=matrix_path.iloc[0,:]
@@ -502,10 +508,12 @@ def plotSBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 
 			[i.set_color("black") for i in plt.gca().get_yticklabels()]
 
-			plt.savefig(output_path + sample + "_" + project + ".png", format="png")
-
+			buffer = io.BytesIO()
+			plt.savefig(buffer, format="png")
+			buff_list[sample]=buffer
 			plt.close()
 			sample_count += 1
+		return buff_list
 	# IMPORTANT: SBS6 has yet to be updated
 	elif plot_type == '6':
 		with open(matrix_path) as f:
@@ -1154,9 +1162,12 @@ def plotSBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 			panel2.set_xticks(xlabs)
 			handles, labels = panel2.get_legend_handles_labels()
 			panel2.legend(handles[:3], labels[:3], loc='best', prop={'size':30})
-			plt.savefig(output_path + "/SBS_sub_plots/" + sample + "_" + project + ".png", format="png")
+			buffer = io.BytesIO()
+			plt.savefig(buffer, format="png")
+			buff_list[sample]=buffer
 			plt.close()
 			sample_count += 1
+		return buff_list
 
 ###########################################################################################################################
 	elif plot_type == '1536':
@@ -1740,13 +1751,12 @@ def plotSBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 							   top=False, labeltop=False,\
 							   direction='in', length=25, colors='white', width=2)
 
-		# 	[i.set_color("black") for i in plt.gca().get_yticklabels()]
-			#pp.savefig(plot1)
-
-			plt.savefig(output_path + "/SBS_sub_plots/" + sample + "_" + project + ".png", format="png")
-
+			buffer = io.BytesIO()
+			plt.savefig(buffer, format="png")
+			buff_list[sample]=buffer
 			plt.close()
 			sample_count += 1
+		return buff_list
 
 	else:
 		print("The provided plot_type: ", plot_type, " is not supported by this plotting function")
@@ -1759,6 +1769,7 @@ def plotID(matrix_path, output_path, project, plot_type, percentage=False, custo
 	plot_custom_text = False
 	sig_probs = False
 	pcawg = False
+	buff_list = dict()
 	if plot_type == '94' or plot_type == 'ID94' or plot_type == '94ID' or plot_type == '83':
 		first_line=matrix_path.iloc[0,:]
 		if first_line[0][1] == 'D' or first_line[0][0] == 'D':
@@ -2086,14 +2097,12 @@ def plotID(matrix_path, output_path, project, plot_type, percentage=False, custo
 
 			[i.set_color("black") for i in plt.gca().get_yticklabels()]
 
-			plt.savefig(output_path + "/ID_sub_plots/" + sample + "_" + project + ".png", format="png")
-
+			buffer = io.BytesIO()
+			plt.savefig(buffer, format="png")
+			buff_list[sample]=buffer
 			plt.close()
 			sample_count += 1
-			#pp.close()
-		# except:
-		# 	print("There may be an issue with the formatting of you matrix file.")
-		# 	os.remove(output_path + 'ID_83_plots_' + project + '.pdf')
+		return buff_list
 
 	# =======================================OLD INDEL-TSB PLOT==================================================================================
 	# elif plot_type == '96' or plot_type == 'ID96' or plot_type == '96ID' or plot_type == 'IDSB':
@@ -2962,6 +2971,7 @@ def plotDBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 	plot_custom_text = False
 	pcawg = False
 	sig_probs = False
+	buff_list = dict()
 
 	if plot_type == '78' or plot_type == '78DBS' or plot_type == 'DBS78':
 
@@ -3223,10 +3233,12 @@ def plotDBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 			[i.set_color("black") for i in plt.gca().get_yticklabels()]
 			[i.set_color("grey") for i in plt.gca().get_xticklabels()]
 
-			plt.savefig(output_path + "/DBS_sub_plots/" + sample + "_" + project + ".png", format="png")
-
+			buffer = io.BytesIO()
+			plt.savefig(buffer, format="png")
+			buff_list[sample]=buffer			
 			plt.close()
 			sample_count += 1
+		return buff_list
 		#pp.close()
 	# except:
 	# 	print("There may be an issue with the formatting of you matrix file.")
@@ -3251,49 +3263,47 @@ def plotDBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 		revcompl = lambda x: ''.join([{'A':'T','C':'G','G':'C','T':'A','>':'>'}[B] for B in x][::-1])
 		mutations = OrderedDict()
 
-		if True:
-		#try:
-			with open (matrix_path) as f:
-				first_line = f.readline()
-				samples = first_line.strip().split("\t")
-				samples = samples[1:]
-				for sample in samples:
-					mutations[sample] = OrderedDict()
-					mutations[sample]['CC'] = OrderedDict()
-					mutations[sample]['CT'] = OrderedDict()
-					mutations[sample]['TC'] = OrderedDict()
-					mutations[sample]['TT'] = OrderedDict()
+		with open (matrix_path) as f:
+			first_line = f.readline()
+			samples = first_line.strip().split("\t")
+			samples = samples[1:]
+			for sample in samples:
+				mutations[sample] = OrderedDict()
+				mutations[sample]['CC'] = OrderedDict()
+				mutations[sample]['CT'] = OrderedDict()
+				mutations[sample]['TC'] = OrderedDict()
+				mutations[sample]['TT'] = OrderedDict()
 
-				for lines in f:
-					line = lines.strip().split()
-					mut = line[0][2:]
-					nuc = line[0][5:]
-					mut_type = line[0][2:4]
-					bias = line[0][0]
-					if bias == 'N' or bias == 'B' or bias == 'Q':
-						continue
-					else:
-						if mut not in dinucs:
-							if revcompl(mut) not in dinucs:
-								continue
-							nuc = revcompl(nuc)
-							mut_type = revcompl(mut_type)
-						sample_index = 1
+			for lines in f:
+				line = lines.strip().split()
+				mut = line[0][2:]
+				nuc = line[0][5:]
+				mut_type = line[0][2:4]
+				bias = line[0][0]
+				if bias == 'N' or bias == 'B' or bias == 'Q':
+					continue
+				else:
+					if mut not in dinucs:
+						if revcompl(mut) not in dinucs:
+							continue
+						nuc = revcompl(nuc)
+						mut_type = revcompl(mut_type)
+					sample_index = 1
 
-						for sample in samples:
-							if percentage:
-								mutCount = float(line[sample_index])
-								if mutCount < 1 and mutCount > 0:
-									sig_probs = True
-							else:
-								mutCount = int(line[sample_index])
-							if nuc not in mutations[sample][mut_type]:
-								mutations[sample][mut_type][nuc] = [0,0]
-							if bias == 'T':
-								mutations[sample][mut_type][nuc][0] = mutCount
-							else:
-								mutations[sample][mut_type][nuc][1] = mutCount
-							sample_index += 1
+					for sample in samples:
+						if percentage:
+							mutCount = float(line[sample_index])
+							if mutCount < 1 and mutCount > 0:
+								sig_probs = True
+						else:
+							mutCount = int(line[sample_index])
+						if nuc not in mutations[sample][mut_type]:
+							mutations[sample][mut_type][nuc] = [0,0]
+						if bias == 'T':
+							mutations[sample][mut_type][nuc][0] = mutCount
+						else:
+							mutations[sample][mut_type][nuc][1] = mutCount
+						sample_index += 1
 
 			for sample in mutations.keys():
 				total_count = sum(sum(sum(tsb) for tsb in nuc.values()) for nuc in mutations[sample].values())
@@ -3441,11 +3451,12 @@ def plotDBS(matrix_path, output_path, project, plot_type, percentage=False, cust
 				[i.set_color("black") for i in plt.gca().get_yticklabels()]
 				[i.set_color("grey") for i in plt.gca().get_xticklabels()]
 
-
-				plt.savefig(output_path + sample + "_" + project + ".png", format="png")
-
 				panel1.set_xlim([0, 36])
+				buffer = io.BytesIO()
+				plt.savefig(buffer, format="png")
+				buff_list[sample]=buffer
 				plt.close()
+		return buff_list	
 			#pp.close()
 		# except:
 		# 	print("There may be an issue with the formatting of you matrix file.")

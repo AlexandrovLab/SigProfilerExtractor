@@ -27,6 +27,10 @@ from SigProfilerExtractor import PlotDecomposition_SBS288 as spd_288
 from SigProfilerExtractor import PlotDecomposition_SBS1536 as spd_1536
 from SigProfilerExtractor import PlotDecomposition_DBS78 as spd_78
 from SigProfilerExtractor import PlotDecomposition_ID83 as spd_83
+# imports for working with plots in memory
+import io
+from PIL import Image
+from reportlab.lib.utils import ImageReader
 # Global Variables
 SBS_CONTEXTS = ["6", "24", "96", "288", "384", "1536", "6144"]
 DBS_CONTEXTS = ["78", "186", "1248", "2976"]
@@ -34,6 +38,27 @@ ID_CONTEXTS = ["28", "83", "415"]
 mtype_options = ["6", "24", "96", "384", "1536", "6144", "28", \
 "83", "415", "78", "186", "1248", "2976"]
 
+# def read_img(path):
+# 	with open(path, "rb") as f:
+# 		return bytearray(f.read())
+# 
+
+# Helper function for converting BytesIO to image so it can be plotted by reportlab
+def bytes_to_img(byte_png):
+	byte_png.seek(0)
+	tmp_im=Image.open(byte_png)
+	image = ImageReader(tmp_im)
+	return image
+	
+# Helper function to convert byte array to image array
+def open_byte_to_img_dict(byte_dict):
+	img_dict = dict()
+	for name in byte_dict.keys():
+		tmp_img = bytes_to_img(byte_dict[name])
+		img_dict[name] = tmp_img
+	return img_dict 
+		
+	
 
 def calculate_similarities(denovo, denovo_name, est_denovo):
 	from numpy import inf
@@ -142,46 +167,57 @@ def matrix_is_formatted(mtx, mtype):
 
 
 def genSBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
-	
+	denovo_plots = dict()
+	basis_plots = dict()
 	if mtype == "1536" or mtype == "288":
-		sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
-		sigPlt.plotSBS(basis_mtx, output_path, project, "96", True)
+		denovo_plots = sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
+		basis_plots = sigPlt.plotSBS(basis_mtx, output_path, project, "96", True)
 	elif mtype == "96":
-		sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
-		sigPlt.plotSBS(basis_mtx, output_path, project, mtype, True)
+		denovo_plots = sigPlt.plotSBS(denovo_mtx, output_path, project, mtype, True)
+		basis_plots = sigPlt.plotSBS(basis_mtx, output_path, project, mtype, True)
+	return denovo_plots,basis_plots
 
 def genDBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
-	sigPlt.plotDBS(denovo_mtx, output_path, project, mtype, True)
-	sigPlt.plotDBS(basis_mtx, output_path, project, mtype, True)
+	denovo_plots = dict()
+	basis_plots = dict()
+	denovo_plots = sigPlt.plotDBS(denovo_mtx, output_path, project, mtype, True)
+	basis_plots = sigPlt.plotDBS(basis_mtx, output_path, project, mtype, True)
+	return denovo_plots,basis_plots
 
 def genID_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
-	sigPlt.plotID(denovo_mtx, output_path, project, mtype, True)
-	sigPlt.plotID(basis_mtx, output_path, project, mtype, True)
+	denovo_plots = dict()
+	basis_plots = dict()
+	denovo_plots = sigPlt.plotID(denovo_mtx, output_path, project, mtype, True)
+	basis_plots = sigPlt.plotID(basis_mtx, output_path, project, mtype, True)
+	return denovo_plots,basis_plots
 
 # signames, weights
 def gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype):
 
 	if mtype in SBS_CONTEXTS:
-		if not os.path.exists(output_path + "/SBS_sub_plots/"):
-			os.makedirs(output_path + "/SBS_sub_plots/")
-		genSBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		if not os.path.exists(output_path):
+			os.makedirs(output_path)
+		denovo_plots,basis_plots=genSBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		return denovo_plots,basis_plots
 	elif mtype in DBS_CONTEXTS:
-		if not os.path.exists(output_path + "/DBS_sub_plots/"):
-			os.makedirs(output_path + "/DBS_sub_plots/")
-		genDBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		if not os.path.exists(output_path):
+			os.makedirs(output_path)
+		denovo_plots,basis_plots=genDBS_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		return denovo_plots,basis_plots
 	elif mtype in ID_CONTEXTS:
-		if not os.path.exists(output_path + "/ID_sub_plots/"):
-			os.makedirs(output_path + "/ID_sub_plots/")
-		genID_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		if not os.path.exists(output_path):
+			os.makedirs(output_path)
+		denovo_plots,basis_plots=genID_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		return denovo_plots,basis_plots
 	else:
 		print(type(mtype))
 		print("ERROR: mtype is " + mtype + " and is not yet supported.")
 
 # generate the plot for the reconstruction
 def gen_reconstructed_png(denovo_name, basis_mtx, basis_names, weights, output_path, project, mtype):
+	reconstruction_plot=dict()
 	col_names=[denovo_name]
 	mut_col = basis_mtx.iloc[:,0]
-
 
 	recon_plot = basis_mtx[basis_names[0]]*float(weights[0].strip("%"))/100
 
@@ -192,35 +228,40 @@ def gen_reconstructed_png(denovo_name, basis_mtx, basis_names, weights, output_p
 	reconstruction_mtx = pd.concat([mut_col, recon_plot], axis=1)
 	if mtype in SBS_CONTEXTS:
 		if mtype == "1536" or mtype == "288":
-			sigPlt.plotSBS(reconstruction_mtx, output_path, "reconstruction_" + project, "96", True)
+			reconstruction_plot=sigPlt.plotSBS(reconstruction_mtx, output_path, "reconstruction_" + project, "96", True)
 		else:
-			sigPlt.plotSBS(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
+			reconstruction_plot=sigPlt.plotSBS(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
 	elif mtype in DBS_CONTEXTS:
-		sigPlt.plotDBS(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
+		reconstruction_plot=sigPlt.plotDBS(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
 	elif mtype in ID_CONTEXTS:
-		sigPlt.plotID(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
+		reconstruction_plot=sigPlt.plotID(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
 	else:
 		print(type(mtype))
 		print("ERROR: mtype is " + mtype + " and is not yet supported.")
 
-	return reconstruction_mtx
+	return reconstruction_mtx,reconstruction_plot
 
 
 def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
-	mtype, reconstruction=False, statistics=None, sig_version=None, custom_text=None):
+	mtype, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+	reconstruction=False, statistics=None, sig_version=None, custom_text=None):
+
 	"""
 	Generate the correct plot based on mtype.
 
 	Parameters:
 	----------
-	denovo_name: 	(String) 			Name of denovo signature
-	basis_names: 	(List of Strings) 	Names of basis signatures
-	weights:		(List of Strings) 	Percentile contribution for each basis signature
-	output_path: 	(String) 			Path to existing output directory
-	project: 		(String) 			Project name appended to file names
-	mtype: 			(String) 			The context 'mtype_options' has valid values
-	reconstruction: (Boolean) 			True to generate plot w/ reconstruction
-	statistics: 	(Pandas Dataframe) 	Output from calculate_similarities()
+	denovo_name: 				(String) 			Name of denovo signature
+	basis_names: 				(List of Strings) 	Names of basis signatures
+	weights:					(List of Strings) 	Percentile contribution for each basis signature
+	output_path: 				(String) 			Path to existing output directory
+	project: 					(String) 			Project name appended to file names
+	mtype: 						(String) 			The context 'mtype_options' has valid values
+	denovo_plots_dict			(Dictionary)		Signatures are keys, ByteIO plots are values
+	basis_plots_dict			(Dictionary)		Signatures are keys, ByteIO plots are values
+	reconstruction_plot_dict	(Dictionary)		Signatures are keys, ByteIO plots are values
+	reconstruction: 			(Boolean) 			True to generate plot w/ reconstruction
+	statistics: 				(Pandas Dataframe) 	Output from calculate_similarities()
 	"""
 	
 	if mtype == "6":
@@ -229,27 +270,33 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "96":
 		spd_96.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics, sig_version, custom_text)
+			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+			reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "288":
 		spd_288.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics, sig_version, custom_text)
+			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+			reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "384":
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "1536":
 		spd_1536.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics, sig_version, custom_text)
+			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+			reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "6144":
 		print("Need to add support for SBS6144 Decomposition")
 	elif mtype == "28":
 		print("Need to add support for ID28 Decomposition")
 	elif mtype == "83":
+		print(basis_plots_dict)
 		spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics, sig_version, custom_text)
+			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+			reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "415":
 		print("Need to add support for ID415 Decomposition")
 	elif mtype == "78":
 		spd_78.gen_decomposition(denovo_name, basis_names, weights, output_path, \
-			project, reconstruction, statistics, sig_version, custom_text)
+			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+			reconstruction, statistics, sig_version, custom_text)
 	elif mtype == "186":
 		print("Need to add support for DBS186 Decomposition")
 	elif mtype == "1248":
@@ -296,14 +343,19 @@ def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
 	None.
 	"""
 	
-	gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype)
-	reconstructed_mtx = gen_reconstructed_png(denovo_name, basis_mtx, basis_names, \
+	denovo_plots_dict,basis_plots_dict=gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype)
+	reconstructed_mtx,reconstruction_plot_dict = gen_reconstructed_png(denovo_name, basis_mtx, basis_names, \
 		weights, output_path, project, mtype)
 
 	present_sigs=np.array(basis_mtx[basis_names])
 	reconstructed_mtx = np.dot(present_sigs,nonzero_exposures)
+	
+	denovo_plots_dict = open_byte_to_img_dict(denovo_plots_dict)
+	basis_plots_dict = open_byte_to_img_dict(basis_plots_dict)
+	reconstruction_plot_dict = open_byte_to_img_dict(reconstruction_plot_dict)
 
 	statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
 	gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
-		mtype, reconstruction=True, statistics=statistics, sig_version=sig_version, \
+		mtype, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+		reconstruction=True, statistics=statistics, sig_version=sig_version, \
 		custom_text=custom_text)
