@@ -35,13 +35,7 @@ from reportlab.lib.utils import ImageReader
 SBS_CONTEXTS = ["6", "24", "96", "288", "384", "1536", "6144"]
 DBS_CONTEXTS = ["78", "186", "1248", "2976"]
 ID_CONTEXTS = ["28", "83", "415"]
-mtype_options = ["6", "24", "96", "384", "1536", "6144", "28", \
-"83", "415", "78", "186", "1248", "2976"]
-
-# def read_img(path):
-# 	with open(path, "rb") as f:
-# 		return bytearray(f.read())
-# 
+mtype_options = ["6", "24", "96", "384", "1536", "6144", "28", "83", "415", "78", "186", "1248", "2976"]
 
 # Helper function for converting BytesIO to image so it can be plotted by reportlab
 def bytes_to_img(byte_png):
@@ -56,7 +50,7 @@ def open_byte_to_img_dict(byte_dict):
 	for name in byte_dict.keys():
 		tmp_img = bytes_to_img(byte_dict[name])
 		img_dict[name] = tmp_img
-	return img_dict 
+	return img_dict
 		
 	
 
