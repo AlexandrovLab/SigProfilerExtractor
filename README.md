@@ -235,8 +235,7 @@ plotActivity(activity_file, output_file = "Activity_in_samples.pdf", bin_size = 
 
 | Parameter | Variable Type | Parameter Description |
 | --------------------- | -------- |-------- |
-| **activity_file** | String | The standard output activity file showing the number of, or percentage of mutations attributed to  
-each sample. The row names should be samples while the column names should be signatures. |
+| **activity_file** | String | The standard output activity file showing the number of, or percentage of mutations attributed to each sample. The row names should be samples while the column names should be signatures. |
 | **output_file** | String | The path and full name of the output pdf file, including ".pdf" |
 | **bin_size** | Integer | Number of samples plotted per page, recommended: 50 |
         
