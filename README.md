@@ -184,11 +184,12 @@ The files below will be generated in the output folder:
 
 ### Decompose
 
+Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
+
 ```python 
 decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False)
 ``` 
 
-Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
 | Parameter | Variable Type | Parameter Description |
 | --------------------- | -------- |-------- |
 | **signatures** | String | Path to a  tab delimited file that contains the signaure table where the rows are mutation types and colunms are signature IDs. |
