@@ -8,7 +8,19 @@ The tool identifies the number of operative mutational signatures, their activit
 for each signature to cause a specific mutation type in a cancer sample. The tool makes use of SigProfilerMatrixGenerator 
 and SigProfilerPlotting. 
 
-## INSTALLATION
+# Table of contents
+- [Installation](#installation)
+- [Functions](#Functions)
+  - [importdata](#importdata)
+  - [sigProfilerExtractor](#sigProfilerExtractor)
+  - [estimate_solution](#estimate_solution)
+  - [decompose](#decompose)
+  - [PlotActivity.py](#plotActivity)
+- [Copyright](#copyright)
+- [Contact Information](#contact)
+
+
+## <a name="installation"></a> Installation
 In the command line, please run the following:
 ```bash
 $ pip install SigProfilerExtractor
@@ -24,18 +36,17 @@ This will install the human 37 assembly as a reference genome. You may install a
 
 Next, open a python interpreter and import the SigProfilerExtractor module. Please see the examples of the functions. 
 
-## FUNCTIONS
-
+## <a name="functions"></a> Functions
 The list of available functions are:
-  - importdata
-  - sigProfilerExtractor
-  - estimate_solution
-  - decompose
+- importdata
+- sigProfilerExtractor
+- estimate_solution
+- decompose
 
 And an additional script:
-  - plotActivity.py
+- plotActivity.py
 
-### importdata 
+### <a name="importdata"></a> importdata
 Imports the path of example data.
 
 ```python
@@ -54,7 +65,7 @@ data = path_to_example_table
 help(sig.importdata)
 ```
 
-### sigProfilerExtractor
+### <a name="sigProfilerExtractor"></a> sigProfilerExtractor
     
 Extracts mutational signatures from an array of samples.
 
@@ -136,7 +147,7 @@ if __name__="__main__":
 To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
   
 
-### Estimation of the Optimum Solution
+### <a name="estimate_solution"></a> Estimation of the Optimum Solution
 Estimate the optimum solution (rank) among different number of solutions (ranks). 
 
 ```python
@@ -182,7 +193,7 @@ The files below will be generated in the output folder:
 | **selection_plot.pdf** | A plot that depict the Stability and Mean Sample Cosine Distance for different solutions. |
 
 
-### Decompose
+### <a name="decompose"></a> Decompose
 
 Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
 
@@ -227,7 +238,7 @@ Values:
   - Signature_assaignment_logfile.txt
   - Signature_plot[MutatutionContext]_plots_Decomposed_Solution.pdf
         
-### Activity Stacked Bar Plot
+### <a name="plotActivity"></a> Activity Stacked Bar Plot
 Generates a stacked bar plot showing activities in individuals
 
 ```python 
@@ -251,8 +262,8 @@ If CUDA out of memory exceptions occur, it will be necessary to reduce the numbe
 
 #### For more information, help, and examples, please visit: https://osf.io/t6j7u/wiki/home/
 
-## COPYRIGHT
+## <a name="copyright"></a> Copyright
 This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 
-## CONTACT INFORMATION
+## <a name="contact"></a> Contact Information
 Please address any queries or bug reports to S M Ashiqul Islam (Mishu) at m0islam@ucsd.edu
