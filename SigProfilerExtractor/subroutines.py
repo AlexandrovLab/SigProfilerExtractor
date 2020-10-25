@@ -466,31 +466,6 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",excecution_parameters=None):
 
     return Ws, Hs, convergence
 
-def nnmf(genomes, nfactors, init="nndsvd"):
-    
-   
-    genomes = np.array(genomes)
-   
-    #print(init)       
-    #model_init = NMF(n_components=nfactors, max_iter=1, solver= "mu",init= "nndsvd", tol=0.0, beta_loss = 'kullback-leibler',  verbose=False)
-    #w = model_init.fit_transform(genomes)
-    #h = model_init.components_
-    w,h=initialize_nmf(genomes, nfactors, init=init, eps=1e-6,random_state=None)
-    W, H = inhouse_nmf(genomes, w=w, h=h, k=nfactors, iterations=200000, tol=0.000005)
-   
-    
-    
-    
-    #calculate L1, L2 and KL for the solution 
-    est_genome = np.array(np.dot(W, H))
-    
-    similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
-    similarities = np.array(np.mean(similarities, axis=0)).T
-    
-    
-    
-
-    return W, H, similarities
 
 
 
@@ -601,7 +576,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
             
         bootstrapGenomes=np.array(bootstrapGenomes)
-        print(init)
+    
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
         
         
@@ -1342,7 +1317,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             basis_cols.insert(0,cosmic_mut_types_col)
             denovo_cols=[denovo_mut_types_col, denovo_name]
             
-            sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory, "temporary", mtype_par)
+            sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory+"/Decomposition_Plots", "test", mtype_par)
             print("Decompositon Plot made for {}\n".format(denovo_name))
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
@@ -1403,13 +1378,11 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     lognote.close()
     
     
-    # merge the subplots, and then remove the individual files
+    
+    #delete the folder with sub_plots from the Decomposition_Polts
     if mtype_par!="none" and make_decomposition_plots==True:
-        merge_pdf(directory, directory )
-        for name in originalProcessAvg.columns:
-            tmp_plot_name=directory+"/"+name+"_decomposition_temporary.pdf"
-            if os.path.exists(tmp_plot_name):
-        	       os.remove(tmp_plot_name)
+        merge_pdf(directory+"/Decomposition_Plots", directory+"/"+mutation_context+"_Decomposition_Plots" )
+        shutil.rmtree(directory+"/Decomposition_Plots")
         
         
     #return values
@@ -1768,6 +1741,8 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="CNV" or m=="48":
          plot.plotCNV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
+    elif m=="SV" or m=="32":
+         plot.plotSV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
@@ -1922,6 +1897,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 
                 init_add_sig_idx = list(set().union(list(np.nonzero(exposureAvg[:, r])[0]), background_sigs))
                 #print(init_add_sig_idx)
+                
                 
                 #get the background_sig_idx for the add_remove function only for the decomposed solution:
                 if background_sigs != 0:  # in the decomposed solution only 
@@ -2114,6 +2090,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         plot.plotID(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     elif m=="CNV" or m=="48":
          plot.plotCNV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
+    elif m=="SV" or m=="32":
+         plot.plotSV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
         
@@ -2127,13 +2105,13 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     probability = probabilities(processAvg, exposureAvg, index, allsigids, allcolnames)
     probability=probability.set_index("Sample Names" )
     
-    if solution_type=="De_Novo_Solution":
+    if cosmic_sigs==False:
         
         if refit_denovo_signatures==True:
             probability.to_csv(layer_directory+"/Activities"+"/"+"De_Novo_Mutation_Probabilities_refit.txt", "\t") 
         else:
             probability.to_csv(layer_directory+"/Activities"+"/"+"De_Novo_Mutation_Probabilities.txt", "\t") 
-    if solution_type!="De_Novo_Solution":
+    if cosmic_sigs==True:
         probability.to_csv(layer_directory+"/Activities"+"/"+"Decomposed_Mutation_Probabilities.txt", "\t") 
     
     """
@@ -2475,6 +2453,7 @@ def custom_signatures_plot(signatures, output):
 def merge_pdf(input_folder, output_file):
     pdf2merge = []
     for filename in os.listdir(input_folder):
+        #print(filename)
         if filename.endswith('.pdf'):
             pdf2merge.append(filename)
             
