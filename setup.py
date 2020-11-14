@@ -45,18 +45,19 @@ requirements=[
            ]
 
 operating_system = sys.platform   
+print(operating_system)
 if operating_system  in ['win32','cygwin','windows']:
     requirements.remove('matplotlib>=3.3.0')
     requirements.remove('torch==1.5.1')
     print('Trying to install pytorch!')
     code = 1
     try:
-        code = subprocess.call(['pip', 'install', 'torch===1.5.1',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+        code = subprocess.call(['pip', 'install', 'torch===1.5.1+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
         if code != 0:
             raise Exception('Torch  instalation failed !')
     except:
         try:
-            code = subprocess.call(['pip3', 'install', 'torch===1.5.1',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+            code = subprocess.call(['pip3', 'install', 'torch===1.5.1+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
             if code != 0:
                 raise Exception('Torch instalation failed !')
         except:
