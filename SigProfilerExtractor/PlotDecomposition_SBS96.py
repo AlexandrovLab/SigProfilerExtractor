@@ -210,57 +210,60 @@ def draw_bracket(num_bases, c_draw):
 #	output_name 	- (String)	The name to save the cropped output as
 #	num_bases		- (Integer)	The number of signatures the sample is composed of
 def crop_margins(pdf_to_edit, output_name, num_bases):
-	pdf_file = PdfFileReader(open(pdf_to_edit, "rb"))
-	page = pdf_file.getPage(0)
-	writer = PdfFileWriter()
-	if (num_bases == 1):
-		page.mediaBox.lowerRight = (792,150)
-		page.mediaBox.lowerLeft = (0,150)
-		page.mediaBox.upperRight = (792,402)
-		page.mediaBox.upperLeft = (0,402)
-		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
-	elif (num_bases == 2):
-		page.mediaBox.lowerRight = (792,150)
-		page.mediaBox.lowerLeft = (0,150)
-		page.mediaBox.upperRight = (792,422)
-		page.mediaBox.upperLeft = (0,422)
-		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
-	elif (num_bases == 3):
-		page.mediaBox.lowerRight = (792,150)
-		page.mediaBox.lowerLeft = (0,150)
-		page.mediaBox.upperRight = (792,462)
-		page.mediaBox.upperLeft = (0,462)
-		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
-	elif (num_bases == 4):
-		page.mediaBox.lowerRight = (792,112)
-		page.mediaBox.lowerLeft = (0,112)
-		page.mediaBox.upperRight = (792,498)
-		page.mediaBox.upperLeft = (0,498)
-		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
-	elif (num_bases == 5):
-		page.mediaBox.lowerRight = (792,75)
-		page.mediaBox.lowerLeft = (0,75)
-		page.mediaBox.upperRight = (792,537)
-		page.mediaBox.upperLeft = (0,537)
-		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
-	elif (num_bases > 5):
-		page.mediaBox.lowerRight = (792,55)
-		page.mediaBox.lowerLeft = (0,55)
-		page.mediaBox.upperRight = (792,537)
-		page.mediaBox.upperLeft = (0,537)
-		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+	
+	with open(pdf_to_edit, "rb") as tmp:
+		pdf_file = PdfFileReader(tmp, "rb")
+		page = pdf_file.getPage(0)
+		writer = PdfFileWriter()
+		
+		if (num_bases == 1):
+			page.mediaBox.lowerRight = (792,150)
+			page.mediaBox.lowerLeft = (0,150)
+			page.mediaBox.upperRight = (792,402)
+			page.mediaBox.upperLeft = (0,402)
+			writer.addPage(page)
+			with open(output_name, "wb") as out_f:
+				writer.write(out_f)
+		elif (num_bases == 2):
+			page.mediaBox.lowerRight = (792,150)
+			page.mediaBox.lowerLeft = (0,150)
+			page.mediaBox.upperRight = (792,422)
+			page.mediaBox.upperLeft = (0,422)
+			writer.addPage(page)
+			with open(output_name, "wb") as out_f:
+				writer.write(out_f)
+		elif (num_bases == 3):
+			page.mediaBox.lowerRight = (792,150)
+			page.mediaBox.lowerLeft = (0,150)
+			page.mediaBox.upperRight = (792,462)
+			page.mediaBox.upperLeft = (0,462)
+			writer.addPage(page)
+			with open(output_name, "wb") as out_f:
+				writer.write(out_f)
+		elif (num_bases == 4):
+			page.mediaBox.lowerRight = (792,112)
+			page.mediaBox.lowerLeft = (0,112)
+			page.mediaBox.upperRight = (792,498)
+			page.mediaBox.upperLeft = (0,498)
+			writer.addPage(page)
+			with open(output_name, "wb") as out_f:
+				writer.write(out_f)
+		elif (num_bases == 5):
+			page.mediaBox.lowerRight = (792,75)
+			page.mediaBox.lowerLeft = (0,75)
+			page.mediaBox.upperRight = (792,537)
+			page.mediaBox.upperLeft = (0,537)
+			writer.addPage(page)
+			with open(output_name, "wb") as out_f:
+				writer.write(out_f)
+		elif (num_bases > 5):
+			page.mediaBox.lowerRight = (792,55)
+			page.mediaBox.lowerLeft = (0,55)
+			page.mediaBox.upperRight = (792,537)
+			page.mediaBox.upperLeft = (0,537)
+			writer.addPage(page)
+			with open(output_name, "wb") as out_f:
+				writer.write(out_f)
 
 # Parameters:
 #   de_novo_name 				(String) 			The name of the denovo signature.
