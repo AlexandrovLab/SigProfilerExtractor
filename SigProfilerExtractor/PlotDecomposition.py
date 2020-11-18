@@ -257,7 +257,7 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	reconstruction: 			(Boolean) 			True to generate plot w/ reconstruction
 	statistics: 				(Pandas Dataframe) 	Output from calculate_similarities()
 	"""
-	
+
 	if mtype == "6":
 		print("Need to add support for SBS6 Decomposition")
 	elif mtype == "24":
@@ -281,7 +281,6 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	elif mtype == "28":
 		print("Need to add support for ID28 Decomposition")
 	elif mtype == "83":
-		print(basis_plots_dict)
 		spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 			reconstruction, statistics, sig_version, custom_text)

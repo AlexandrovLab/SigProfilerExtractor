@@ -12,6 +12,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 import SigProfilerExtractor as cosmic
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
+# imports for saving plots to memory
+import io
+from PIL import Image
 # imports for dashed line
 from reportlab.lib.colors import black
 paths = cosmic.__path__[0]
@@ -211,58 +214,57 @@ def draw_bracket(num_bases, c_draw):
 #	output_name 	- (String)	The name to save the cropped output as
 #	num_bases		- (Integer)	The number of signatures the sample is composed of
 def crop_margins(pdf_to_edit, output_name, num_bases):
-	with open(pdf_to_edit, "rb") as tmp:
-		pdf_file = PdfFileReader(tmp, "rb")
-		page = pdf_file.getPage(0)
-		writer = PdfFileWriter()
-		if (num_bases == 1):
-			page.mediaBox.lowerRight = (792,150)
-			page.mediaBox.lowerLeft = (0,150)
-			page.mediaBox.upperRight = (792,402)
-			page.mediaBox.upperLeft = (0,402)
-			writer.addPage(page)
-			with open(output_name, "wb") as out_f:
-				writer.write(out_f)
-		elif (num_bases == 2):
-			page.mediaBox.lowerRight = (792,150)
-			page.mediaBox.lowerLeft = (0,150)
-			page.mediaBox.upperRight = (792,422)
-			page.mediaBox.upperLeft = (0,422)
-			writer.addPage(page)
-			with open(output_name, "wb") as out_f:
-				writer.write(out_f)
-		elif (num_bases == 3):
-			page.mediaBox.lowerRight = (792,150)
-			page.mediaBox.lowerLeft = (0,150)
-			page.mediaBox.upperRight = (792,462)
-			page.mediaBox.upperLeft = (0,462)
-			writer.addPage(page)
-			with open(output_name, "wb") as out_f:
-				writer.write(out_f)
-		elif (num_bases == 4):
-			page.mediaBox.lowerRight = (792,112)
-			page.mediaBox.lowerLeft = (0,112)
-			page.mediaBox.upperRight = (792,498)
-			page.mediaBox.upperLeft = (0,498)
-			writer.addPage(page)
-			with open(output_name, "wb") as out_f:
-				writer.write(out_f)
-		elif (num_bases == 5):
-			page.mediaBox.lowerRight = (792,75)
-			page.mediaBox.lowerLeft = (0,75)
-			page.mediaBox.upperRight = (792,537)
-			page.mediaBox.upperLeft = (0,537)
-			writer.addPage(page)
-			with open(output_name, "wb") as out_f:
-				writer.write(out_f)
-		elif (num_bases > 5):
-			page.mediaBox.lowerRight = (792,55)
-			page.mediaBox.lowerLeft = (0,55)
-			page.mediaBox.upperRight = (792,537)
-			page.mediaBox.upperLeft = (0,537)
-			writer.addPage(page)
-			with open(output_name, "wb") as out_f:
-				writer.write(out_f)
+	pdf_file = PdfFileReader(pdf_to_edit, "rb")
+	page = pdf_file.getPage(0)
+	writer = PdfFileWriter()
+	if (num_bases == 1):
+		page.mediaBox.lowerRight = (792,150)
+		page.mediaBox.lowerLeft = (0,150)
+		page.mediaBox.upperRight = (792,402)
+		page.mediaBox.upperLeft = (0,402)
+		writer.addPage(page)
+		with open(output_name, "wb") as out_f:
+			writer.write(out_f)
+	elif (num_bases == 2):
+		page.mediaBox.lowerRight = (792,150)
+		page.mediaBox.lowerLeft = (0,150)
+		page.mediaBox.upperRight = (792,422)
+		page.mediaBox.upperLeft = (0,422)
+		writer.addPage(page)
+		with open(output_name, "wb") as out_f:
+			writer.write(out_f)
+	elif (num_bases == 3):
+		page.mediaBox.lowerRight = (792,150)
+		page.mediaBox.lowerLeft = (0,150)
+		page.mediaBox.upperRight = (792,462)
+		page.mediaBox.upperLeft = (0,462)
+		writer.addPage(page)
+		with open(output_name, "wb") as out_f:
+			writer.write(out_f)
+	elif (num_bases == 4):
+		page.mediaBox.lowerRight = (792,112)
+		page.mediaBox.lowerLeft = (0,112)
+		page.mediaBox.upperRight = (792,498)
+		page.mediaBox.upperLeft = (0,498)
+		writer.addPage(page)
+		with open(output_name, "wb") as out_f:
+			writer.write(out_f)
+	elif (num_bases == 5):
+		page.mediaBox.lowerRight = (792,75)
+		page.mediaBox.lowerLeft = (0,75)
+		page.mediaBox.upperRight = (792,537)
+		page.mediaBox.upperLeft = (0,537)
+		writer.addPage(page)
+		with open(output_name, "wb") as out_f:
+			writer.write(out_f)
+	elif (num_bases > 5):
+		page.mediaBox.lowerRight = (792,55)
+		page.mediaBox.lowerLeft = (0,55)
+		page.mediaBox.upperRight = (792,537)
+		page.mediaBox.upperLeft = (0,537)
+		writer.addPage(page)
+		with open(output_name, "wb") as out_f:
+			writer.write(out_f)
 
 # Parameters:
 #   de_novo_name 				(String) 			The name of the denovo signature.
@@ -328,16 +330,17 @@ def gen_plot(de_novo_name, bases, output_path, project, c, reconstruction, \
 def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, reconstruction, \
 	statistics,  sig_version=None, custom_text=None):
-	output_plot_to_crop = output_path+"/"+denovo_name+"_decomposition_"+project+"_to_crop.pdf"
+	
 	output_plot_cropped = output_path+"/"+denovo_name+"_decomposition_"+project+".pdf"
-	c = canvas.Canvas(output_plot_to_crop, pagesize=letter)
+	
+	buff = io.BytesIO()
+	c = canvas.Canvas(buff, pagesize=letter)
 	c.setPageSize(landscape(letter))
 	c.setFont("Arial-Bold", 7.19)
 
 	basis_plots = []
 	for i in range(0,len(basis_names)):
 		basis_plots.append([basis_names[i], weights[i]])
-
 
 	# create for loop to iterate through list, then change second value in list of lists
 	# Otherwise sorts strings and then 5.14% > 48.54%
@@ -350,8 +353,8 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		reconstruction_plot_dict)
 
 	c.save()
-
-	crop_margins(output_plot_to_crop, output_plot_cropped, len(basis_names))
-
-	if os.path.exists(output_plot_to_crop):
-			os.remove(output_plot_to_crop)
+	
+	# Take the plot and crop the margins
+	buff.seek(0)
+	crop_margins(buff, output_plot_cropped, len(basis_names))
+	buff.close()
