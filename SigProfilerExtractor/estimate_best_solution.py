@@ -47,11 +47,17 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
     csvfile=np.zeros([len(signatures),4])
     csvfile=csvfile
     for i in range(len(signatures)):
-        signatures[i]=signatures[i].rstrip("*")
-        csvfile[i,0]=signatures[i]
-        fnorm=base_csvfile.iloc[i,4].rstrip("%")
+        if base_csvfile.shape[1]!=3:
+            signatures[i]=signatures[i].rstrip("*")
+            fnorm=base_csvfile.iloc[i,4].rstrip("%")
+            csvfile[i,[1,3]]=base_csvfile.iloc[i,[1,0]]
+        elif base_csvfile.shape[1]==3:
+            signatures[i]=str(signatures[i])
+            fnorm=base_csvfile.iloc[i,1].astype(float)
+            fnorm=fnorm*100
+            csvfile[i,[1,3]]=base_csvfile.iloc[i,[0,2]]
+        csvfile[i,0]=signatures[i]    
         csvfile[i,2]=fnorm
-        csvfile[i,[1,3]]=base_csvfile.iloc[i,[1,0]]
         w=pd.read_csv(All_solution+"/"+mtype+"_"+signatures[i]+"_Signatures/Signatures/"+mtype+"_S"+signatures[i]+"_Signatures.txt", sep="\t", index_col=0)
         h=pd.read_csv(All_solution+"/"+mtype+"_"+signatures[i]+"_Signatures/Activities/"+mtype+"_S"+signatures[i]+"_NMF_Activities.txt", sep="\t", index_col=0)
         w = np.array(w)

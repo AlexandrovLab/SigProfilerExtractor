@@ -466,31 +466,6 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",excecution_parameters=None):
 
     return Ws, Hs, convergence
 
-def nnmf(genomes, nfactors, init="nndsvd"):
-    
-   
-    genomes = np.array(genomes)
-   
-    #print(init)       
-    #model_init = NMF(n_components=nfactors, max_iter=1, solver= "mu",init= "nndsvd", tol=0.0, beta_loss = 'kullback-leibler',  verbose=False)
-    #w = model_init.fit_transform(genomes)
-    #h = model_init.components_
-    w,h=initialize_nmf(genomes, nfactors, init=init, eps=1e-6,random_state=None)
-    W, H = inhouse_nmf(genomes, w=w, h=h, k=nfactors, iterations=200000, tol=0.000005)
-   
-    
-    
-    
-    #calculate L1, L2 and KL for the solution 
-    est_genome = np.array(np.dot(W, H))
-    
-    similarities = calculate_similarities(genomes, est_genome, sample_names=False)[0].iloc[:,2:]
-    similarities = np.array(np.mean(similarities, axis=0)).T
-    
-    
-    
-
-    return W, H, similarities
 
 
 
@@ -601,7 +576,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
             
         bootstrapGenomes=np.array(bootstrapGenomes)
-        print(init)
+    
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
         
         
@@ -1766,6 +1741,8 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="CNV" or m=="48":
          plot.plotCNV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
+    elif m=="SV" or m=="32":
+         plot.plotSV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
@@ -1920,6 +1897,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 
                 init_add_sig_idx = list(set().union(list(np.nonzero(exposureAvg[:, r])[0]), background_sigs))
                 #print(init_add_sig_idx)
+                
                 
                 #get the background_sig_idx for the add_remove function only for the decomposed solution:
                 if background_sigs != 0:  # in the decomposed solution only 
@@ -2112,6 +2090,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         plot.plotID(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     elif m=="CNV" or m=="48":
          plot.plotCNV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
+    elif m=="SV" or m=="32":
+         plot.plotSV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
     elif m=="96" or m=="288" or m=="384" or m=="1536":
         plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
         
@@ -2125,13 +2105,13 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     probability = probabilities(processAvg, exposureAvg, index, allsigids, allcolnames)
     probability=probability.set_index("Sample Names" )
     
-    if solution_type=="De_Novo_Solution":
+    if cosmic_sigs==False:
         
         if refit_denovo_signatures==True:
             probability.to_csv(layer_directory+"/Activities"+"/"+"De_Novo_Mutation_Probabilities_refit.txt", "\t") 
         else:
             probability.to_csv(layer_directory+"/Activities"+"/"+"De_Novo_Mutation_Probabilities.txt", "\t") 
-    if solution_type!="De_Novo_Solution":
+    if cosmic_sigs==True:
         probability.to_csv(layer_directory+"/Activities"+"/"+"Decomposed_Mutation_Probabilities.txt", "\t") 
     
     """

@@ -185,8 +185,8 @@ class NMF:
 
             if beta == 2:
                 for self._iter in range(self.max_iterations):
-                    self.H = self.H * (self.W.transpose(1, 2) @ self._V) / (self.W.transpose(1, 2) @ (self.W @ self.H))
-                    self.W = self.W * (self._V @ self.H.transpose(1, 2)) / (self.W @ (self.H @ self.H.transpose(1, 2)))
+                    self._H = self.H * (self.W.transpose(1, 2) @ self._V) / (self.W.transpose(1, 2) @ (self.W @ self.H))
+                    self._W = self.W * (self._V @ self.H.transpose(1, 2)) / (self.W @ (self.H @ self.H.transpose(1, 2)))
                     if stop_iterations()[0]:
                         self._conv=stop_iterations()[1]
                         break
@@ -211,9 +211,9 @@ class NMF:
 
             else:
                 for self._iter in range(self.max_iterations):
-                    self.H = self.H * ((self.W.transpose(1, 2) @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
+                    self._H = self.H * ((self.W.transpose(1, 2) @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
                                        (self.W.transpose(1, 2) @ ((self.W @ self.H)**(beta-1))))
-                    self.W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(1, 2)) /
+                    self._W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(1, 2)) /
                                        (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(1, 2)))
                     if stop_iterations()[0]:
                         self._conv=stop_iterations()[1]

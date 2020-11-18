@@ -111,40 +111,40 @@ CONTRIBUTION = 1
 #   output_path - (String) The path to where the .png files are stored.
 #   project 	- (String) The name of the project that is post-fixed to each file name.
 #	c_draw 		- (Canvas) The canvas to draw the graph decomposition on.
-def plot_1(bases, output_path, project, c_draw):
+def plot_1(bases, project, c_draw, denovo_plots_dict, basis_plots_dict):
 	for i in range(0,1):
-		c_draw.drawImage(output_path+"/DBS_sub_plots/"+bases[i][0] + "_" + project+".png", \
-			LAYOUT_1_GRAPH[i][X_COORD], LAYOUT_1_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		image=basis_plots_dict[bases[i][0]]
+		c_draw.drawImage(image, LAYOUT_1_GRAPH[i][X_COORD], LAYOUT_1_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c_draw.drawString(LAYOUT_1_TEXT[i][X_COORD], LAYOUT_1_TEXT[i][Y_COORD], str(bases[i][1]) + "%")
 
-def plot_2(bases, output_path, project, c_draw):
+def plot_2(bases, project, c_draw, denovo_plots_dict, basis_plots_dict):
 	for i in range(0,2):
-		c_draw.drawImage(output_path+"/DBS_sub_plots/"+bases[i][0] + "_" + project+".png", \
-			LAYOUT_2_GRAPH[i][X_COORD], LAYOUT_2_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		image=basis_plots_dict[bases[i][0]]
+		c_draw.drawImage(image, LAYOUT_2_GRAPH[i][X_COORD], LAYOUT_2_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c_draw.drawString(LAYOUT_2_TEXT[i][X_COORD], LAYOUT_2_TEXT[i][Y_COORD], str(bases[i][1]) + "%")
 
-def plot_3(bases, output_path, project, c_draw):
+def plot_3(bases, project, c_draw, denovo_plots_dict, basis_plots_dict):
 	for i in range(0,3):
-		c_draw.drawImage(output_path+"/DBS_sub_plots/"+bases[i][0] + "_" + project+".png", \
-			LAYOUT_3_GRAPH[i][X_COORD], LAYOUT_3_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		image=basis_plots_dict[bases[i][0]]
+		c_draw.drawImage(image, LAYOUT_3_GRAPH[i][X_COORD], LAYOUT_3_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c_draw.drawString(LAYOUT_3_TEXT[i][X_COORD], LAYOUT_3_TEXT[i][Y_COORD], str(bases[i][1]) + "%")
 
-def plot_4(bases, output_path, project, c_draw):
+def plot_4(bases, project, c_draw, denovo_plots_dict, basis_plots_dict):
 	for i in range(0,4):
-		c_draw.drawImage(output_path+"/DBS_sub_plots/"+bases[i][0] + "_" + project+".png", \
-			LAYOUT_4_GRAPH[i][X_COORD], LAYOUT_4_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		image=basis_plots_dict[bases[i][0]]
+		c_draw.drawImage(image, LAYOUT_4_GRAPH[i][X_COORD], LAYOUT_4_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c_draw.drawString(LAYOUT_4_TEXT[i][X_COORD], LAYOUT_4_TEXT[i][Y_COORD], str(bases[i][1]) + "%")
 
-def plot_5(bases, output_path, project, c_draw):
+def plot_5(bases, project, c_draw, denovo_plots_dict, basis_plots_dict):
 	for i in range(0,5):
-		c_draw.drawImage(output_path+"/DBS_sub_plots/"+bases[i][0] + "_" + project+".png", \
-			LAYOUT_5_GRAPH[i][X_COORD], LAYOUT_5_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		image=basis_plots_dict[bases[i][0]]
+		c_draw.drawImage(image, LAYOUT_5_GRAPH[i][X_COORD], LAYOUT_5_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c_draw.drawString(LAYOUT_5_TEXT[i][X_COORD], LAYOUT_5_TEXT[i][Y_COORD], str(bases[i][1]) + "%")
 
-def plot_6_plus(bases, output_path, project, c_draw):
+def plot_6_plus(bases, project, c_draw, denovo_plots_dict, basis_plots_dict):
 	for i in range(0,5):
-		c_draw.drawImage(output_path+"/DBS_sub_plots/"+bases[i][0] + "_" + project+".png", \
-			LAYOUT_5_GRAPH[i][X_COORD], LAYOUT_5_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		image=basis_plots_dict[bases[i][0]]
+		c_draw.drawImage(image, LAYOUT_5_GRAPH[i][X_COORD], LAYOUT_5_GRAPH[i][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c_draw.drawString(LAYOUT_5_TEXT[i][X_COORD], LAYOUT_5_TEXT[i][Y_COORD], str(bases[i][1]) + "%")
 
 	extra_sigs = "* "
@@ -250,40 +250,46 @@ def crop_margins(pdf_to_edit, output_name, num_bases):
 			writer.write(out_f)
 
 # Parameters:
-#   de_novo_name 	- (String) The name of the denovo signature.
-#   basis_names		- (List of Strings) The names of the basis signatures
-#	output_path 	- (String)	Path to where to save the output.
-#	project			- (String)	The project name that is appended to file names.
-#	c				- (Canvas)	The canvas that is being drawn on.
-#	reconstruction	- (Boolean) True to create reconstruction
-#	statistics		- (Pandas Dataframe) If reconstructing, then include statistics.
+#   de_novo_name 				(String) 			The name of the denovo signature.
+#   basis_names					(List of Strings)	The names of the basis signatures
+#	output_path 				(String)			Path to where to save the output.
+#	project						(String)			The project name that is appended to file names.
+#	c							(Canvas)			The canvas that is being drawn on.
+#	reconstruction				(Boolean) 			True to create reconstruction
+#	statistics					(Pandas Dataframe) 	If reconstructing, then include statistics.
+#	sig_version					(String) 			The version of the Cosmic Signatures used
+#	denovo_plots_dict			(Dictionary) 		Signatures are keys, ByteIO plots are values
+#	basis_plots_dict			(Dictionary) 		Signatures are keys, ByteIO plots are values
+#	reconstruction_plot_dict	(Dictionary) 		Signatures are keys, ByteIO plots are values
+#
 # Output:
 #   A graph of the de_novo signature's decomposition.
-def gen_plot(de_novo, bases, output_path, project, c, reconstruction, statistics, \
-	sig_version, custom_text):
+def gen_plot(de_novo_name, bases, output_path, project, c, reconstruction, \
+	statistics, sig_version, custom_text, denovo_plots_dict, basis_plots_dict, \
+	reconstruction_plot_dict):
 
 	# THIS IS THE RIGHT SIDE, IT CHANGES
 	num_bases = len(bases)
 	# print("num bases is: " + str(num_bases))
 	if (num_bases == 1):
-		plot_1(bases, output_path, project, c)
+		plot_1(bases, project, c, denovo_plots_dict, basis_plots_dict)
 	elif (num_bases == 2):
-		plot_2(bases, output_path, project, c)
+		plot_2(bases, project, c, denovo_plots_dict, basis_plots_dict)
 	elif (num_bases == 3):
-		plot_3(bases, output_path, project, c)
+		plot_3(bases, project, c, denovo_plots_dict, basis_plots_dict)
 	elif (num_bases == 4):
-		plot_4(bases, output_path, project, c)
+		plot_4(bases, project, c, denovo_plots_dict, basis_plots_dict)
 	elif (num_bases == 5):
-		plot_5(bases, output_path, project, c)
+		plot_5(bases, project, c, denovo_plots_dict, basis_plots_dict)
 	elif (num_bases > 5):
-		plot_6_plus(bases, output_path, project, c)
+		plot_6_plus(bases, project, c, denovo_plots_dict, basis_plots_dict)
 
+	recon_image=reconstruction_plot_dict[de_novo_name]
+	denovo_image=denovo_plots_dict[de_novo_name]
 	# THIS IS THE LEFT SIDE
 	if reconstruction:
-		recon_png = output_path+"/DBS_sub_plots/"+de_novo+"_reconstruction_"+project+".png"
-		c.drawImage(output_path+"/DBS_sub_plots/"+de_novo+"_"+project+".png", \
-			WIDTH_GAP, LAYOUT_2_GRAPH[0][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
-		c.drawImage(recon_png, WIDTH_GAP, LAYOUT_2_GRAPH[1][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		c.drawImage(denovo_image, WIDTH_GAP, LAYOUT_2_GRAPH[0][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		c.drawImage(recon_image, WIDTH_GAP, LAYOUT_2_GRAPH[1][Y_COORD], width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 		c.drawString(WIDTH_GRAPH - WIDTH_GAP - 25, LAYOUT_2_TEXT[0][Y_COORD], "Original")
 		c.drawString(WIDTH_GRAPH - WIDTH_GAP - 45, LAYOUT_2_TEXT[1][Y_COORD], "Reconstructed")
 		draw_statistics(c, statistics, sig_version, custom_text)
@@ -298,15 +304,15 @@ def gen_plot(de_novo, bases, output_path, project, c, reconstruction, statistics
 		p.lineTo(WIDTH_GRAPH + 2,MID_HEIGHT_LETTER)
 		c.drawPath(p, stroke=1, fill=1)
 	else:
-		c.drawImage(output_path+"/DBS_sub_plots/"+de_novo+"_"+project+".png", \
-			WIDTH_GAP, MID_HEIGHT_LETTER - HEIGHT_GRAPH/2, width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
+		c.drawImage(denovo_image, WIDTH_GAP, MID_HEIGHT_LETTER - HEIGHT_GRAPH/2, width=WIDTH_GRAPH, height=HEIGHT_GRAPH)
 	draw_bracket(len(bases), c)
 
 	c.showPage()
 
 # iterate over the csv file and generate plots accordingly
 def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
-	reconstruction, statistics, sig_version=None, custom_text=None):
+	denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, reconstruction, \
+	statistics,  sig_version=None, custom_text=None):
 	
 	output_plot_to_crop = output_path+"/"+denovo_name+"_decomposition_"+project+"_to_crop.pdf"
 	output_plot_cropped = output_path+"/"+denovo_name+"_decomposition_"+project+".pdf"
@@ -326,7 +332,8 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	sorted_list = sorted(basis_plots, key=lambda tup: tup[1], reverse=True)
 
 	gen_plot(denovo_name, sorted_list, output_path, project, c, reconstruction, \
-		statistics, sig_version, custom_text)
+		statistics, sig_version, custom_text, denovo_plots_dict, basis_plots_dict, \
+		reconstruction_plot_dict)
 
 	c.save()
 
