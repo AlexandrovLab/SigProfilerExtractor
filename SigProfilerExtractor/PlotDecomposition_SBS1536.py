@@ -205,58 +205,55 @@ def draw_bracket(num_bases, c_draw):
 #	pdf_to_edit 	- (String)	The path to the uncropped decomposition plot
 #	output_name 	- (String)	The name to save the cropped output as
 #	num_bases		- (Integer)	The number of signatures the sample is composed of
-def crop_margins(pdf_to_edit, output_name, num_bases):
+def crop_margins(pdf_to_edit, num_bases):
+	pdf_to_edit.seek(0)
 	pdf_file = PdfFileReader(pdf_to_edit, "rb")
 	page = pdf_file.getPage(0)
 	writer = PdfFileWriter()
+	output_plot_buff = io.BytesIO()
 	if (num_bases == 1):
 		page.mediaBox.lowerRight = (792,155)
 		page.mediaBox.lowerLeft = (0,155)
 		page.mediaBox.upperRight = (792,512)
 		page.mediaBox.upperLeft = (0,512)
 		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+		writer.write(output_plot_buff)
 	elif (num_bases == 2):
 		page.mediaBox.lowerRight = (792,155)
 		page.mediaBox.lowerLeft = (0,155)
 		page.mediaBox.upperRight = (792,512)
 		page.mediaBox.upperLeft = (0,512)
 		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+		writer.write(output_plot_buff)
 	elif (num_bases == 3):
 		page.mediaBox.lowerRight = (792,150)
 		page.mediaBox.lowerLeft = (0,150)
 		page.mediaBox.upperRight = (792,512)
 		page.mediaBox.upperLeft = (0,512)
 		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+		writer.write(output_plot_buff)
 	elif (num_bases == 4):
 		page.mediaBox.lowerRight = (792,110)
 		page.mediaBox.lowerLeft = (0,110)
 		page.mediaBox.upperRight = (792,512)
 		page.mediaBox.upperLeft = (0,512)
 		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+		writer.write(output_plot_buff)
 	elif (num_bases == 5):
 		page.mediaBox.lowerRight = (792,75)
 		page.mediaBox.lowerLeft = (0,75)
 		page.mediaBox.upperRight = (792,537)
 		page.mediaBox.upperLeft = (0,537)
 		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+		writer.write(output_plot_buff)
 	elif (num_bases > 5):
 		page.mediaBox.lowerRight = (792,50)
 		page.mediaBox.lowerLeft = (0,50)
 		page.mediaBox.upperRight = (792,537)
 		page.mediaBox.upperLeft = (0,537)
 		writer.addPage(page)
-		with open(output_name, "wb") as out_f:
-			writer.write(out_f)
+		writer.write(output_plot_buff)
+	return output_plot_buff
 
 # Parameters:
 #   de_novo_name 				(String) 			The name of the denovo signature.
@@ -326,8 +323,6 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, \
 	project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 	reconstruction, statistics, sig_version=None, custom_text=None):
 
-	output_plot_cropped = output_path+"/"+denovo_name+"_decomposition_"+project+".pdf"
-
 	buff = io.BytesIO()
 	c = canvas.Canvas(buff, pagesize=letter)
 	c.setPageSize(landscape(letter))
@@ -350,6 +345,6 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, \
 	c.save()
 	
 	# Take the plot and crop the margins
-	buff.seek(0)
-	crop_margins(buff, output_plot_cropped, len(basis_names))
+	byte_plot = crop_margins(buff, len(basis_names))
 	buff.close()
+	return byte_plot
