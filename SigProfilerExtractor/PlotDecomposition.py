@@ -257,40 +257,44 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 	reconstruction: 			(Boolean) 			True to generate plot w/ reconstruction
 	statistics: 				(Pandas Dataframe) 	Output from calculate_similarities()
 	"""
-	
+
 	if mtype == "6":
 		print("Need to add support for SBS6 Decomposition")
 	elif mtype == "24":
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "96":
-		spd_96.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+		byte_plot=spd_96.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 			reconstruction, statistics, sig_version, custom_text)
+		return byte_plot
 	elif mtype == "288":
-		spd_288.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+		byte_plot=spd_288.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 			reconstruction, statistics, sig_version, custom_text)
+		return byte_plot
 	elif mtype == "384":
 		print("Need to add support for SBS24 Decomposition")
 	elif mtype == "1536":
-		spd_1536.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+		byte_plot=spd_1536.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 			reconstruction, statistics, sig_version, custom_text)
+		return byte_plot
 	elif mtype == "6144":
 		print("Need to add support for SBS6144 Decomposition")
 	elif mtype == "28":
 		print("Need to add support for ID28 Decomposition")
 	elif mtype == "83":
-		print(basis_plots_dict)
-		spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+		byte_plot=spd_83.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 			reconstruction, statistics, sig_version, custom_text)
+		return byte_plot
 	elif mtype == "415":
 		print("Need to add support for ID415 Decomposition")
 	elif mtype == "78":
-		spd_78.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+		byte_plot=spd_78.gen_decomposition(denovo_name, basis_names, weights, output_path, \
 			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 			reconstruction, statistics, sig_version, custom_text)
+		return byte_plot
 	elif mtype == "186":
 		print("Need to add support for DBS186 Decomposition")
 	elif mtype == "1248":
@@ -349,7 +353,9 @@ def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
 	reconstruction_plot_dict = open_byte_to_img_dict(reconstruction_plot_dict)
 
 	statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
-	gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
+	byte_plot = gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		mtype, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 		reconstruction=True, statistics=statistics, sig_version=sig_version, \
 		custom_text=custom_text)
+
+	return byte_plot
