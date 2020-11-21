@@ -40,6 +40,7 @@ from scipy.spatial.distance import cdist
 from scipy.spatial.distance import correlation as cor
 from scipy.optimize import linear_sum_assignment
 import shutil
+from PyPDF2 import PdfFileMerger
 #import mkl
 #mkl.set_num_threads(40)
 #from numba import jit
@@ -1188,6 +1189,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     denovo_signature_names = make_letter_ids(signatures.shape[1], mtype=mutation_context)
     #lognote.write("\n********** Starting Signature Decomposition **********\n\n")
     activity_percentages=[]
+    merger = PdfFileMerger()
     for i, j in zip(range(signatures.shape[1]), denovo_signature_names):
         
         # Only for context SBS96
@@ -1290,7 +1292,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
         sigDatabases_DF=sigDatabases
         
-        
         if mtype=="1536":
             mtype_par="1536"
         elif mtype=="288":
@@ -1304,7 +1305,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         else:
             mtype_par="none"
         
-        
         if mtype_par!="none" and make_decomposition_plots==True:
             # Get the names of the columns for each dataframe
             denovo_col_names = originalProcessAvg.columns
@@ -1316,8 +1316,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             basis_cols = basis_names.copy()
             basis_cols.insert(0,cosmic_mut_types_col)
             denovo_cols=[denovo_mut_types_col, denovo_name]
-            
-            sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory+"/Decomposition_Plots", "test", mtype_par)
+            byte_plot = sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory, "test", mtype_par)
+            merger.append(byte_plot)
             print("Decompositon Plot made for {}\n".format(denovo_name))
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
@@ -1343,7 +1343,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             fh.close()
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
-       
+    
+    # Write out the decomposition plots   
+    contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83'}
+    merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)
@@ -1379,10 +1382,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     
     
     
-    #delete the folder with sub_plots from the Decomposition_Polts
-    if mtype_par!="none" and make_decomposition_plots==True:
-        merge_pdf(directory+"/Decomposition_Plots", directory+"/"+mutation_context+"_Decomposition_Plots" )
-        shutil.rmtree(directory+"/Decomposition_Plots")
+    # #delete the folder with sub_plots from the Decomposition_Polts
+    # if mtype_par!="none" and make_decomposition_plots==True:
+    #     merge_pdf(directory+"/Decomposition_Plots", directory+"/"+mutation_context+"_Decomposition_Plots" )
+    #     shutil.rmtree(directory+"/Decomposition_Plots")
         
         
     #return values

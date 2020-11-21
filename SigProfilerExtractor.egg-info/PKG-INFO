@@ -16,7 +16,19 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         for each signature to cause a specific mutation type in a cancer sample. The tool makes use of SigProfilerMatrixGenerator 
         and SigProfilerPlotting. 
         
-        ## INSTALLATION
+        # Table of contents
+        - [Installation](#installation)
+        - [Functions](#Functions)
+          - [importdata](#importdata)
+          - [sigProfilerExtractor](#sigProfilerExtractor)
+          - [estimate_solution](#estimate_solution)
+          - [decompose](#decompose)
+          - [PlotActivity.py](#plotActivity)
+        - [Copyright](#copyright)
+        - [Contact Information](#contact)
+        
+        
+        ## <a name="installation"></a> Installation
         In the command line, please run the following:
         ```bash
         $ pip install SigProfilerExtractor
@@ -32,18 +44,17 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         
         Next, open a python interpreter and import the SigProfilerExtractor module. Please see the examples of the functions. 
         
-        ## FUNCTIONS
-        
+        ## <a name="functions"></a> Functions
         The list of available functions are:
-          - importdata
-          - sigProfilerExtractor
-          - estimate_solution
-          - decompose
+        - importdata
+        - sigProfilerExtractor
+        - estimate_solution
+        - decompose
         
         And an additional script:
-          - plotActivity.py
+        - plotActivity.py
         
-        ### importdata 
+        ### <a name="importdata"></a> importdata
         Imports the path of example data.
         
         ```python
@@ -62,7 +73,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         help(sig.importdata)
         ```
         
-        ### sigProfilerExtractor
+        ### <a name="sigProfilerExtractor"></a> sigProfilerExtractor
             
         Extracts mutational signatures from an array of samples.
         
@@ -70,7 +81,8 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37", opportunity_genome = "GRCh37", context_type = "default", exome = False, 
                                  minimum_signatures=1, maximum_signatures=10, nmf_replicates=100, resample = True, batch_size=1, cpu=-1, gpu=False, 
                                  nmf_init="alexandrov-lab-custom", precision= "single", matrix_normalization= "100X", seeds= "none", 
-                                 min_nmf_iterations= 10000, max_nmf_iterations=1000000, nmf_test_conv= 10000, nmf_tolerance= 1e-15, nnls_penalty=0.05, get_all_signature_matrices= False):
+                                 min_nmf_iterations= 10000, max_nmf_iterations=1000000, nmf_test_conv= 10000, nmf_tolerance= 1e-15,nnls_add_penalty=0.05,
+                                 nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02,get_all_signature_matrices= False)
         ```
         
         | Category | Parameter | Variable Type | Parameter Description |
@@ -144,7 +156,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
           
         
-        ### Estimation of the Optimum Solution
+        ### <a name="estimate_solution"></a> Estimation of the Optimum Solution
         Estimate the optimum solution (rank) among different number of solutions (ranks). 
         
         ```python
@@ -190,7 +202,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         | **selection_plot.pdf** | A plot that depict the Stability and Mean Sample Cosine Distance for different solutions. |
         
         
-        ### Decompose
+        ### <a name="decompose"></a> Decompose
         
         Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
         
@@ -235,7 +247,7 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
           - Signature_assaignment_logfile.txt
           - Signature_plot[MutatutionContext]_plots_Decomposed_Solution.pdf
                 
-        ### Activity Stacked Bar Plot
+        ### <a name="plotActivity"></a> Activity Stacked Bar Plot
         Generates a stacked bar plot showing activities in individuals
         
         ```python 
@@ -259,10 +271,10 @@ Description: [![Docs](https://img.shields.io/badge/docs-latest-blue.svg)](https:
         
         #### For more information, help, and examples, please visit: https://osf.io/t6j7u/wiki/home/
         
-        ## COPYRIGHT
+        ## <a name="copyright"></a> Copyright
         This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
         
-        ## CONTACT INFORMATION
+        ## <a name="contact"></a> Contact Information
         Please address any queries or bug reports to S M Ashiqul Islam (Mishu) at m0islam@ucsd.edu
         
 Platform: UNKNOWN
