@@ -604,7 +604,7 @@ def sigProfilerExtractor(input_type,
             
         #project_name = project.split("/")[-1]
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
-        print(data.keys())
+        
         
         
         
@@ -667,7 +667,7 @@ def sigProfilerExtractor(input_type,
             
             if m.startswith("SBS"):
                 mutation_type = m
-            elif m.startswith("96" or "288" or "384" or "1536"):
+            elif m in ["96","288","384","1536"]:
                 mutation_type="SBS"+m
             elif m.startswith("78"): 
                 mutation_type="DBS78"
