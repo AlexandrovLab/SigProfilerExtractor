@@ -112,7 +112,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 | **Decomposition** |  |  |  | 
 |  | **de_novo_fit_penalty** | Float | Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to assign denovo signatures to a sample. | 
 |  | **nnls_add_penalty** | Float | Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to assign COSMIC signatures to a sample. | 
-|  | **nnls_remove_penalty** | Float | Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to assign COSMIC signatures to a sample. | 
+|  | **nnls_remove_penalty** | Float | Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to assign COSMIC signatures to a sample. | 
 |  | **initial_remove_penalty** | Float | Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to COSMIC assign signatures to a sample. | 
 |  | **refit_denovo_signatures** | Boolean | Default is True. If True, then refit the denovo signatures with nnls. | 
 |  | **make_decomposition_plots** | Boolean | Defualt is True. If True, Denovo to Cosmic sigantures decompostion plots will be created as a part the results. | 
