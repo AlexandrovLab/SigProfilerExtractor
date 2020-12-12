@@ -41,7 +41,7 @@ requirements=[
 	  'psutil>=5.6.1',
           'reportlab>=3.5.42',
           'PyPDF2>=1.26.0',
-      'xlrd>=1.0.0'
+      'xlrd==1.2.0'
            ]
 
 operating_system = sys.platform   
