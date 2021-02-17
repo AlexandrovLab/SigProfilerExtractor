@@ -2,7 +2,6 @@ MANIFEST.in
 README.md
 setup.py
 SigProfilerExtractor/PlotDecomposition.py
-SigProfilerExtractor/PlotDecomposition_CNV48.py
 SigProfilerExtractor/PlotDecomposition_DBS78.py
 SigProfilerExtractor/PlotDecomposition_ID83.py
 SigProfilerExtractor/PlotDecomposition_SBS1536.py
@@ -26,6 +25,7 @@ SigProfilerExtractor.egg-info/dependency_links.txt
 SigProfilerExtractor.egg-info/not-zip-safe
 SigProfilerExtractor.egg-info/requires.txt
 SigProfilerExtractor.egg-info/top_level.txt
+SigProfilerExtractor/data/.DS_Store
 SigProfilerExtractor/data/21_breast_WGS_substitutions.mat
 SigProfilerExtractor/data/Accolade_fermante.png
 SigProfilerExtractor/data/CNV_features.tsv

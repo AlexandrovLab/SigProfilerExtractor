@@ -1092,7 +1092,8 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+    
     
     originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
@@ -1106,40 +1107,17 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     paths = cosmic.__path__[0]
     
     if signatures.shape[0]==96:
-        
-        if genome_build=="GRCh37":
-            sigDatabase = pd.read_excel(paths+"/data/SBS_signatures_genome_builds.xlsx", sheet_name="GRCh37")
-            sigDatabase,_,_,_ = read_csv(sigDatabase)
-        elif genome_build=="GRCh38":
-            sigDatabase = pd.read_excel(paths+"/data/SBS_signatures_genome_builds.xlsx", sheet_name="GRCh38")
-            sigDatabase,_,_,_ = read_csv(sigDatabase) 
-        elif genome_build=="mm9":
-            sigDatabase = pd.read_excel(paths+"/data/SBS_signatures_genome_builds.xlsx", sheet_name="mm9")
-            sigDatabase,_,_,_ = read_csv(sigDatabase)  
-        elif genome_build=="mm10":
-            sigDatabase = pd.read_excel(paths+"/data/SBS_signatures_genome_builds.xlsx", sheet_name="mm10")
-            sigDatabase,_,_,_ = read_csv(sigDatabase) 
-            
-        signames = sigDatabase.columns 
-        
-        
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v"+str(cosmic_version)+"_SBS_"+genome_build+".txt", sep="\t", index_col=0)
+        signames = sigDatabase.columns   
         
     elif signatures.shape[0]==78:
-        if genome_build=="GRCh37":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="GRCh37", index_col=0)
-        elif genome_build=="GRCh38":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="GRCh38", index_col=0)
-        elif genome_build=="mm9":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm9",index_col=0)
-        elif genome_build=="mm10":
-            sigDatabase = pd.read_excel(paths+"/data/DBS_signatures_genome_builds.xlsx", sheet_name="mm10",index_col=0)
-            
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v"+str(cosmic_version)+"_DBS_"+genome_build+".txt", sep="\t", index_col=0)
         signames = sigDatabase.columns
         connected_sigs=False
         
         
     elif signatures.shape[0]==83:
-        sigDatabase = pd.read_csv(paths+"/data/sigProfiler_ID_signatures.csv", sep=",",index_col=0)
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/GRCh37/COSMIC_v"+str(cosmic_version)+"_ID_GRCh37.txt", sep="\t", index_col=0)
         signames = sigDatabase.columns
         connected_sigs=False
         
@@ -1344,10 +1322,9 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
     
-    if make_decomposition_plots:
-        # Write out the decomposition plots   
-        contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', '48':'CNV48'}
-        merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
+    # Write out the decomposition plots   
+    contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', "48":"CNV"}
+    merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)

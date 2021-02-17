@@ -147,6 +147,7 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             
             sysdata.write("COSMIC MATCH\n")
             sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
+            sysdata.write("\cosmic_version: {}\n".format(excecution_parameters["cosmic_version"]))
             sysdata.write("\tnnls_add_penalty: {}\n".format(excecution_parameters["nnls_add_penalty"]))
             sysdata.write("\tnnls_remove_penalty: {}\n".format(excecution_parameters["nnls_remove_penalty"]))
             sysdata.write("\tinitial_remove_penalty: {}\n".format(excecution_parameters["initial_remove_penalty"]))
@@ -163,6 +164,7 @@ def sigProfilerExtractor(input_type,
                          input_data, 
                          reference_genome="GRCh37", 
                          opportunity_genome = "GRCh37", 
+                         cosmic_version=3.2,
                          context_type = "default", 
                          exome = False, 
                          minimum_signatures=1,
@@ -375,6 +377,7 @@ def sigProfilerExtractor(input_type,
                         "input_data":input_data, 
                         "reference_genome":reference_genome, 
                         "opportunity_genome":opportunity_genome, 
+                        "cosmic_version":cosmic_version,
                         "context_type":context_type,
                         "exome":exome,
                         "minimum_signatures":minimum_signatures, 
@@ -1028,7 +1031,7 @@ def sigProfilerExtractor(input_type,
             genomes = np.array(genomes)
         
         originalProcessAvg.columns = listOfSignatures    
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
+        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, cosmic_version=cosmic_version, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
         globalsigs = final_signatures["globalsigs"]
