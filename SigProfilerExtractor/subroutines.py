@@ -1147,8 +1147,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         sigDatabase = pd.read_csv(paths+"/data/CNV_signatures.txt", sep="\t",index_col=0)
         signames = sigDatabase.columns
         connected_sigs=False
-        print(list(signames))
-        print(list(sigDatabase.index))
     else:
         sigDatabase = pd.DataFrame(signatures)
         sigDatabase.columns=sigDatabase.columns.astype(str)
@@ -1302,6 +1300,8 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             mtype_par="78"
         elif mtype=="INDEL" or mtype=="83":
             mtype_par="83"
+        elif mtype=="CNV" or mtype=="48":
+            mtype_par="48"
         else:
             mtype_par="none"
         
@@ -1344,9 +1344,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
     
-    # Write out the decomposition plots   
-    contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83'}
-    merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
+    if make_decomposition_plots:
+        # Write out the decomposition plots   
+        contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', '48':'CNV48'}
+        merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)
