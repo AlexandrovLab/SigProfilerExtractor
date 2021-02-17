@@ -2,6 +2,7 @@ MANIFEST.in
 README.md
 setup.py
 SigProfilerExtractor/PlotDecomposition.py
+SigProfilerExtractor/PlotDecomposition_CNV48.py
 SigProfilerExtractor/PlotDecomposition_DBS78.py
 SigProfilerExtractor/PlotDecomposition_ID83.py
 SigProfilerExtractor/PlotDecomposition_SBS1536.py
