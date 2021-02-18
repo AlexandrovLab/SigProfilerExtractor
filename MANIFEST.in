@@ -1,6 +1,11 @@
 include README.rst
 include SigProfilerExtractor/data/*
 include SigProfilerExtractor/data/vcftest/*
+include SigProfilerExtractor/data/Reference_Signatures/GRCh37/*
+include SigProfilerExtractor/data/Reference_Signatures/GRCh38/*
+include SigProfilerExtractor/data/Reference_Signatures/mm9/*
+include SigProfilerExtractor/data/Reference_Signatures/mm10/*
+include SigProfilerExtractor/data/Reference_Signatures/rn6/*
 include SigProfilerExtractor/src/FormatFiles/*
 include SigProfilerExtractor/src/Fonts/*
 include SigProfilerExtractor/src/*
