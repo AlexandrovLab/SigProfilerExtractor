@@ -2,6 +2,7 @@ MANIFEST.in
 README.md
 setup.py
 SigProfilerExtractor/PlotDecomposition.py
+SigProfilerExtractor/PlotDecomposition_CNV48.py
 SigProfilerExtractor/PlotDecomposition_DBS78.py
 SigProfilerExtractor/PlotDecomposition_ID83.py
 SigProfilerExtractor/PlotDecomposition_SBS1536.py
@@ -46,6 +47,7 @@ SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.1_ID_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.1_SBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.2_DBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.2_ID_GRCh37.txt
+SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.2_SBS288_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.2_SBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3_DBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3_ID_GRCh37.txt

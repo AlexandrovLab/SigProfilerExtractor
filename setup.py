@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.0'
+VERSION = '1.1.1'
 
 
 with open('README.md') as f:
@@ -29,19 +29,18 @@ Update = 'Heirarchy option deleted, clustering deleted and signatures orders by 
 requirements=[
           'matplotlib>=3.3.0',
           'scipy>=1.3.3',
-          'torch==1.5.1',
+          'torch==1.7.1',
           'numpy>=1.17.4', 
           'pandas>=0.25.3', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.1.23', 
-          'sigProfilerPlotting>=1.1.8', 
+          'SigProfilerMatrixGenerator>=1.1.26', 
+          'sigProfilerPlotting>=1.1.14', 
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.22',
 	  'psutil>=5.6.1',
           'reportlab>=3.5.42',
-          'PyPDF2>=1.26.0',
-      'xlrd==1.2.0'
+          'PyPDF2>=1.26.0'
            ]
 
 operating_system = sys.platform   

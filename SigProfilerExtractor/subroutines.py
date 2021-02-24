@@ -1092,9 +1092,14 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
 
 
 ################################### Dicompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None, collapse_SBS288=True):
     
     
+    if collapse_SBS288==True:
+        check_rule_mtypes=["96","288","1536"]
+    else:
+        check_rule_mtypes=["96","1536"]
+        
     originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
         os.makedirs(directory+"/Solution_Stats")
@@ -1125,12 +1130,22 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         sigDatabase = pd.read_csv(paths+"/data/CNV_signatures.txt", sep="\t",index_col=0)
         signames = sigDatabase.columns
         connected_sigs=False
+        
+    if collapse_SBS288==False and mtype=="288":
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v3.2_SBS288_GRCh37.txt", sep="\t", index_col=0)
+        signames = sigDatabase.columns 
+        
     else:
         sigDatabase = pd.DataFrame(signatures)
         sigDatabase.columns=sigDatabase.columns.astype(str)
         sigDatabase.index=sigDatabase.index.astype(str)
         signames=sigDatabase.columns
         connected_sigs=False
+        
+    
+        
+        
+        
         
       
     if type(signature_database)==pd.core.frame.DataFrame:
@@ -1322,13 +1337,16 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
     
-    # Write out the decomposition plots   
-    contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', "48":"CNV"}
-    merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
+    if make_decomposition_plots:
+        # Write out the decomposition plots   
+        contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', '48':'CNV48'}
+        merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)
-    if mtype == "96" or mtype=="288" or mtype=="1536":
+    
+    
+    if mtype in check_rule_mtypes: 
         different_signatures = list(set().union(different_signatures, [0,4]))
         different_signatures.sort()    
       
@@ -1347,7 +1365,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         #print('{}: {}'.format(k, v))
         
     #only for SBS96
-    if mtype == "96" or mtype=="288" or mtype=="1536":        
+    if mtype in check_rule_mtypes:        
         background_sigs = get_indeces(list(detected_signatures), ['SBS1', 'SBS5'])
         # add connected signatures   
         different_signatures = ss.add_connected_sigs(different_signatures, list(signames))
@@ -1745,7 +1763,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  cosmic_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
                         remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
-                        refit_denovo_signatures=True, connected_sigs=True, pcawg_rule=False, verbose=False):
+                        refit_denovo_signatures=True, connected_sigs=True, pcawg_rule=False, collapse_SBS288=True, verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -1760,6 +1778,13 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         os.makedirs(layer_directory+"/Activities")
     if not os.path.exists(layer_directory+"/Solution_Stats"):
         os.makedirs(layer_directory+"/Solution_Stats")
+        
+        
+    # check if SBS288 or SBS1536 needs to become SBS96
+    if collapse_SBS288==True:
+        check_rule_mtypes=["96","288","1536"]
+    else:
+        check_rule_mtypes=["96","1536"]
           
     
     # Create the lognote file
@@ -1784,7 +1809,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     
     
     allgenomes = np.array(allgenomes)
-    if (m=="96" or m=="1536" or m=="288") and (genome_build=="mm9" or genome_build=="mm10"):
+    if (m in check_rule_mtypes) and (genome_build=="mm9" or genome_build=="mm10"):
         check_rule_negatives = [1,16]
         check_rule_penalty=1.50
     else:
@@ -2059,7 +2084,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
-        if m == "1536" or m=="288": # collapse the 1536 to 96
+        if (m in check_rule_mtypes): # collapse the 1536 to 96
             m = "96"  
        
     ########################################### PLOT THE SIGNATURES ################################################

@@ -164,7 +164,8 @@ def sigProfilerExtractor(input_type,
                          input_data, 
                          reference_genome="GRCh37", 
                          opportunity_genome = "GRCh37", 
-                         cosmic_version=3.1,
+                         cosmic_version=3.2,
+                         collapse_SBS288=False,
                          context_type = "default", 
                          exome = False, 
                          minimum_signatures=1,
@@ -379,6 +380,7 @@ def sigProfilerExtractor(input_type,
                         "opportunity_genome":opportunity_genome, 
                         "cosmic_version":cosmic_version,
                         "context_type":context_type,
+                        "collapse_SBS288":collapse_SBS288,
                         "exome":exome,
                         "minimum_signatures":minimum_signatures, 
                         "maximum_signatures":maximum_signatures, 
@@ -1011,6 +1013,8 @@ def sigProfilerExtractor(input_type,
             
         originalProcessAvg=pd.DataFrame(processAvg, index=index)
         
+        
+        
         if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
             processAvg = pd.DataFrame(processAvg, index=index)
             processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
@@ -1021,7 +1025,7 @@ def sigProfilerExtractor(input_type,
             genomes = np.array(genomes)
             
             
-        if processAvg.shape[0]==288: #collapse the 288 context into 96 only for the deocmposition 
+        if (processAvg.shape[0]==288) and (collapse_SBS288==True): #collapse the 288 context into 96 only for the deocmposition 
             processAvg = pd.DataFrame(processAvg, index=index)
             processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
             genomes = pd.DataFrame(genomes, index=index)
@@ -1031,7 +1035,7 @@ def sigProfilerExtractor(input_type,
             genomes = np.array(genomes)
         
         originalProcessAvg.columns = listOfSignatures    
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, cosmic_version=cosmic_version, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
+        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, cosmic_version=cosmic_version, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg, collapse_SBS288=collapse_SBS288)
         
         # extract the global signatures and new signatures from the final_signatures dictionary
         globalsigs = final_signatures["globalsigs"]
@@ -1051,7 +1055,7 @@ def sigProfilerExtractor(input_type,
         
         
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, sequence=sequence,export_probabilities=export_probabilities)
+                                cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, sequence=sequence,export_probabilities=export_probabilities,collapse_SBS288=collapse_SBS288)
         
             
            
