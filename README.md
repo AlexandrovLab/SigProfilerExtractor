@@ -111,6 +111,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. | 
 | **Decomposition** |  |  |  | 
 |  | **cosmic_version** | Float | Takes a positive float among 1, 2, 3, 3.1, 3.2. Default is 3.1. Defines the version of COSMIC reference signatures. | 
+|  | **collapse_SBS288** | Boolean | Default is True. If False, then decompose to SBS288 reference signatures without collapsing to SBS96. | 
 |  | **de_novo_fit_penalty** | Float | Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to assign denovo signatures to a sample. | 
 |  | **nnls_add_penalty** | Float | Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to assign COSMIC signatures to a sample. | 
 |  | **nnls_remove_penalty** | Float | Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to assign COSMIC signatures to a sample. | 
