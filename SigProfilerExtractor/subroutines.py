@@ -1322,9 +1322,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
     
-    # Write out the decomposition plots   
-    contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', "48":"CNV"}
-    merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
+    if make_decomposition_plots:
+        # Write out the decomposition plots   
+        contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', "48":"CNV"}
+        merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)
