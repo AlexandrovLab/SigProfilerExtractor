@@ -21,12 +21,15 @@ import os
 import pandas as pd
 import numpy as np
 import scipy.stats
+import sigProfilerPlotting as pltCNV
 from SigProfilerExtractor import SigProfilerPlottingMatrix as sigPlt
 from SigProfilerExtractor import PlotDecomposition_SBS96 as spd_96
 from SigProfilerExtractor import PlotDecomposition_SBS288 as spd_288
 from SigProfilerExtractor import PlotDecomposition_SBS1536 as spd_1536
 from SigProfilerExtractor import PlotDecomposition_DBS78 as spd_78
 from SigProfilerExtractor import PlotDecomposition_ID83 as spd_83
+from SigProfilerExtractor import PlotDecomposition_CNV48 as cnv_48
+from SigProfilerExtractor import subroutines as sub
 # imports for working with plots in memory
 import io
 from PIL import Image
@@ -35,6 +38,7 @@ from reportlab.lib.utils import ImageReader
 SBS_CONTEXTS = ["6", "24", "96", "288", "384", "1536", "6144"]
 DBS_CONTEXTS = ["78", "186", "1248", "2976"]
 ID_CONTEXTS = ["28", "83", "415"]
+CNV_CONTEXTS = ["48"]
 mtype_options = ["6", "24", "96", "384", "1536", "6144", "28", "83", "415", "78", "186", "1248", "2976"]
 
 # Helper function for converting BytesIO to image so it can be plotted by reportlab
@@ -89,9 +93,8 @@ def calculate_similarities(denovo, denovo_name, est_denovo):
 
 	p_i = denovo[denovo_name]
 	q_i = est_denovo
-
-	cos_sim = 1 - scipy.spatial.distance.cosine(p_i, q_i)
-	cosine_similarity_list.append(round(cos_sim,3))
+	
+	cosine_similarity_list.append(round(sub.cos_sim(p_i,q_i ),3))
 	cosine_distance_list.append(round(scipy.spatial.distance.cosine(p_i, q_i),3))
 	correlation_list.append(round(scipy.stats.pearsonr(p_i,q_i)[0],3))
 	correlation_distance_list.append(round(1-scipy.stats.pearsonr(p_i,q_i)[0],3))
@@ -100,10 +103,9 @@ def calculate_similarities(denovo, denovo_name, est_denovo):
 	relative_l1_list.append(round((l1_norm_list[-1]/np.linalg.norm(p_i, ord=1))*100,3))
 	l2_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=2),2))
 	relative_l2_list.append(round((l2_norm_list[-1]/np.linalg.norm(p_i, ord=2))*100,3))
-
-
 	kl_divergence_list = np.array(kl_divergence_list)
 	kl_divergence_list[kl_divergence_list == inf] =1000
+	
 	similarities_dataframe = pd.DataFrame({"Sample Names": sample_names, \
 										   "Cosine Similarity": cosine_similarity_list, \
 										   "Cosine Distance": cosine_distance_list, \
@@ -184,6 +186,13 @@ def genID_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
 	denovo_plots = sigPlt.plotID(denovo_mtx, output_path, project, mtype, True)
 	basis_plots = sigPlt.plotID(basis_mtx, output_path, project, mtype, True)
 	return denovo_plots,basis_plots
+	
+def genCNV_pngs(denovo_mtx, basis_mtx, output_path, project, mtype):
+	denovo_plots = dict()
+	basis_plots = dict()
+	denovo_plots = pltCNV.plotCNV(denovo_mtx, output_path, project, plot_type="pdf", percentage=True, aggregate=False, read_from_file=False, write_to_file=False)
+	basis_plots = pltCNV.plotCNV(basis_mtx, output_path, project, plot_type="pdf", percentage=True, aggregate=False, read_from_file=False, write_to_file=False)
+	return denovo_plots,basis_plots
 
 # signames, weights
 def gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype):
@@ -203,8 +212,12 @@ def gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype):
 			os.makedirs(output_path)
 		denovo_plots,basis_plots=genID_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
 		return denovo_plots,basis_plots
+	elif mtype in CNV_CONTEXTS:
+		if not os.path.exists(output_path):
+			os.makedirs(output_path)
+		denovo_plots, basis_plots=genCNV_pngs(denovo_mtx, basis_mtx, output_path, project, mtype)
+		return denovo_plots,basis_plots
 	else:
-		print(type(mtype))
 		print("ERROR: mtype is " + mtype + " and is not yet supported.")
 
 # generate the plot for the reconstruction
@@ -229,8 +242,10 @@ def gen_reconstructed_png(denovo_name, basis_mtx, basis_names, weights, output_p
 		reconstruction_plot=sigPlt.plotDBS(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
 	elif mtype in ID_CONTEXTS:
 		reconstruction_plot=sigPlt.plotID(reconstruction_mtx, output_path, "reconstruction_" + project, mtype, True)
+	elif mtype in CNV_CONTEXTS:
+		 reconstruction_plot = pltCNV.plotCNV(reconstruction_mtx, output_path, "reconstruction_"+project, plot_type="pdf", \
+		 	percentage=True, aggregate=False, read_from_file=False, write_to_file=False)
 	else:
-		print(type(mtype))
 		print("ERROR: mtype is " + mtype + " and is not yet supported.")
 
 	return reconstruction_mtx,reconstruction_plot
@@ -301,6 +316,11 @@ def gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		print("Need to add support for DBS1248 Decomposition")
 	elif mtype == "2976":
 		print("Need to add support for DBS2976 Decomposition")
+	elif mtype == "48":
+		byte_plot=cnv_48.gen_decomposition(denovo_name, basis_names, weights, output_path, \
+			project, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
+			reconstruction, statistics, sig_version, custom_text)
+		return byte_plot
 
 
 
@@ -344,18 +364,19 @@ def run_PlotDecomposition(denovo_mtx, denovo_name, basis_mtx, basis_names, \
 	denovo_plots_dict,basis_plots_dict=gen_sub_plots(denovo_mtx, basis_mtx, output_path, project, mtype)
 	reconstructed_mtx,reconstruction_plot_dict = gen_reconstructed_png(denovo_name, basis_mtx, basis_names, \
 		weights, output_path, project, mtype)
-
+	
 	present_sigs=np.array(basis_mtx[basis_names])
 	reconstructed_mtx = np.dot(present_sigs,nonzero_exposures)
 	
 	denovo_plots_dict = open_byte_to_img_dict(denovo_plots_dict)
 	basis_plots_dict = open_byte_to_img_dict(basis_plots_dict)
 	reconstruction_plot_dict = open_byte_to_img_dict(reconstruction_plot_dict)
-
+	
 	statistics=calculate_similarities(denovo_mtx, denovo_name, reconstructed_mtx)
 	byte_plot = gen_decomposition(denovo_name, basis_names, weights, output_path, project, \
 		mtype, denovo_plots_dict, basis_plots_dict, reconstruction_plot_dict, \
 		reconstruction=True, statistics=statistics, sig_version=sig_version, \
 		custom_text=custom_text)
+	
 
 	return byte_plot

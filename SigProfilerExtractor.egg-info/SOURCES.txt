@@ -2,6 +2,7 @@ MANIFEST.in
 README.md
 setup.py
 SigProfilerExtractor/PlotDecomposition.py
+SigProfilerExtractor/PlotDecomposition_CNV48.py
 SigProfilerExtractor/PlotDecomposition_DBS78.py
 SigProfilerExtractor/PlotDecomposition_ID83.py
 SigProfilerExtractor/PlotDecomposition_SBS1536.py
@@ -25,7 +26,6 @@ SigProfilerExtractor.egg-info/dependency_links.txt
 SigProfilerExtractor.egg-info/not-zip-safe
 SigProfilerExtractor.egg-info/requires.txt
 SigProfilerExtractor.egg-info/top_level.txt
-SigProfilerExtractor/data/.DS_Store
 SigProfilerExtractor/data/21_breast_WGS_substitutions.mat
 SigProfilerExtractor/data/Accolade_fermante.png
 SigProfilerExtractor/data/CNV_features.tsv
@@ -38,7 +38,6 @@ SigProfilerExtractor/data/csvexample.csv
 SigProfilerExtractor/data/sigProfiler_DBS_signatures.csv
 SigProfilerExtractor/data/sigProfiler_ID_signatures.csv
 SigProfilerExtractor/data/sigProfiler_SBS_signatures_2018_03_28.csv
-SigProfilerExtractor/data/Reference_Signatures/GRCh37/.DS_Store
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v1_SBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v2_SBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.1_DBS_GRCh37.txt
@@ -50,7 +49,6 @@ SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3.2_SBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3_DBS_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3_ID_GRCh37.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh37/COSMIC_v3_SBS_GRCh37.txt
-SigProfilerExtractor/data/Reference_Signatures/GRCh38/.DS_Store
 SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v1_SBS_GRCh38.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v2_SBS_GRCh38.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v3.1_DBS_GRCh38.txt
@@ -59,7 +57,6 @@ SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v3.2_DBS_GRCh38.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v3.2_SBS_GRCh38.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v3_DBS_GRCh38.txt
 SigProfilerExtractor/data/Reference_Signatures/GRCh38/COSMIC_v3_SBS_GRCh38.txt
-SigProfilerExtractor/data/Reference_Signatures/mm10/.DS_Store
 SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v1_SBS_mm10.txt
 SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v2_SBS_mm10.txt
 SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v3.1_DBS_mm10.txt
@@ -68,7 +65,6 @@ SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v3.2_DBS_mm10.txt
 SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v3.2_SBS_mm10.txt
 SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v3_DBS_mm10.txt
 SigProfilerExtractor/data/Reference_Signatures/mm10/COSMIC_v3_SBS_mm10.txt
-SigProfilerExtractor/data/Reference_Signatures/mm9/.DS_Store
 SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v1_SBS_mm9.txt
 SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v2_SBS_mm9.txt
 SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v3.1_DBS_mm9.txt
@@ -77,7 +73,6 @@ SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v3.2_DBS_mm9.txt
 SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v3.2_SBS_mm9.txt
 SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v3_DBS_mm9.txt
 SigProfilerExtractor/data/Reference_Signatures/mm9/COSMIC_v3_SBS_mm9.txt
-SigProfilerExtractor/data/Reference_Signatures/rn6/.DS_Store
 SigProfilerExtractor/data/Reference_Signatures/rn6/COSMIC_v1_SBS_rn6.txt
 SigProfilerExtractor/data/Reference_Signatures/rn6/COSMIC_v2_SBS_rn6.txt
 SigProfilerExtractor/data/Reference_Signatures/rn6/COSMIC_v3.1_DBS_rn6.txt

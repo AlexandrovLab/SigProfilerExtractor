@@ -1282,21 +1282,23 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             mtype_par="48"
         else:
             mtype_par="none"
-        
-        if mtype_par!="none" and make_decomposition_plots==True:
-            # Get the names of the columns for each dataframe
-            denovo_col_names = originalProcessAvg.columns
-            cosmic_col_names = sigDatabases_DF.columns
-            # Get the name for the MutationTypes column
-            cosmic_mut_types_col = cosmic_col_names[0]
-            denovo_mut_types_col =  denovo_col_names[0]
-            # create lists of implemented columns
-            basis_cols = basis_names.copy()
-            basis_cols.insert(0,cosmic_mut_types_col)
-            denovo_cols=[denovo_mut_types_col, denovo_name]
-            byte_plot = sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory, "test", mtype_par)
-            merger.append(byte_plot)
-            print("Decompositon Plot made for {}\n".format(denovo_name))
+        try:
+            if mtype_par!="none" and make_decomposition_plots==True:
+                # Get the names of the columns for each dataframe
+                denovo_col_names = originalProcessAvg.columns
+                cosmic_col_names = sigDatabases_DF.columns
+                # Get the name for the MutationTypes column
+                cosmic_mut_types_col = cosmic_col_names[0]
+                denovo_mut_types_col =  denovo_col_names[0]
+                # create lists of implemented columns
+                basis_cols = basis_names.copy()
+                basis_cols.insert(0,cosmic_mut_types_col)
+                denovo_cols=[denovo_mut_types_col, denovo_name]
+                byte_plot = sp.run_PlotDecomposition(originalProcessAvg[denovo_cols], denovo_name, sigDatabases_DF[basis_cols], basis_names, weights, nonzero_exposures/5000, directory, "test", mtype_par)
+                merger.append(byte_plot)
+                print("Decompositon Plot made for {}\n".format(denovo_name))
+        except:
+            print("The context-" + str(mtype_par) + " decomposition plots pages were not able to be generated.")
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
         #print(strings%(ListToTumple))
@@ -1322,9 +1324,13 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             dictionary.update({"{}".format(mutation_context+letters[i]):["{}".format(mutation_context+letters[i])]}) 
             #dictionary.update({letters[i]:"Signature {}-{}, Signature {}-{}, {}\n".format(mtype, letters[i], mtype, letters[i], 1 )}) 
     
-    # Write out the decomposition plots   
-    contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', "48":"CNV"}
-    merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
+    try:
+        if make_decomposition_plots and mtype_par is not 'none':
+            # Write out the decomposition plots   
+            contexts = {'96':'SBS96', '288':'SBS288', '1536':'SBS1536', '78':'DBS78', '83':'ID83', "48":"CNV"}
+            merger.write(directory+"/"+contexts[mtype_par]+"_Decomposition_Plots.pdf")
+    except:
+        print("The context-" + str(mtype_par) + " decomposition pages were not able to be merged.")
     
     different_signatures = np.unique(allsignatures)
     different_signatures=different_signatures.astype(int)
