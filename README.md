@@ -6,7 +6,7 @@
 SigProfilerExtractor allows de novo extraction of mutational signatures from data generated in a matrix format. 
 The tool identifies the number of operative mutational signatures, their activities in each sample, and the probability 
 for each signature to cause a specific mutation type in a cancer sample. The tool makes use of SigProfilerMatrixGenerator 
-and SigProfilerPlotting. 
+and SigProfilerPlotting. Detailed documentation can be found at: https://osf.io/t6j7u/wiki/home/
 
 # Table of contents
 - [Installation](#installation)
