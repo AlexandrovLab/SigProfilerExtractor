@@ -16,6 +16,7 @@ and SigProfilerPlotting.
   - [estimate_solution](#estimate_solution)
   - [decompose](#decompose)
   - [PlotActivity.py](#plotActivity)
+- [Video Tutorials](#video_tutorials)
 - [Copyright](#copyright)
 - [Contact Information](#contact)
 
@@ -258,6 +259,21 @@ plotActivity(activity_file, output_file = "Activity_in_samples.pdf", bin_size = 
 ```bash 
 $ python plotActivity.py 50 sig_attribution_sample.txt test_out.pdf
 ``` 
+
+## <a name="video_tutorials"></a> Video Tutorials
+Take a look at our video tutorials for step-by-step instructions on how to install and run SigProfilerExtractor on Amazon Web Services.
+
+### Tutorial #1: Installing SigProfilerExtractor on Amazon Web Services ###
+
+[![Video Tutorial #3](https://img.youtube.com/vi/30JmjvJ-DtI/0.jpg)](https://www.youtube.com/watch?v=30JmjvJ-DtI/)
+
+### Tutorial #2: Running the Quick Start Example Program ###
+
+[![Video Tutorial #3](https://img.youtube.com/vi/BiBYZz_khIY/0.jpg)](https://www.youtube.com/watch?v=BiBYZz_khIY/)
+
+### Tutorial #3: Reviewing the output from SigProfilerExtractor ###
+
+[![Video Tutorial #3](https://img.youtube.com/vi/BchtNeaQlv0/0.jpg)](https://www.youtube.com/watch?v=BchtNeaQlv0/)
 
 ### GPU support
 
