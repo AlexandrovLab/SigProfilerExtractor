@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.0'
+VERSION = '1.1.2'
 
 
 with open('README.md') as f:
@@ -40,8 +40,7 @@ requirements=[
           'scikit-learn>=0.22',
 	  'psutil>=5.6.1',
           'reportlab>=3.5.42',
-          'PyPDF2>=1.26.0',
-      'xlrd==1.2.0'
+          'PyPDF2>=1.26.0'
            ]
 
 operating_system = sys.platform   

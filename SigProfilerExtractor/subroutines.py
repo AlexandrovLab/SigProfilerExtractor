@@ -85,7 +85,7 @@ def make_letter_ids(idlenth = 10, mtype = "SBS96"):
     letters.extend([i+b for i in letters for b in letters])
     letters = letters[0:idlenth]
     
-    for j,l in zip(range(idlenth),letters)  :
+    for j,l in zip(range(idlenth),letters):
         listOfSignatures.append(mtype+l)
     listOfSignatures = np.array(listOfSignatures)
     return listOfSignatures
@@ -1110,11 +1110,18 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v"+str(cosmic_version)+"_SBS_"+genome_build+".txt", sep="\t", index_col=0)
         signames = sigDatabase.columns   
         
+    elif signatures.shape[0]==288:
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v"+str(3.2)+"_SBS"+str(signatures.shape[0])+"_"+genome_build+".txt", sep="\t", index_col=0)
+        signames = sigDatabase.columns
+        
+    elif signatures.shape[0]==1536:
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+"GRCh37"+"/COSMIC_v"+str(3.2)+"_SBS"+str(signatures.shape[0])+"_"+"GRCh37"+".txt", sep="\t", index_col=0)
+        signames = sigDatabase.columns
+    
     elif signatures.shape[0]==78:
-        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v"+str(cosmic_version)+"_DBS_"+genome_build+".txt", sep="\t", index_col=0)
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+"GRCh37"+"/COSMIC_v"+str(cosmic_version)+"_DBS_"+"GRCh37"+".txt", sep="\t", index_col=0)
         signames = sigDatabase.columns
         connected_sigs=False
-        
         
     elif signatures.shape[0]==83:
         sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/GRCh37/COSMIC_v"+str(cosmic_version)+"_ID_GRCh37.txt", sep="\t", index_col=0)
@@ -1751,7 +1758,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
 def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, index, allcolnames, process_std_error = "none", signature_stabilities = " ", \
                         signature_total_mutations= " ", signature_stats = "none",  cosmic_sigs=False, attribution= 0, denovo_exposureAvg  = "none", add_penalty=0.05, \
                         remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, background_sigs=0, genome_build="GRCh37", sequence="genome", export_probabilities=True, \
-                        refit_denovo_signatures=True, connected_sigs=True, pcawg_rule=False, verbose=False):
+                        refit_denovo_signatures=True, collapse_to_SBS96=True, connected_sigs=True, pcawg_rule=False, verbose=False):
     
     # Get the type of solution from the last part of the layer_directory name
     solution_type = layer_directory.split("/")[-1]
@@ -1788,9 +1795,8 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         signature_type = "SBS"+str(m)
     
     
-    
     allgenomes = np.array(allgenomes)
-    if (m=="96" or m=="1536" or m=="288") and (genome_build=="mm9" or genome_build=="mm10"):
+    if (m=="96" or m=="1536" or m=="288") and (genome_build=="mm9" or genome_build=="mm10") and (collapse_to_SBS96==True):
         check_rule_negatives = [1,16]
         check_rule_penalty=1.50
     else:
@@ -2043,7 +2049,6 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else:
         all_similarities.to_csv(layer_directory+"/Solution_Stats/"+solution_prefix+"_Samples_Stats.txt", sep="\t")
     
-     
     if cosmic_sigs==False:
         try:
             process_std_error= pd.DataFrame(process_std_error)
@@ -2065,23 +2070,27 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else: #when it works with the decomposed solution
         signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
-        if m == "1536" or m=="288": # collapse the 1536 to 96
+        if (m == "1536" or m=="288") and collapse_to_SBS96==True: # collapse the 1536 to 96
             m = "96"  
+    
        
     ########################################### PLOT THE SIGNATURES ################################################
-    
     if m=="DINUC" or m=="78":
-        plot.plotDBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-            
+        plot.plotDBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )        
     elif m=="INDEL" or m=="83":
         plot.plotID(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "94", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     elif m=="CNV" or m=="48":
          plot.plotCNV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
     elif m=="SV" or m=="32":
          plot.plotSV(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "pdf", percentage=True, aggregate=False)
-    elif m=="96" or m=="288" or m=="384" or m=="1536":
+    elif (m=="96" or m=="288" or m=="384" or m=="1536") and collapse_to_SBS96==True:
         plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
-        
+    elif m=="96":
+        plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+    elif m=="288":
+        plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
+    elif m=="1536":
+        plot.plotSBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/", solution_prefix, m, True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )
     else:
         custom_signatures_plot(processes, layer_directory+"/Signatures")
       
