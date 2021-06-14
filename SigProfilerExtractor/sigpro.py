@@ -153,7 +153,7 @@ def record_parameters(sysdata, excecution_parameters, start_time):
             sysdata.write("\tinitial_remove_penalty: {}\n".format(excecution_parameters["initial_remove_penalty"]))
             sysdata.write("\tde_novo_fit_penalty: {}\n".format(excecution_parameters["de_novo_fit_penalty"])) 
             sysdata.write("\trefit_denovo_signatures: {}\n".format(excecution_parameters["refit_denovo_signatures"]))
-            
+            sysdata.write("\tcollapse_to_SBS96: {}\n".format(excecution_parameters["collapse_to_SBS96"]))
             
             sysdata.write("\n-------Analysis Progress------- \n")
             sysdata.write("[{}] Analysis started: \n".format(str(start_time).split(".")[0]))
@@ -401,6 +401,7 @@ def sigProfilerExtractor(input_type,
                         "initial_remove_penalty":initial_remove_penalty,
                         "de_novo_fit_penalty":de_novo_fit_penalty,
                         "refit_denovo_signatures":refit_denovo_signatures,
+                        "collapse_to_SBS96":collapse_to_SBS96,
                         "dist":clustering_distance,
                         "export_probabilities":export_probabilities,
                         "make_decompostion_plots":make_decomposition_plots,

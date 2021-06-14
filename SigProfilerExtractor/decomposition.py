@@ -15,7 +15,10 @@ import os
 
 
 
-def decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False):
+def decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, 
+              nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, 
+              genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, 
+              collapse_to_SBS96=True,connected_sigs=True, verbose=False):
 
     
     """
@@ -136,14 +139,14 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
         print ("The {} folder could not be created".format("Decomposed_Solution"))
     
     
-    if processAvg.shape[0]==1536: #collapse the 1596 context into 96 only for the deocmposition 
+    if processAvg.shape[0]==1536 and collapse_to_SBS96==True: #collapse the 1596 context into 96 only for the deocmposition 
         processAvg = pd.DataFrame(processAvg, index=index)
         processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
         genomes = genomes.groupby(genomes.index.str[1:8]).sum()
         index = genomes.index
         processAvg = np.array(processAvg)
     
-    if processAvg.shape[0]==288: #collapse the 288 context into 96 only for the deocmposition 
+    if processAvg.shape[0]==288 and collapse_to_SBS96==True: #collapse the 288 context into 96 only for the deocmposition 
         processAvg = pd.DataFrame(processAvg, index=index)
         processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
         genomes = pd.DataFrame(genomes, index=index)
