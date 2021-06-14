@@ -27,17 +27,17 @@ Update = 'Heirarchy option deleted, clustering deleted and signatures orders by 
     fh.write(cnt % {'version': VERSION,})
     fh.close()
 requirements=[
-          'matplotlib>=3.3.0',
-          'scipy>=1.3.3',
-          'torch==1.5.1',
+          'matplotlib>=3.4.2',
+          'scipy>=1.6.3',
+          'torch>=1.8.1',
           'numpy>=1.17.4', 
-          'pandas>=0.25.3', 
+          'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.1.23', 
-          'sigProfilerPlotting>=1.1.8', 
+          'SigProfilerMatrixGenerator>=1.1.30', 
+          'sigProfilerPlotting>=1.1.15', 
           'pillow',
           'statsmodels>=0.9.0',
-          'scikit-learn>=0.22',
+          'scikit-learn>=0.24.2',
 	  'psutil>=5.6.1',
           'reportlab>=3.5.42',
           'PyPDF2>=1.26.0'
