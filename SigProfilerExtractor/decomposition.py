@@ -171,8 +171,13 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
     
     
     
-    result = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                            cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg ,  background_sigs=background_sigs, verbose=verbose, genome_build=genome_build, add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, initial_remove_penalty=initial_remove_penalty,connected_sigs=connected_sigs,refit_denovo_signatures=False)
+    result = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, 
+                            cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg ,  
+                            background_sigs=background_sigs, verbose=verbose, genome_build=genome_build, 
+                            add_penalty=nnls_add_penalty, remove_penalty=nnls_remove_penalty, 
+                            initial_remove_penalty=initial_remove_penalty,connected_sigs=connected_sigs,
+                            collapse_to_SBS96=collapse_to_SBS96,
+                            refit_denovo_signatures=False)
 
     return result
 

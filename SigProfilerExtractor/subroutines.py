@@ -1111,11 +1111,11 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         signames = sigDatabase.columns   
         
     elif signatures.shape[0]==288:
-        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+genome_build+"/COSMIC_v"+str(3.2)+"_SBS"+str(signatures.shape[0])+"_"+genome_build+".txt", sep="\t", index_col=0)
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/GRCh37/COSMIC_v"+str(3.2)+"_SBS"+str(signatures.shape[0])+"_GRCh37.txt", sep="\t", index_col=0)
         signames = sigDatabase.columns
         
     elif signatures.shape[0]==1536:
-        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+"GRCh37"+"/COSMIC_v"+str(3.2)+"_SBS"+str(signatures.shape[0])+"_"+"GRCh37"+".txt", sep="\t", index_col=0)
+        sigDatabase = pd.read_csv(paths+"/data/Reference_Signatures/"+"GRCh37"+"/COSMIC_v"+str(3.2)+"_SBS"+str(signatures.shape[0])+"_GRCh37.txt", sep="\t", index_col=0)
         signames = sigDatabase.columns
     
     elif signatures.shape[0]==78:
