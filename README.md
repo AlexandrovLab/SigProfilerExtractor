@@ -104,7 +104,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **nmf_tolerance** | Float | Value defines the tolerance to achieve to converge. Default is 1e-15. | 
 | **Execution** |  |  |  | 
 |  | **cpu** | Integer | The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. | 
-|  | **gpu** | Boolean | Defines if the GPU resource will used if available. Default is False. If True, the GPU resources will be used in the computation. | 
+|  | **gpu** | Boolean | Defines if the GPU resource will used if available. Default is False. If True, the GPU resources will be used in the computation. *Note: All available CPU processors are used by default, which may cause a memory error. This error can be resolved by reducing the number of CPU processes through the **cpu** parameter.*|
 |  | **batch_size** | Integer | Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing. Default is 1. | 
 | **Solution Estimation Thresholds** |  |  |  | 
 |  | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. | 
