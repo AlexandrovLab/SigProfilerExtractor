@@ -408,14 +408,15 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
     return w, h
     
 
-def nnmf_cpu(genomes, nfactors, init="nndsvd", excecution_parameters=None):
+def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None):
    
     
     genomes = torch.from_numpy(genomes).float()
-    min_iterations=excecution_parameters["min_NMF_iterations"]
-    max_iterations=excecution_parameters["max_NMF_iterations"]
-    tolerance=excecution_parameters["NMF_tolerance"]
-    test_conv=excecution_parameters["NMF_test_conv"]
+    min_iterations=execution_parameters["min_NMF_iterations"]
+    max_iterations=execution_parameters["max_NMF_iterations"]
+    tolerance=execution_parameters["NMF_tolerance"]
+    test_conv=execution_parameters["NMF_test_conv"]
+    seed=execution_parameters["seeds"]
     net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init,seed=None)
     net.fit()
     Ws = []
@@ -439,16 +440,16 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", excecution_parameters=None):
     similarities = np.append(similarities, convergence)
     return W, H, similarities
 
-def nnmf_gpu(genomes, nfactors, init="nndsvd",excecution_parameters=None):
+def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None):
     p = current_process()
     identity = p._identity[0]
     #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
-    min_iterations=excecution_parameters["min_NMF_iterations"]
-    max_iterations=excecution_parameters["max_NMF_iterations"]
-    tolerance=excecution_parameters["NMF_tolerance"]
-    test_conv=excecution_parameters["NMF_test_conv"]
+    min_iterations=execution_parameters["min_NMF_iterations"]
+    max_iterations=execution_parameters["max_NMF_iterations"]
+    tolerance=execution_parameters["NMF_tolerance"]
+    test_conv=execution_parameters["NMF_test_conv"]
     net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=None)
     net.fit()
     Ws = []
@@ -507,7 +508,7 @@ def BootstrapCancerGenomes(genomes, seed=None):
     return dataframe
 
 # NMF version for the multiprocessing library
-def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, init="nndsvd", seeds=None, normalization_cutoff=10000000, norm="log2", gpu=False, excecution_parameters=None):
+def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, init="nndsvd", seeds=None, normalization_cutoff=10000000, norm="log2", gpu=False, execution_parameters=None):
     tic = time.time()
     totalMutations = np.sum(genomes, axis =0)
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
@@ -538,7 +539,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         #print(len(genome_list))      
         g = np.array(genome_list)
         
-        W, H, Conv = nmf_fn(g, totalProcesses, init=init, excecution_parameters=excecution_parameters)
+        W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters)
         for i in range(len(W)):
             
             _W = np.array(W[i])
@@ -578,7 +579,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             
         bootstrapGenomes=np.array(bootstrapGenomes)
     
-        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, excecution_parameters=excecution_parameters)  #uses custom function nnmf
+        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters)  #uses custom function nnmf
         
         
         #print ("initital W: ", W); print("\n");
@@ -657,17 +658,17 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
 #     return W, H, kl
 # =============================================================================
 
-def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = False):
+def parallel_runs(execution_parameters, genomes=1, totalProcesses=1, verbose = False):
     
-    iterations = excecution_parameters["NMF_replicates"]
-    seeds=excecution_parameters["seeds"]
-    init=excecution_parameters["NMF_init"]
-    normalization_cutoff=excecution_parameters["normalization_cutoff"]
-    n_cpu=excecution_parameters["cpu"]
-    resample=excecution_parameters["resample"]
-    norm=excecution_parameters["matrix_normalization"]
-    gpu=excecution_parameters["gpu"]
-    batch_size=excecution_parameters["batch_size"]
+    iterations = execution_parameters["NMF_replicates"]
+    seeds=execution_parameters["seeds"]
+    init=execution_parameters["NMF_init"]
+    normalization_cutoff=execution_parameters["normalization_cutoff"]
+    n_cpu=execution_parameters["cpu"]
+    resample=execution_parameters["resample"]
+    norm=execution_parameters["matrix_normalization"]
+    gpu=execution_parameters["gpu"]
+    batch_size=execution_parameters["batch_size"]
     
     
     
@@ -699,7 +700,7 @@ def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = 
    
    
     if gpu==True:
-        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
+        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, execution_parameters=execution_parameters)
         result_list = pool.map(pool_nmf, batch_seed_pair) 
         pool.close()
         pool.join()
@@ -707,7 +708,7 @@ def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = 
         flat_list = [item for sublist in result_list for item in sublist]
 
     else:
-         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, seeds=seeds,normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, excecution_parameters=excecution_parameters)
+         pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, seeds=seeds,normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, execution_parameters=execution_parameters)
          result_list = pool.map(pool_nmf, batch_seed_pair) 
          pool.close()
          pool.join()
@@ -739,7 +740,7 @@ def parallel_runs(excecution_parameters, genomes=1, totalProcesses=1, verbose = 
 #################################### Decipher Signatures ###################################################
 #############################################################################################################
 """
-def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96"):
+def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96"):
     
     
         
@@ -750,11 +751,11 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
     totalMutationTypes = genomes.shape[0];
     totalGenomes = genomes.shape[1];
     totalProcesses = i
-    totalIterations=excecution_parameters["NMF_replicates"]
-    gpu=excecution_parameters["gpu"]
-    dist=excecution_parameters["dist"]
-    norm = excecution_parameters["matrix_normalization"]
-    normalization_cutoff=excecution_parameters["normalization_cutoff"]
+    totalIterations=execution_parameters["NMF_replicates"]
+    gpu=execution_parameters["gpu"]
+    dist=execution_parameters["dist"]
+    norm = execution_parameters["matrix_normalization"]
+    normalization_cutoff=execution_parameters["normalization_cutoff"]
     
     print ("Extracting signature {} for mutation type {}".format(i, m))  # m is for the mutation context
     
@@ -770,7 +771,7 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
     ############################################################################################################################################################################## 
     if gpu==True:
         results = []
-        flat_list = parallel_runs(excecution_parameters, genomes=genomes, totalProcesses=totalProcesses,  verbose = False)
+        flat_list = parallel_runs(execution_parameters, genomes=genomes, totalProcesses=totalProcesses,  verbose = False)
         
         for items in range(len(flat_list)):
             
@@ -786,7 +787,7 @@ def decipher_signatures(excecution_parameters, genomes=[0], i=1, totalIterations
             
             results.append([W,H,similarities])
     else:
-        results = parallel_runs(excecution_parameters, genomes=genomes, totalProcesses=totalProcesses, verbose = False)
+        results = parallel_runs(execution_parameters, genomes=genomes, totalProcesses=totalProcesses, verbose = False)
     #print(results[0][2])     
     toc = time.time()
     print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
