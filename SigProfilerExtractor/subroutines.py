@@ -408,7 +408,7 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
     return w, h
     
 
-def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None):
+def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, seed=None):
    
     
     genomes = torch.from_numpy(genomes).float()
@@ -416,8 +416,7 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None):
     max_iterations=execution_parameters["max_NMF_iterations"]
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
-    seed=execution_parameters["seeds"]
-    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init,seed=None)
+    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init, seed=seed)
     net.fit()
     Ws = []
     Hs = []
@@ -440,17 +439,16 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None):
     similarities = np.append(similarities, convergence)
     return W, H, similarities
 
-def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None):
+def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, seed=None):
     p = current_process()
     identity = p._identity[0]
-    #print(genomes.shape)
     gpu_id = identity % torch.cuda.device_count()
     genomes = torch.from_numpy(genomes).float().cuda(gpu_id)
     min_iterations=execution_parameters["min_NMF_iterations"]
     max_iterations=execution_parameters["max_NMF_iterations"]
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
-    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=None)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=seed)
     net.fit()
     Ws = []
     Hs = []
@@ -512,10 +510,10 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
     tic = time.time()
     totalMutations = np.sum(genomes, axis =0)
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
+    seeds=batch_seed_pair[1] # seeds used for random intitialization of matrices
     
     if gpu:
         batch_size=batch_seed_pair[0]
-        seeds=batch_seed_pair[1]
         nmf_fn = nnmf_gpu
         results = []
         genome_list = []
@@ -539,7 +537,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         #print(len(genome_list))      
         g = np.array(genome_list)
         
-        W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters)
+        W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters, seed=seeds)
         for i in range(len(W)):
             
             _W = np.array(W[i])
@@ -557,7 +555,6 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
 
     else:
         nmf_fn = nnmf_cpu
-        seeds=batch_seed_pair[1]
        
         if resample == True:
             bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=seeds)
@@ -579,7 +576,7 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
             
         bootstrapGenomes=np.array(bootstrapGenomes)
     
-        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters)  #uses custom function nnmf
+        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters, seed=seeds)  #uses custom function nnmf
         
         
         #print ("initital W: ", W); print("\n");
@@ -700,7 +697,7 @@ def parallel_runs(execution_parameters, genomes=1, totalProcesses=1, verbose = F
    
    
     if gpu==True:
-        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, seeds=seeds, init=init, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, execution_parameters=execution_parameters)
+        pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, seeds=seeds, normalization_cutoff=normalization_cutoff, norm=norm, gpu=gpu, execution_parameters=execution_parameters)
         result_list = pool.map(pool_nmf, batch_seed_pair) 
         pool.close()
         pool.join()
