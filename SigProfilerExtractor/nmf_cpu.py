@@ -20,7 +20,7 @@ from torch import nn
 
 class NMF:
     def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
-                 init_method='nndsvd', floating_point_precision='float', min_iterations=2000):
+                 init_method='nndsvd', floating_point_precision='single', min_iterations=2000):
 
         """
         Run non-negative matrix factorisation using GPU. Uses beta-divergence.
@@ -50,7 +50,7 @@ class NMF:
         if seed is None:
             seed = datetime.now().timestamp()
 
-        if floating_point_precision == 'float':
+        if floating_point_precision == 'single':
             self._tensor_type = torch.FloatTensor
         elif floating_point_precision == 'double':
             self._tensor_type = torch.DoubleTensor

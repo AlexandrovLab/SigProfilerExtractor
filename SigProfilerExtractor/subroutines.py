@@ -416,7 +416,8 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, seed=N
     max_iterations=execution_parameters["max_NMF_iterations"]
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
-    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init, seed=seed)
+    precision=execution_parameters["precision"]
+    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init, seed=seed, floating_point_precision=precision)
     net.fit()
     Ws = []
     Hs = []
@@ -448,7 +449,8 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, seed=No
     max_iterations=execution_parameters["max_NMF_iterations"]
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
-    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=seed)
+    precision=execution_parameters["precision"]
+    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init,seed=seed, floating_point_precision=precision)
     net.fit()
     Ws = []
     Hs = []
