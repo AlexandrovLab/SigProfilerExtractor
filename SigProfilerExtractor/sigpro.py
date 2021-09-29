@@ -42,6 +42,7 @@ import psutil
 import sigProfilerPlotting 
 import multiprocessing
 from SigProfilerExtractor import single_sample as ss
+from numpy.random import SeedSequence, default_rng
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
