@@ -102,7 +102,7 @@ def get_indeces(a, b):
     
     Parameters:
         a: list. where we want to get the index of the items.
-        b; list. the items we want to get index of. 
+        b: list. the items we want to get index of. 
     """
 
     indeces = []
@@ -581,12 +581,9 @@ def pnmf(batch_seed_pair=[1,None], genomes=1, totalProcesses=1, resample=True, i
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters, seed=seeds)  #uses custom function nnmf
         
         
-        #print ("initital W: ", W); print("\n");
-        #print ("initial H: ", H); print("\n");
         W = np.array(W)
         H = np.array(H)
         total = W.sum(axis=0)[np.newaxis]
-        #print ("total: ", total); print("\n");
         W = W/total
         H = H*total.T
         
@@ -747,8 +744,8 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
     
     tic = time.time()
     # The initial values accumute the results for each number of 
-    totalMutationTypes = genomes.shape[0];
-    totalGenomes = genomes.shape[1];
+    totalMutationTypes = genomes.shape[0]
+    totalGenomes = genomes.shape[1]
     totalProcesses = i
     totalIterations=execution_parameters["NMF_replicates"]
     gpu=execution_parameters["gpu"]
@@ -796,12 +793,12 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
     
     
     ################### Achieve the best clustering by shuffling results list using a few iterations ##########        
-    Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations));
+    Wall = np.zeros((totalMutationTypes, totalProcesses * totalIterations))
     #print (Wall.shape)
-    Hall = np.zeros((totalProcesses * totalIterations, totalGenomes));
+    Hall = np.zeros((totalProcesses * totalIterations, totalGenomes))
     converge_information = np.zeros((totalIterations, 7))
     
-    finalgenomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations));
+    finalgenomeErrors = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
     finalgenomesReconstructed = np.zeros((totalMutationTypes, totalGenomes, totalIterations))
     
     processCount=0
@@ -809,11 +806,11 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
         W = results[j][0]
         H = results[j][1]
         converge_information[j,:] = results[j][2][:]
-        finalgenomeErrors[:, :, j] = genomes -  np.dot(W,H);
-        finalgenomesReconstructed[:, :, j] = np.dot(W,H);
-        Wall[ :, processCount : (processCount + totalProcesses) ] = W;
-        Hall[ processCount : (processCount + totalProcesses), : ] = H;
-        processCount = processCount + totalProcesses;
+        finalgenomeErrors[:, :, j] = genomes -  np.dot(W,H)
+        finalgenomesReconstructed[:, :, j] = np.dot(W,H)
+        Wall[ :, processCount : (processCount + totalProcesses) ] = W
+        Hall[ processCount : (processCount + totalProcesses), : ] = H
+        processCount = processCount + totalProcesses
     
     
     processes=i #renamed the i as "processes"    
