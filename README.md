@@ -73,7 +73,7 @@ Extracts mutational signatures from an array of samples.
 ```python 
 sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37", opportunity_genome = "GRCh37", context_type = "default", exome = False, 
                          minimum_signatures=1, maximum_signatures=10, nmf_replicates=100, resample = True, batch_size=1, cpu=-1, gpu=False, 
-                         nmf_init="random", precision= "single", matrix_normalization= "gmm", seeds= "none", 
+                         nmf_init="random", precision= "single", matrix_normalization= "gmm", seeds= "random", 
                          min_nmf_iterations= 10000, max_nmf_iterations=1000000, nmf_test_conv= 10000, nmf_tolerance= 1e-15,nnls_add_penalty=0.05,
                          nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02,get_all_signature_matrices= False)
 ```
@@ -93,7 +93,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **maximum_signatures** | Positive Integer | The maximum number of signatures to be extracted. The default value is 25. | 
 |  | **nmf_replicates** | Positive Integer | The number of iteration to be performed to extract each number signature. The default value is 100. | 
 |  | **resample** | Boolean | Default is True. If True, add poisson noise to samples by resampling. | 
-|  | **seeds** | String | It can be used to get reproducible resamples for the NMF replicates. A path of a tab separated .txt file containing the replicated id and preset seeds in a two columns dataframe can be passed through this parameter. The Seeds.txt file in the results folder from a previous analysis can be used for the seeds parameter in a new analysis. The Default value for this parameter is "none". When "none", the seeds for resampling will be random for different analysis. | 
+|  | **seeds** | String | It can be used to get reproducible resamples for the NMF replicates. A path of a tab separated .txt file containing the replicated id and preset seeds in a two columns dataframe can be passed through this parameter. The Seeds.txt file in the results folder from a previous analysis can be used for the seeds parameter in a new analysis. The Default value for this parameter is "random". When "random", the seeds for resampling will be random for different analysis. | 
 | **NMF Engines** |  |  |  | 
 |  | **matrix_normalization** | String | Method of normalizing the genome matrix before it is analyzed by NMF. Default is value is "gmm". Other options are, "log2", "custom" or "none". | 
 |  | **nmf_init** | String | The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'. Default is 'nndsvd_min'. | 
