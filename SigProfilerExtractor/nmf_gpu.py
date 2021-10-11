@@ -12,7 +12,7 @@ from torch import nn
 
 
 class NMF:
-    def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, seed=None,
+    def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, generators=None,
                  init_method='nndsvd', floating_point_precision='single', min_iterations=2000):
 
         """
@@ -25,9 +25,9 @@ class NMF:
           tolerance: tolerance to use in convergence tests. Lower numbers give longer times to convergence
           test_conv: (int) How often to test for convergnce
           gpu_id: (int) Which GPU device to use
-          seed: random seed, if None (default) datetime is used
+          generators: random generators, if None (default) datetime is used
           init_method: how to initialise basis and coefficient matrices, options are:
-            - random (will always be the same if seed != None)
+            - random (will always be the same if set generators != None)
             - NNDSVD
             - NNDSVDa (fill in the zero elements with the average),
             - NNDSVDar (fill in the zero elements with random values in the space [0:average/100]).
@@ -37,21 +37,16 @@ class NMF:
               fp32 tensors as convergence can happen too early.
         """
         torch.cuda.set_device(gpu_id)
-        
-        
-        
-        if seed is None:
-            seed = datetime.now().timestamp()
+
 
         if floating_point_precision == 'single':
             self._tensor_type = torch.FloatTensor
+            self._np_dtype = np.float32
         elif floating_point_precision == 'double':
             self._tensor_type = torch.DoubleTensor
+            self._np_dtype = np.float64
         else:
-            self._tensor_type = floating_point_precision
-
-        torch.manual_seed(seed)
-        torch.cuda.manual_seed(seed)
+            raise ValueError("Precision needs to be either 'single' or 'double'." )
 
         self.max_iterations = max_iterations
         self.min_iterations = min_iterations
@@ -68,6 +63,7 @@ class NMF:
         self._test_conv = test_conv
         self._gpu_id = gpu_id
         self._rank = rank
+        self._generator = generators
         self._W, self._H = self._initialise_wh(init_method)
 
     def _initialise_wh(self, init_method):
@@ -75,8 +71,8 @@ class NMF:
         Initialise basis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
-            W = torch.rand(self._V.shape[0], self._V.shape[1], self._rank).type(self._tensor_type).cuda()
-            H = torch.rand(self._V.shape[0], self._rank, self._V.shape[2]).type(self._tensor_type).cuda()
+            W = torch.unsqueeze(torch.from_numpy(self._generator[0].random((self._V.shape[1],self._rank), dtype=self._np_dtype)),0).cuda()
+            H = torch.unsqueeze(torch.from_numpy(self._generator[1].random((self._rank, self._V.shape[2]), dtype=self._np_dtype)),0).cuda()
             return W, H
 
         elif init_method == 'nndsvd':
@@ -139,6 +135,11 @@ class NMF:
             return self._conv
         except:
             return 0
+
+    @property
+    def generator(self):
+        return self._generator
+
     @property
     def _kl_loss(self):
         return (self._V * (self._V / self.reconstruction).log()).sum() - self._V.sum() + self.reconstruction.sum()

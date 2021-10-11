@@ -43,6 +43,8 @@ import sigProfilerPlotting
 import multiprocessing
 from SigProfilerExtractor import single_sample as ss
 from numpy.random import SeedSequence, default_rng
+import copy
+
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -414,14 +416,14 @@ def sigProfilerExtractor(input_type,
     
     
     ################################ take the inputs from the mandatory arguments ####################################
-    input_type = input_type;
+    input_type = input_type
      
     #project = input_data   #the variable was already set above
         
     
     ################################ take the inputs from the general optional arguments ####################################
-    startProcess=minimum_signatures ; 
-    endProcess=maximum_signatures;
+    startProcess=minimum_signatures
+    endProcess=maximum_signatures
     
     #totalIterations=nmf_replicates
     cpu = cpu
@@ -440,20 +442,19 @@ def sigProfilerExtractor(input_type,
     if exome==True:
         sequence="exome"
     
-    #setting seeds
+    # Use a SeedSequence to create generators for random number generation
     if seeds=="random":
-         execution_parameters["seeds"]=seeds
-         replicates=list(range(1,nmf_replicates+1))
-         seed=np.random.randint(0, 10000000, size=nmf_replicates)
-         seeds=pd.DataFrame(list(zip(replicates, seed)), columns=["Replicates","Seeds"])
-         seeds=seeds.set_index("Replicates")
-         seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
+        execution_parameters["seeds"]=seeds
+        tmp_seed = SeedSequence().entropy
+        seed=np.array(tmp_seed)
+        seeds=pd.DataFrame([tmp_seed], columns=["Seed"])
+        seeds.to_csv(out_put+"/Seeds.txt", sep="\t", quoting=None)
     else:
         try:
             execution_parameters["seeds"]=seeds
             seeds=pd.read_csv(seeds,sep="\t", index_col=0)
             seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
-            seed=np.array(seeds["Seeds"])
+            seed=np.array(seeds["Seed"])
             
             
             
@@ -771,10 +772,7 @@ def sigProfilerExtractor(input_type,
         
         #pass the seed values to inner funtions:
         execution_parameters["seeds"]= seed
-            
-        
-        
-        
+
         if genomes.shape[1]<endProcess:
             endProcess=genomes.shape[1]
         
@@ -800,8 +798,27 @@ def sigProfilerExtractor(input_type,
                               format(str(datetime.datetime.now()).split(".")[0],execution_parameters["matrix_normalization"]))
             
             
-        sysdata.close()        
+        sysdata.close()     
+
         
+
+        """
+        Create list of pairs (x,y) where x is poisson generator (will be used to create the same noise at each rank)
+        and y is a random generator. The pair will be used to spawn more generators.
+        Note: Poisson seed will be same in each pair, but random generator will be different.
+        """
+        # initialize root seed sequence with seed
+        seed_seq = SeedSequence(int(execution_parameters["seeds"]))
+        poisson_seed = seed_seq.spawn(1)
+        # create num rank copies of the poisson seed so that noise is consistent across ranks for same replicate number
+        poisson_list = [copy.deepcopy(poisson_seed) for x in range(startProcess, endProcess+1)]
+        replicate_generators = seed_seq.spawn(endProcess + 1 - startProcess)
+        cluster_generators = seed_seq.spawn(endProcess + 1 - startProcess)
+        noise_rep_pair=[]
+        for i, j, k in zip(poisson_list, replicate_generators, cluster_generators):
+            noise_rep_pair.append([i,j,k])
+
+
         for i in range(startProcess,endProcess+1):
             current_time_start = datetime.datetime.now()
             
@@ -821,41 +838,13 @@ def sigProfilerExtractor(input_type,
             processes = sub.decipher_signatures(execution_parameters,
                                                 genomes= genomes, 
                                                 mut_context=m,
-                                                i = i)
+                                                i = i,
+                                                noise_rep_pair=noise_rep_pair[i-startProcess])
             
-            
-            
-            
-            
-            
-            
-            
-            #denormalize the genomes and exposures
-            #genomes = sub.denormalize_samples(genomes, totalMutations, normalization_value=100000)
-            #exposureStd = sub.denormalize_samples(exposureStd, totalMutations, normalization_value=100000)    
-            ####################################################################### add sparsity in the exposureAvg #################################################################
-            
-            
+
             # remove signatures only if the process stability is above a thresh-hold of 0.85
             if  avgSilhouetteCoefficients> -1.0:   
                 stic = time.time() 
-                
-                #removing signatures:
-# =============================================================================
-#                     pool = mp.Pool()
-#                     results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
-#                     pooloutput = [p.get() for p in results]
-#                     
-#                     #print(results)
-#                     pool.close()
-#                     
-#                     for i in range(len(pooloutput)):
-#                         #print(results[i])
-#                         exposureAvg[:,i]=pooloutput[i]
-# =============================================================================
-                    
-                #refitting signatures:
-                #removing signatures:
                 pool = mp.Pool()
                 results = [pool.apply_async(ss.fit_signatures_pool, args=(genomes,processAvg,x,)) for x in range(genomes.shape[1])]
                 pooloutput = [p.get() for p in results]
@@ -867,8 +856,6 @@ def sigProfilerExtractor(input_type,
                     
                 stoc = time.time()
                 print ("Optimization time is {} seconds".format(stoc-stic))    
-                #sysdata.write("\nAnalysis of context type {} is ended successfully\n".format(m)) 
-            #report progress to the system file:
             
             
             #Get total mutationation for each signature in reverse order and order the signatures from high to low mutation barden
