@@ -130,7 +130,7 @@ def matrix_is_formatted(mtx, mtype):
 	example_SBS96 = FormatFiles_path + "Sample_Files.SBS96.all"
 	example_SBS384 = FormatFiles_path + "Sample_Files.SBS384.all"
 	example_SBS1536 = FormatFiles_path + "Sample_Files.SBS1536.all"
-	example_SBS6144 = FormastFiles_path + "Sample_Files.SBS6144.all"
+	example_SBS6144 = FormatFiles_path + "Sample_Files.SBS6144.all"
 	example_ID28 = FormatFiles_path + "Sample_Files.ID28.all"
 	example_ID83 = FormatFiles_path + "Sample_Files.ID83.all"
 	example_ID415 = FormatFiles_path + "Sample_Files.ID415.all"
