@@ -43,7 +43,7 @@ import shutil
 from PyPDF2 import PdfFileMerger
 import warnings as _warnings
 _warnings.filterwarnings("ignore")
-from numpy.random import SeedSequence, default_rng
+from numpy.random import Generator, PCG64DXSM, SeedSequence
 
 try:
     import torch
@@ -405,7 +405,7 @@ def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
     return w, h
     
 
-def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, generators=None):
+def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, generator=None):
     
     genomes = torch.from_numpy(genomes).float()
     min_iterations=execution_parameters["min_NMF_iterations"]
@@ -413,7 +413,7 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, genera
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
     precision=execution_parameters["precision"]
-    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init, generators=generators, floating_point_precision=precision)
+    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init, generator=generator, floating_point_precision=precision)
     net.fit()
     Ws = []
     Hs = []
@@ -436,7 +436,7 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, genera
     similarities = np.append(similarities, convergence)
     return W, H, similarities
 
-def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, generators=None):
+def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, generator=None):
     p = current_process()
     identity = p._identity[0]
     gpu_id = identity % torch.cuda.device_count()
@@ -446,7 +446,7 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, generat
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
     precision=execution_parameters["precision"]
-    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init, generators=generators, floating_point_precision=precision)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init, generator=generator, floating_point_precision=precision)
     net.fit()
     Ws = []
     Hs = []
@@ -509,10 +509,8 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
     # generators used for noise and matrix initialization
     poisson_generator=batch_generator_pair[1][0]
     rep_generator=batch_generator_pair[1][1]
-    # spawn 2 generators, 1 for W, 1 for H
-    sub_rand_generators = rep_generator.spawn(2)
-    rand_rng = [default_rng(tmp) for tmp in sub_rand_generators]
-    poisson_rng = default_rng(poisson_generator)
+    rand_rng = Generator(PCG64DXSM(rep_generator))
+    poisson_rng = Generator(PCG64DXSM(poisson_generator))
 
     
     if gpu:
@@ -540,7 +538,7 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
         #print(len(genome_list))      
         g = np.array(genome_list)
         
-        W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters, generators=rand_rng)
+        W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters, generator=rand_rng)
         for i in range(len(W)):
             
             _W = np.array(W[i])
@@ -579,7 +577,7 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
             
         bootstrapGenomes=np.array(bootstrapGenomes)
     
-        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters, generators=rand_rng)  #uses custom function nnmf
+        W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters, generator=rand_rng)  #uses custom function nnmf
         
         
         W = np.array(W)
@@ -763,9 +761,9 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
     print ("Extracting signature {} for mutation type {}".format(i, m))  # m is for the mutation context
     
     if norm=="gmm":
-        print("The matrix normalizig cutoff is {}\n\n".format(normalization_cutoff))
+        print("The matrix normalizing cutoff is {}\n\n".format(normalization_cutoff))
     else:
-        print("The matrix normalizig cutoff is set for {}\n\n".format(norm))
+        print("The matrix normalizing cutoff is set for {}\n\n".format(norm))
     
     ##############################################################################################################################################################################         
     ############################################################# The parallel processing takes place here #######################################################################  
@@ -1042,7 +1040,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
 
 def cluster_converge_innerloop(Wall, Hall, totalprocess, iteration_generator_pair, iteration=1, dist="cosine", gpu=False):
     
-    rng_generator = default_rng(iteration_generator_pair[1])
+    rng_generator = Generator(PCG64DXSM(iteration_generator_pair[1]))
     processAvg = rng_generator.random((Wall.shape[0],totalprocess))
     exposureAvg = rng_generator.random((totalprocess, Hall.shape[1]))
     

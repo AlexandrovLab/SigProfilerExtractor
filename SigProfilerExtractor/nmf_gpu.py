@@ -12,7 +12,7 @@ from torch import nn
 
 
 class NMF:
-    def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, generators=None,
+    def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, generator=None,
                  init_method='nndsvd', floating_point_precision='single', min_iterations=2000):
 
         """
@@ -25,9 +25,9 @@ class NMF:
           tolerance: tolerance to use in convergence tests. Lower numbers give longer times to convergence
           test_conv: (int) How often to test for convergnce
           gpu_id: (int) Which GPU device to use
-          generators: random generators, if None (default) datetime is used
+          generator: random generator, if None (default) datetime is used
           init_method: how to initialise basis and coefficient matrices, options are:
-            - random (will always be the same if set generators != None)
+            - random (will always be the same if set generator != None)
             - NNDSVD
             - NNDSVDa (fill in the zero elements with the average),
             - NNDSVDar (fill in the zero elements with random values in the space [0:average/100]).
@@ -63,7 +63,7 @@ class NMF:
         self._test_conv = test_conv
         self._gpu_id = gpu_id
         self._rank = rank
-        self._generator = generators
+        self._generator = generator
         self._W, self._H = self._initialise_wh(init_method)
 
     def _initialise_wh(self, init_method):
@@ -71,8 +71,11 @@ class NMF:
         Initialise basis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
-            W = torch.unsqueeze(torch.from_numpy(self._generator[0].random((self._V.shape[1],self._rank), dtype=self._np_dtype)),0).cuda()
-            H = torch.unsqueeze(torch.from_numpy(self._generator[1].random((self._rank, self._V.shape[2]), dtype=self._np_dtype)),0).cuda()
+            W = torch.unsqueeze(torch.from_numpy(self._generator.random((self._V.shape[1],self._rank), dtype=np.float64)),0).cuda()
+            H = torch.unsqueeze(torch.from_numpy(self._generator.random((self._rank, self._V.shape[2]), dtype=np.float64)),0).cuda()
+            if self._np_dtype is np.float32:
+                W = W.float()
+                H = H.float()
             return W, H
 
         elif init_method == 'nndsvd':
