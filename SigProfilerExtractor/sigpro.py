@@ -42,6 +42,9 @@ import psutil
 import sigProfilerPlotting 
 import multiprocessing
 from SigProfilerExtractor import single_sample as ss
+from numpy.random import SeedSequence
+import copy
+
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -101,59 +104,59 @@ def importdata(datatype="matrix"):
     return data
 
     
-def record_parameters(sysdata, excecution_parameters, start_time):
+def record_parameters(sysdata, execution_parameters, start_time):
             #genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
             sysdata.write("\n--------------EXECUTION PARAMETERS--------------\n")
             
             sysdata.write("INPUT DATA\n")
-            sysdata.write("\tinput_type: {}\n".format(excecution_parameters["input_type"]))
-            sysdata.write("\toutput: {}\n".format(excecution_parameters["output"]))
-            sysdata.write("\tinput_data: {}\n".format(excecution_parameters["input_data"]))
-            sysdata.write("\treference_genome: {}\n".format(excecution_parameters["reference_genome"]))
-            sysdata.write("\tcontext_types: {}\n".format(excecution_parameters["context_type"]))
-            sysdata.write("\texome: {}\n".format(excecution_parameters["exome"]))
+            sysdata.write("\tinput_type: {}\n".format(execution_parameters["input_type"]))
+            sysdata.write("\toutput: {}\n".format(execution_parameters["output"]))
+            sysdata.write("\tinput_data: {}\n".format(execution_parameters["input_data"]))
+            sysdata.write("\treference_genome: {}\n".format(execution_parameters["reference_genome"]))
+            sysdata.write("\tcontext_types: {}\n".format(execution_parameters["context_type"]))
+            sysdata.write("\texome: {}\n".format(execution_parameters["exome"]))
             
             sysdata.write("NMF REPLICATES\n")
-            sysdata.write("\tminimum_signatures: {}\n".format(excecution_parameters["minimum_signatures"]))
-            sysdata.write("\tmaximum_signatures: {}\n".format(excecution_parameters["maximum_signatures"]))
-            sysdata.write("\tNMF_replicates: {}\n".format(excecution_parameters["NMF_replicates"]))
+            sysdata.write("\tminimum_signatures: {}\n".format(execution_parameters["minimum_signatures"]))
+            sysdata.write("\tmaximum_signatures: {}\n".format(execution_parameters["maximum_signatures"]))
+            sysdata.write("\tNMF_replicates: {}\n".format(execution_parameters["NMF_replicates"]))
             
             sysdata.write("NMF ENGINE\n")
-            sysdata.write("\tNMF_init: {}\n".format(excecution_parameters["NMF_init"]))
-            sysdata.write("\tprecision: {}\n".format(excecution_parameters["precision"]))
-            sysdata.write("\tmatrix_normalization: {}\n".format(excecution_parameters["matrix_normalization"]))
-            sysdata.write("\tresample: {}\n".format(excecution_parameters["resample"]))
-            sysdata.write("\tseeds: {}\n".format(excecution_parameters["seeds"]))
-            sysdata.write("\tmin_NMF_iterations: {}\n".format(format(excecution_parameters["min_NMF_iterations"],',d')))
-            sysdata.write("\tmax_NMF_iterations: {}\n".format(format(excecution_parameters["max_NMF_iterations"], ',d')))
-            sysdata.write("\tNMF_test_conv: {}\n".format(format(excecution_parameters["NMF_test_conv"],',d')))
-            sysdata.write("\tNMF_tolerance: {}\n".format(excecution_parameters["NMF_tolerance"]))
+            sysdata.write("\tNMF_init: {}\n".format(execution_parameters["NMF_init"]))
+            sysdata.write("\tprecision: {}\n".format(execution_parameters["precision"]))
+            sysdata.write("\tmatrix_normalization: {}\n".format(execution_parameters["matrix_normalization"]))
+            sysdata.write("\tresample: {}\n".format(execution_parameters["resample"]))
+            sysdata.write("\tseeds: {}\n".format(execution_parameters["seeds"]))
+            sysdata.write("\tmin_NMF_iterations: {}\n".format(format(execution_parameters["min_NMF_iterations"],',d')))
+            sysdata.write("\tmax_NMF_iterations: {}\n".format(format(execution_parameters["max_NMF_iterations"], ',d')))
+            sysdata.write("\tNMF_test_conv: {}\n".format(format(execution_parameters["NMF_test_conv"],',d')))
+            sysdata.write("\tNMF_tolerance: {}\n".format(execution_parameters["NMF_tolerance"]))
             
             sysdata.write("CLUSTERING\n")
-            sysdata.write("\tclustering_distance: {}\n".format(excecution_parameters["dist"]))
+            sysdata.write("\tclustering_distance: {}\n".format(execution_parameters["dist"]))
             
             
             sysdata.write("EXECUTION\n")
-            if excecution_parameters["cpu"]==-1:
+            if execution_parameters["cpu"]==-1:
                 sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(multiprocessing.cpu_count(), multiprocessing.cpu_count()))
             else:
-                sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(excecution_parameters["cpu"], multiprocessing.cpu_count()))
-            sysdata.write("\tgpu: {}\n".format(excecution_parameters["gpu"]))
+                sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(execution_parameters["cpu"], multiprocessing.cpu_count()))
+            sysdata.write("\tgpu: {}\n".format(execution_parameters["gpu"]))
             
             sysdata.write("Solution Estimation\n")
-            sysdata.write("\tstability: {}\n".format(excecution_parameters["stability"]))
-            sysdata.write("\tmin_stability: {}\n".format(excecution_parameters["min_stability"]))
-            sysdata.write("\tcombined_stability: {}\n".format(excecution_parameters["combined_stability"]))
+            sysdata.write("\tstability: {}\n".format(execution_parameters["stability"]))
+            sysdata.write("\tmin_stability: {}\n".format(execution_parameters["min_stability"]))
+            sysdata.write("\tcombined_stability: {}\n".format(execution_parameters["combined_stability"]))
             
             sysdata.write("COSMIC MATCH\n")
-            sysdata.write("\topportunity_genome: {}\n".format(excecution_parameters["opportunity_genome"]))
-            sysdata.write("\cosmic_version: {}\n".format(excecution_parameters["cosmic_version"]))
-            sysdata.write("\tnnls_add_penalty: {}\n".format(excecution_parameters["nnls_add_penalty"]))
-            sysdata.write("\tnnls_remove_penalty: {}\n".format(excecution_parameters["nnls_remove_penalty"]))
-            sysdata.write("\tinitial_remove_penalty: {}\n".format(excecution_parameters["initial_remove_penalty"]))
-            sysdata.write("\tde_novo_fit_penalty: {}\n".format(excecution_parameters["de_novo_fit_penalty"])) 
-            sysdata.write("\trefit_denovo_signatures: {}\n".format(excecution_parameters["refit_denovo_signatures"]))
-            sysdata.write("\tcollapse_to_SBS96: {}\n".format(excecution_parameters["collapse_to_SBS96"]))
+            sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
+            sysdata.write("\cosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
+            sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
+            sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
+            sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
+            sysdata.write("\tde_novo_fit_penalty: {}\n".format(execution_parameters["de_novo_fit_penalty"])) 
+            sysdata.write("\trefit_denovo_signatures: {}\n".format(execution_parameters["refit_denovo_signatures"]))
+            sysdata.write("\tcollapse_to_SBS96: {}\n".format(execution_parameters["collapse_to_SBS96"]))
             
             sysdata.write("\n-------Analysis Progress------- \n")
             sysdata.write("[{}] Analysis started: \n".format(str(start_time).split(".")[0]))
@@ -373,7 +376,7 @@ def sigProfilerExtractor(input_type,
    
         
         
-    excecution_parameters= {"input_type":input_type, 
+    execution_parameters= {"input_type":input_type, 
                         "output":output, 
                         "input_data":input_data, 
                         "reference_genome":reference_genome, 
@@ -413,14 +416,14 @@ def sigProfilerExtractor(input_type,
     
     
     ################################ take the inputs from the mandatory arguments ####################################
-    input_type = input_type;
+    input_type = input_type
      
     #project = input_data   #the variable was already set above
         
     
     ################################ take the inputs from the general optional arguments ####################################
-    startProcess=minimum_signatures ; 
-    endProcess=maximum_signatures;
+    startProcess=minimum_signatures
+    endProcess=maximum_signatures
     
     #totalIterations=nmf_replicates
     cpu = cpu
@@ -439,20 +442,19 @@ def sigProfilerExtractor(input_type,
     if exome==True:
         sequence="exome"
     
-    #setting seeds
+    # Use a SeedSequence to create generators for random number generation
     if seeds=="random":
-         excecution_parameters["seeds"]=seeds
-         replicates=list(range(1,nmf_replicates+1))
-         seed=np.random.randint(0, 10000000, size=nmf_replicates)
-         seeds=pd.DataFrame(list(zip(replicates, seed)), columns=["Replicates","Seeds"])
-         seeds=seeds.set_index("Replicates")
-         seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
+        execution_parameters["seeds"]=seeds
+        tmp_seed = SeedSequence().entropy
+        seed=np.array(tmp_seed)
+        seeds=pd.DataFrame([tmp_seed], columns=["Seed"])
+        seeds.to_csv(out_put+"/Seeds.txt", sep="\t", quoting=None)
     else:
         try:
-            excecution_parameters["seeds"]=seeds
+            execution_parameters["seeds"]=seeds
             seeds=pd.read_csv(seeds,sep="\t", index_col=0)
             seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
-            seed=np.array(seeds["Seeds"])
+            seed=np.array(seeds["Seed"])
             
             
             
@@ -473,7 +475,7 @@ def sigProfilerExtractor(input_type,
     
         if type(text_file)!=str:
             data=text_file
-            excecution_parameters["input_data"]="Matrix["+str(data.shape[0])+" rows X "+str(data.shape[1])+ " columns]"
+            execution_parameters["input_data"]="Matrix["+str(data.shape[0])+" rows X "+str(data.shape[1])+ " columns]"
         else:
             data = pd.read_csv(text_file, sep="\t").iloc[:,:]
         
@@ -641,10 +643,10 @@ def sigProfilerExtractor(input_type,
         raise ValueError("Please provide a correct input_type. Check help for more details")
     
     #recording context types
-    excecution_parameters["context_type"]=",".join(mtypes) 
+    execution_parameters["context_type"]=",".join(mtypes) 
   
     
-    record_parameters(sysdata, excecution_parameters, start_time)
+    record_parameters(sysdata, execution_parameters, start_time)
     sysdata.close()      
     
     
@@ -766,14 +768,11 @@ def sigProfilerExtractor(input_type,
         
         normalization_cutoff = sub.get_normalization_cutoff(genomes, manual_cutoff=100*genomes.shape[0])
         #print("Normalization Cutoff is :", normalization_cutoff)
-        excecution_parameters["normalization_cutoff"]= normalization_cutoff
+        execution_parameters["normalization_cutoff"]= normalization_cutoff
         
         #pass the seed values to inner funtions:
-        excecution_parameters["seeds"]= seed
-            
-        
-        
-        
+        execution_parameters["seeds"]= seed
+
         if genomes.shape[1]<endProcess:
             endProcess=genomes.shape[1]
         
@@ -782,25 +781,44 @@ def sigProfilerExtractor(input_type,
         context_start_time=datetime.datetime.now()
         sysdata.write("\n##################################\n")
         sysdata.write("\n[{}] Analysis started for {}. Matrix size [{} rows x {} columns]\n".format(str(context_start_time).split(".")[0],mutation_type,genomes.shape[0],genomes.shape[1])) 
-        if excecution_parameters["matrix_normalization"]=="gmm":
+        if execution_parameters["matrix_normalization"]=="gmm":
                 sysdata.write("\n[{}] Normalization GMM with cutoff value set at {}\n". \
                               format(str(datetime.datetime.now()).split(".")[0], normalization_cutoff)) 
-        elif excecution_parameters["matrix_normalization"]=="100X":
+        elif execution_parameters["matrix_normalization"]=="100X":
                 sysdata.write("\n[{}] Normalization 100X with cutoff value set at {}\n". \
                               format(str(datetime.datetime.now()).split(".")[0],(genomes.shape[0]*100)))
-        elif excecution_parameters["matrix_normalization"]=="log2":
+        elif execution_parameters["matrix_normalization"]=="log2":
             sysdata.write("\n[{}] Normalization Log2\n". \
                               format(str(datetime.datetime.now()).split(".")[0]))
-        elif excecution_parameters["matrix_normalization"]=="none":
+        elif execution_parameters["matrix_normalization"]=="none":
             sysdata.write("\n[{}] Analysis is proceeding without normalization\n". \
                           format(str(datetime.datetime.now()).split(".")[0]))
         else:
             sysdata.write("\n[{}] Normalization Custom with cutoff value set at {}\n". \
-                              format(str(datetime.datetime.now()).split(".")[0],excecution_parameters["matrix_normalization"]))
+                              format(str(datetime.datetime.now()).split(".")[0],execution_parameters["matrix_normalization"]))
             
             
-        sysdata.close()        
+        sysdata.close()     
+
         
+
+        """
+        Create list of pairs (x,y) where x is poisson generator (will be used to create the same noise at each rank)
+        and y is a random generator. The pair will be used to spawn more generators.
+        Note: Poisson seed will be same in each pair, but random generator will be different.
+        """
+        # initialize root seed sequence with seed
+        seed_seq = SeedSequence(int(execution_parameters["seeds"]))
+        poisson_seed = seed_seq.spawn(1)
+        # create num rank copies of the poisson seed so that noise is consistent across ranks for same replicate number
+        poisson_list = [copy.deepcopy(poisson_seed) for x in range(startProcess, endProcess+1)]
+        replicate_generators = seed_seq.spawn(endProcess + 1 - startProcess)
+        cluster_generators = seed_seq.spawn(endProcess + 1 - startProcess)
+        noise_rep_pair=[]
+        for i, j, k in zip(poisson_list, replicate_generators, cluster_generators):
+            noise_rep_pair.append([i,j,k])
+
+
         for i in range(startProcess,endProcess+1):
             current_time_start = datetime.datetime.now()
             
@@ -817,44 +835,16 @@ def sigProfilerExtractor(input_type,
             finalHall, \
             converge_information, \
             reconstruction_error, \
-            processes = sub.decipher_signatures(excecution_parameters,
+            processes = sub.decipher_signatures(execution_parameters,
                                                 genomes= genomes, 
                                                 mut_context=m,
-                                                i = i)
+                                                i = i,
+                                                noise_rep_pair=noise_rep_pair[i-startProcess])
             
-            
-            
-            
-            
-            
-            
-            
-            #denormalize the genomes and exposures
-            #genomes = sub.denormalize_samples(genomes, totalMutations, normalization_value=100000)
-            #exposureStd = sub.denormalize_samples(exposureStd, totalMutations, normalization_value=100000)    
-            ####################################################################### add sparsity in the exposureAvg #################################################################
-            
-            
+
             # remove signatures only if the process stability is above a thresh-hold of 0.85
             if  avgSilhouetteCoefficients> -1.0:   
                 stic = time.time() 
-                
-                #removing signatures:
-# =============================================================================
-#                     pool = mp.Pool()
-#                     results = [pool.apply_async(sub.remove_all_single_signatures_pool, args=(x,processAvg,exposureAvg,genomes,)) for x in range(genomes.shape[1])]
-#                     pooloutput = [p.get() for p in results]
-#                     
-#                     #print(results)
-#                     pool.close()
-#                     
-#                     for i in range(len(pooloutput)):
-#                         #print(results[i])
-#                         exposureAvg[:,i]=pooloutput[i]
-# =============================================================================
-                    
-                #refitting signatures:
-                #removing signatures:
                 pool = mp.Pool()
                 results = [pool.apply_async(ss.fit_signatures_pool, args=(genomes,processAvg,x,)) for x in range(genomes.shape[1])]
                 pooloutput = [p.get() for p in results]
@@ -866,8 +856,6 @@ def sigProfilerExtractor(input_type,
                     
                 stoc = time.time()
                 print ("Optimization time is {} seconds".format(stoc-stic))    
-                #sysdata.write("\nAnalysis of context type {} is ended successfully\n".format(m)) 
-            #report progress to the system file:
             
             
             #Get total mutationation for each signature in reverse order and order the signatures from high to low mutation barden
