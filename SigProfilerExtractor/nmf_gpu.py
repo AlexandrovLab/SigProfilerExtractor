@@ -145,7 +145,8 @@ class NMF:
 
     @property
     def _kl_loss(self):
-        return (self._V * (self._V / self.reconstruction).log()).sum() - self._V.sum() + self.reconstruction.sum()
+        # calculate kl_loss in double precision for better convergence criteria
+        return (self._V * (self._V / self.reconstruction).log()).sum(dtype=torch.float64) - self._V.sum(dtype=torch.float64) + self.reconstruction.sum(dtype=torch.float64)
 
     @property
     def _loss_converged(self):
