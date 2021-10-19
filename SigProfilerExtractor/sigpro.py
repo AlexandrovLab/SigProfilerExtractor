@@ -802,11 +802,11 @@ def sigProfilerExtractor(input_type,
 
         
 
-        """
-        Create list of pairs (x,y) where x is poisson generator (will be used to create the same noise at each rank)
-        and y is a random generator. The pair will be used to spawn more generators.
-        Note: Poisson seed will be same in each pair, but random generator will be different.
-        """
+
+        # Create list of pairs (x,y) where x is poisson generator (will be used to create the same noise at each rank)
+        # and y is a random generator. The pair will be used to spawn more generators.
+        # Note: Poisson seed will be same in each pair, but random generator will be different.
+
         # initialize root seed sequence with seed
         seed_seq = SeedSequence(int(execution_parameters["seeds"]))
         poisson_seed = seed_seq.spawn(1)
