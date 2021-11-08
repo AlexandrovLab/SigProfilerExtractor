@@ -53,25 +53,6 @@ multiprocessing.set_start_method('spawn', force=True)
 
 ############################################################## FUNCTION ONE ##########################################
 
-# def format_integer(number, thousand_separator=','):
-#     def reverse(string):
-#         string = "".join(reversed(string))
-#         return string
-
-#     s = reverse(str(number))
-#     count = 0
-#     result = ''
-#     for char in s:
-#         count = count + 1
-#         if count % 3 == 0:
-#             if len(s) == count:
-#                 result = char + result
-#             else:
-#                 result = thousand_separator + char + result
-#         else:
-#             result = char + result
-#     return result
-
 def make_letter_ids(idlenth = 10, mtype = "SBS96"):
     
     listOfSignatures = []
@@ -156,22 +137,6 @@ def split_list(lst, splitlenth):
     return newlst
 
 
-# def mat_ave_std(matlst):
-#     """ Calculates elementwise standard deviations from a list of matrices """
-
-#     matsum = np.zeros(matlst[0].shape)
-#     for i in matlst:
-#         matsum = matsum+i
-#     matavg = matsum/len(matlst)
-    
-#     matvar=np.zeros(matlst[0].shape)
-#     for i in matlst:
-#         matvar = matvar+(i-matavg)**2
-#     matvar= matvar/len(matlst)
-#     matstd = matvar**(1/2)
-    
-#     return matavg, matstd
-
 
 ############################################ Functions for modifications of Sample Matrices ############### 
 
@@ -185,10 +150,6 @@ def get_normalization_cutoff(data, manual_cutoff=9600):
         try:
             # doing Kmean clustering
             col_sums_for_cluster = col_sums.reshape(-1,1)
-            
-            #separate distributions using kmean
-            #kmeans = KMeans(n_clusters=2, random_state=0).fit(col_sums_for_cluster)
-            #labels = kmeans.labels_
             
             #separate distributions using mixture model
             clf = mixture.GaussianMixture(n_components=2, covariance_type='full')
@@ -207,13 +168,6 @@ def get_normalization_cutoff(data, manual_cutoff=9600):
             bigger_cluster__dist_mean = np.mean(bigger_cluster__dist) 
             bigger_cluster__dist_std = np.std(bigger_cluster__dist) 
             smaller_cluster__dist_mean = np.mean(smaller_cluster__dist) 
-            #smaller_cluster__dist_std = np.std(smaller_cluster__dist)
-            
-            #print("bigger_cluster__dist_mean ", bigger_cluster__dist_mean)
-            #print("bigger_cluster__dist_std ", bigger_cluster__dist_std)
-            #print("smaller_cluster__dist_mean ", smaller_cluster__dist_mean)
-            #print("smaller_cluster__dist_std ", smaller_cluster__dist_std)
-            
             # continue the loop if the differece the means is larger than the 2*STD of the larger cluster 
             
             if abs(bigger_cluster__dist_mean-smaller_cluster__dist_mean)< 2*2*bigger_cluster__dist_std:
@@ -1331,19 +1285,6 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
     exposures = exposureAvg.set_index(listOfSignatures)
     exposures.columns = colnames
-    #plot exposures
-    # for p in range(exposures.shape[0]):
-    #   plt.bar(colnames, exposures.iloc[p], bottom = np.sum(exposures.iloc[:p], axis = 0), label = listOfSignatures[p])
-        
-    # plt.legend(loc=(1.01,0.0))
-    # plt.title("Signature Activities on Samples")
-    # plt.xlabel("Samples")
-    # plt.ylabel("Mutation Count")
-    # plt.xticks(colnames, rotation='vertical')
-    # plt.tight_layout()
-    # plt.savefig(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Activities_Plot.pdf", dpi=300)  
-    # plt.close()
-
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
     #print("exposures are ok", exposures)

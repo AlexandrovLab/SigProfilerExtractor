@@ -24,7 +24,8 @@ and SigProfilerPlotting. Detailed documentation can be found at: https://osf.io/
 ## <a name="installation"></a> Installation
 
 To install the current version of this Github repo, git clone this repo or download the zip file.
-Unzip the contents of SigProfilerExtractor-master.zip or the zip file of a correpsonding branch and 
+Unzip the contents of SigProfilerExtractor-master.zip or the zip file of a corresponding branch.
+
 In the command line, please run the following:
 ```bash
 $ cd SigProfilerExtractor-master
