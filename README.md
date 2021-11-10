@@ -22,10 +22,22 @@ and SigProfilerPlotting. Detailed documentation can be found at: https://osf.io/
 
 
 ## <a name="installation"></a> Installation
+
+To install the current version of this Github repo, git clone this repo or download the zip file.
+Unzip the contents of SigProfilerExtractor-master.zip or the zip file of a corresponding branch.
+
+In the command line, please run the following:
+```bash
+$ cd SigProfilerExtractor-master
+$ pip install .
+```
+
+For most recent stable pypi version of this tool,
 In the command line, please run the following:
 ```bash
 $ pip install SigProfilerExtractor
 ```
+
 Install your desired reference genome from the command line/terminal as follows (available reference genomes are: GRCh37, GRCh38, mm9, and mm10):
 ```python
 $ python

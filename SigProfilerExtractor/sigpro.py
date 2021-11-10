@@ -18,44 +18,39 @@ Created on Mon Aug 27 13:39:29 2018
 
 """
 import os
-
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
 os.environ["OMP_NUM_THREADS"] = "1" 
+
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
+
 import scipy
-import scipy.io
+from scipy import io as sio
 import sklearn
 import numpy as np
 import pandas as pd
 import time
-from SigProfilerExtractor import subroutines as sub
-import SigProfilerMatrixGenerator
-from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as datadump   
 import shutil
-import multiprocessing as mp
-import SigProfilerExtractor as cosmic
 import platform
 import datetime
 import psutil
+import copy
 import sigProfilerPlotting 
 import multiprocessing
+from SigProfilerExtractor import subroutines as sub
+import SigProfilerMatrixGenerator
+from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as datadump   
+import multiprocessing as mp
+import SigProfilerExtractor as cosmic
 from SigProfilerExtractor import single_sample as ss
 from numpy.random import SeedSequence
-import copy
-
+import pdb
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
     memoryUse1 = py.memory_info()[0]/2.**30  # memory use in GB...I think
     print('\n************** Reported Current Memory Use: '+ str(round(memoryUse1,2))+" GB *****************\n")
-    #print('\n************** Reported Current Memory Use: '+ str(round(memoryUse2,2))+" GB *****************\n")
-
-
-
-
-
 
 def importdata(datatype="matrix"):
     
@@ -99,69 +94,64 @@ def importdata(datatype="matrix"):
         datanew = directory+"/vcftest"
         if not os.path.exists(datanew):
             shutil.copytree(dataold , datanew)
-        
         data="vcftest"
     return data
-
     
 def record_parameters(sysdata, execution_parameters, start_time):
-            #genomes = sub.normalize_samples(genomes, normalize=False, all_samples=False, number=30000)
-            sysdata.write("\n--------------EXECUTION PARAMETERS--------------\n")
-            
-            sysdata.write("INPUT DATA\n")
-            sysdata.write("\tinput_type: {}\n".format(execution_parameters["input_type"]))
-            sysdata.write("\toutput: {}\n".format(execution_parameters["output"]))
-            sysdata.write("\tinput_data: {}\n".format(execution_parameters["input_data"]))
-            sysdata.write("\treference_genome: {}\n".format(execution_parameters["reference_genome"]))
-            sysdata.write("\tcontext_types: {}\n".format(execution_parameters["context_type"]))
-            sysdata.write("\texome: {}\n".format(execution_parameters["exome"]))
-            
-            sysdata.write("NMF REPLICATES\n")
-            sysdata.write("\tminimum_signatures: {}\n".format(execution_parameters["minimum_signatures"]))
-            sysdata.write("\tmaximum_signatures: {}\n".format(execution_parameters["maximum_signatures"]))
-            sysdata.write("\tNMF_replicates: {}\n".format(execution_parameters["NMF_replicates"]))
-            
-            sysdata.write("NMF ENGINE\n")
-            sysdata.write("\tNMF_init: {}\n".format(execution_parameters["NMF_init"]))
-            sysdata.write("\tprecision: {}\n".format(execution_parameters["precision"]))
-            sysdata.write("\tmatrix_normalization: {}\n".format(execution_parameters["matrix_normalization"]))
-            sysdata.write("\tresample: {}\n".format(execution_parameters["resample"]))
-            sysdata.write("\tseeds: {}\n".format(execution_parameters["seeds"]))
-            sysdata.write("\tmin_NMF_iterations: {}\n".format(format(execution_parameters["min_NMF_iterations"],',d')))
-            sysdata.write("\tmax_NMF_iterations: {}\n".format(format(execution_parameters["max_NMF_iterations"], ',d')))
-            sysdata.write("\tNMF_test_conv: {}\n".format(format(execution_parameters["NMF_test_conv"],',d')))
-            sysdata.write("\tNMF_tolerance: {}\n".format(execution_parameters["NMF_tolerance"]))
-            
-            sysdata.write("CLUSTERING\n")
-            sysdata.write("\tclustering_distance: {}\n".format(execution_parameters["dist"]))
-            
-            
-            sysdata.write("EXECUTION\n")
-            if execution_parameters["cpu"]==-1:
-                sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(multiprocessing.cpu_count(), multiprocessing.cpu_count()))
-            else:
-                sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(execution_parameters["cpu"], multiprocessing.cpu_count()))
-            sysdata.write("\tgpu: {}\n".format(execution_parameters["gpu"]))
-            
-            sysdata.write("Solution Estimation\n")
-            sysdata.write("\tstability: {}\n".format(execution_parameters["stability"]))
-            sysdata.write("\tmin_stability: {}\n".format(execution_parameters["min_stability"]))
-            sysdata.write("\tcombined_stability: {}\n".format(execution_parameters["combined_stability"]))
-            
-            sysdata.write("COSMIC MATCH\n")
-            sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
-            sysdata.write("\cosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
-            sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
-            sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
-            sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
-            sysdata.write("\tde_novo_fit_penalty: {}\n".format(execution_parameters["de_novo_fit_penalty"])) 
-            sysdata.write("\trefit_denovo_signatures: {}\n".format(execution_parameters["refit_denovo_signatures"]))
-            sysdata.write("\tcollapse_to_SBS96: {}\n".format(execution_parameters["collapse_to_SBS96"]))
-            
-            sysdata.write("\n-------Analysis Progress------- \n")
-            sysdata.write("[{}] Analysis started: \n".format(str(start_time).split(".")[0]))
-            
+    """
+    Extracts mutational signatures from an array of samples.
+    
+    """
+    sysdata.write("\n--------------EXECUTION PARAMETERS--------------\n")
+    sysdata.write("INPUT DATA\n")
+    sysdata.write("\tinput_type: {}\n".format(execution_parameters["input_type"]))
+    sysdata.write("\toutput: {}\n".format(execution_parameters["output"]))
+    sysdata.write("\tinput_data: {}\n".format(execution_parameters["input_data"]))
+    sysdata.write("\treference_genome: {}\n".format(execution_parameters["reference_genome"]))
+    sysdata.write("\tcontext_types: {}\n".format(execution_parameters["context_type"]))
+    sysdata.write("\texome: {}\n".format(execution_parameters["exome"]))
+    sysdata.write("NMF REPLICATES\n")
+    sysdata.write("\tminimum_signatures: {}\n".format(execution_parameters["minimum_signatures"]))
+    sysdata.write("\tmaximum_signatures: {}\n".format(execution_parameters["maximum_signatures"]))
+    sysdata.write("\tNMF_replicates: {}\n".format(execution_parameters["NMF_replicates"]))
+    sysdata.write("NMF ENGINE\n")
+    sysdata.write("\tNMF_init: {}\n".format(execution_parameters["NMF_init"]))
+    sysdata.write("\tprecision: {}\n".format(execution_parameters["precision"]))
+    sysdata.write("\tmatrix_normalization: {}\n".format(execution_parameters["matrix_normalization"]))
+    sysdata.write("\tresample: {}\n".format(execution_parameters["resample"]))
+    sysdata.write("\tseeds: {}\n".format(execution_parameters["seeds"]))
+    sysdata.write("\tmin_NMF_iterations: {}\n".format(format(execution_parameters["min_NMF_iterations"],',d')))
+    sysdata.write("\tmax_NMF_iterations: {}\n".format(format(execution_parameters["max_NMF_iterations"], ',d')))
+    sysdata.write("\tNMF_test_conv: {}\n".format(format(execution_parameters["NMF_test_conv"],',d')))
+    sysdata.write("\tNMF_tolerance: {}\n".format(execution_parameters["NMF_tolerance"]))
+    sysdata.write("CLUSTERING\n")
+    sysdata.write("\tclustering_distance: {}\n".format(execution_parameters["dist"]))
 
+    sysdata.write("EXECUTION\n")
+    if execution_parameters["cpu"]==-1:
+        sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(multiprocessing.cpu_count(), multiprocessing.cpu_count()))
+    else:
+        sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(execution_parameters["cpu"], multiprocessing.cpu_count()))
+
+    sysdata.write("\tgpu: {}\n".format(execution_parameters["gpu"]))
+    sysdata.write("Solution Estimation\n")
+    sysdata.write("\tstability: {}\n".format(execution_parameters["stability"]))
+    sysdata.write("\tmin_stability: {}\n".format(execution_parameters["min_stability"]))
+    sysdata.write("\tcombined_stability: {}\n".format(execution_parameters["combined_stability"]))
+    
+    sysdata.write("COSMIC MATCH\n")
+    sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
+    sysdata.write("\cosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
+    sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
+    sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
+    sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
+    sysdata.write("\tde_novo_fit_penalty: {}\n".format(execution_parameters["de_novo_fit_penalty"])) 
+    sysdata.write("\trefit_denovo_signatures: {}\n".format(execution_parameters["refit_denovo_signatures"]))
+    sysdata.write("\tcollapse_to_SBS96: {}\n".format(execution_parameters["collapse_to_SBS96"]))
+    
+    sysdata.write("\n-------Analysis Progress------- \n")
+    sysdata.write("[{}] Analysis started: \n".format(str(start_time).split(".")[0]))
+            
 def sigProfilerExtractor(input_type, 
                          output, 
                          input_data, 
@@ -198,7 +188,6 @@ def sigProfilerExtractor(input_type,
                          min_stability=0.2, 
                          combined_stability=1.0,
                          get_all_signature_matrices= False): 
-    memory_usage()
     """
     Extracts mutational signatures from an array of samples.
     
@@ -329,6 +318,7 @@ def sigProfilerExtractor(input_type,
     Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
     Check the results in the "example_output" folder.
     """
+    memory_usage()
     #record the start time
     start_time = datetime.datetime.now()
     
@@ -351,18 +341,14 @@ def sigProfilerExtractor(input_type,
     sysdata.write("Operating System Name: "+ platform.uname()[0]+"\n"+"Nodename: "+platform.uname()[1]+"\n"+"Release: "+platform.uname()[2]+"\n"+"Version: "+platform.uname()[3]+"\n")
     sysdata.write("\n-------Python and Package Versions------- \n")
     sysdata.write("Python Version: "+str(platform.sys.version_info.major)+"."+str(platform.sys.version_info.minor)+"."+str(platform.sys.version_info.micro)+"\n")
-    sysdata.write("Sigproextractor Version: "+cosmic.__version__+"\n")
-    sysdata.write("SigprofilerPlotting Version: "+sigProfilerPlotting.__version__+"\n")
-    sysdata.write("SigprofilerMatrixGenerator Version: "+SigProfilerMatrixGenerator.__version__+"\n")
+    sysdata.write("SigProfilerExtractor Version: "+cosmic.__version__+"\n")
+    sysdata.write("SigProfilerPlotting Version: "+sigProfilerPlotting.__version__+"\n")
+    sysdata.write("SigProfilerMatrixGenerator Version: "+SigProfilerMatrixGenerator.__version__+"\n")
     sysdata.write("Pandas version: "+pd.__version__+"\n")
     sysdata.write("Numpy version: "+np.__version__+"\n")
     sysdata.write("Scipy version: "+scipy.__version__+"\n")
     sysdata.write("Scikit-learn version: "+sklearn.__version__+"\n")
-    #sysdata.write("Nimfa version: "+nimfa.__version__+"\n")
-    
-    
-    
-    
+
     #format the project_name first:
     project = input_data  #will use this variable as the parameter for project argument in SigprofilerMatrixGenerator
     try:
@@ -372,10 +358,7 @@ def sigProfilerExtractor(input_type,
             project_name = project.split("/")[-2]
     except:
         project_name = "Input from DataFrame"
-    
-   
-        
-        
+
     execution_parameters= {"input_type":input_type, 
                         "output":output, 
                         "input_data":input_data, 
@@ -412,30 +395,17 @@ def sigProfilerExtractor(input_type,
                         "min_stability":min_stability, 
                         "combined_stability":combined_stability,
                         "get_all_signature_matrices":get_all_signature_matrices}
-    
-    
-    
-    ################################ take the inputs from the mandatory arguments ####################################
-    input_type = input_type
-     
-    #project = input_data   #the variable was already set above
-        
-    
+                        
     ################################ take the inputs from the general optional arguments ####################################
-    startProcess=minimum_signatures
-    endProcess=maximum_signatures
-    
-    #totalIterations=nmf_replicates
-    cpu = cpu
-    hierarchy = False #No use
-    mtype=context_type
-    #init=nmf_init
-    wall=get_all_signature_matrices
-    add_penalty=nnls_add_penalty
-    remove_penalty=nnls_remove_penalty
-    genome_build=opportunity_genome
-    refgen=reference_genome
-    refit_denovo_signatures
+    startProcess  = minimum_signatures
+    endProcess    = maximum_signatures
+    mtype         = context_type
+    wall          = get_all_signature_matrices
+    add_penalty   = nnls_add_penalty
+    remove_penalty= nnls_remove_penalty
+    genome_build  = opportunity_genome
+    refgen        = reference_genome
+
     #set the squence type ("genome" or "exome") for the tmb plot inside the make_final_solution function
     if exome==False:
         sequence="genome"
@@ -444,41 +414,32 @@ def sigProfilerExtractor(input_type,
     
     # Use a SeedSequence to create generators for random number generation
     if seeds=="random":
-        execution_parameters["seeds"]=seeds
+        execution_parameters["seeds"] = seeds
         tmp_seed = SeedSequence().entropy
-        seed=np.array(tmp_seed)
-        seeds=pd.DataFrame([tmp_seed], columns=["Seed"])
+        seed     = np.array(tmp_seed)
+        seeds    = pd.DataFrame([tmp_seed], columns=["Seed"])
         seeds.to_csv(out_put+"/Seeds.txt", sep="\t", quoting=None)
     else:
         try:
-            execution_parameters["seeds"]=seeds
-            seeds=pd.read_csv(seeds,sep="\t", index_col=0)
+            execution_parameters["seeds"] = seeds
+            seeds = pd.read_csv(seeds,sep="\t", index_col=0)
             seeds.to_csv(out_put+"/Seeds.txt", sep="\t")
-            seed=np.array(seeds["Seed"])
-            
-            
-            
+            seed  = np.array(seeds["Seed"])
+
         except:
             "Please set valid seeds"
-    
-   
-    
-    
     
     if input_type=="text" or input_type =="table" or input_type=="matrix":
         
         ################################### For text input files ######################################################
-        
         text_file = project
         title = "" # set the title for plotting 
             
-    
         if type(text_file)!=str:
             data=text_file
             execution_parameters["input_data"]="Matrix["+str(data.shape[0])+" rows X "+str(data.shape[1])+ " columns]"
         else:
             data = pd.read_csv(text_file, sep="\t").iloc[:,:]
-        
         
         if data.shape[0]==48:
             paths = cosmic.__path__[0]
@@ -492,21 +453,19 @@ def sigProfilerExtractor(input_type,
                 #sort the mutation types first step
                 data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist1)
                 data = data.sort_values("Mutation Types")
-                data=data.reset_index()
-                data=data.drop(columns='index')
+                data = data.reset_index()
+                data = data.drop(columns='index')
                 #sort the mutation types second step
                 data["Mutation Types"]=feature_map[1]
                 data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist2)
                 data = data.sort_values("Mutation Types")
                 
         
-        data=data.dropna(axis=1, inplace=False)
+        data = data.dropna(axis=1, inplace=False)
         data = data.loc[:, (data != 0).any(axis=0)]
         genomes = data.iloc[:,1:]
         genomes = np.array(genomes)
-        
         allgenomes = genomes.copy()  # save the allgenomes for the final results 
-        
         #Contruct the indeces of the matrix
         #setting index and columns names of processAvg and exposureAvg
         index = data.iloc[:,0]
@@ -527,62 +486,40 @@ def sigProfilerExtractor(input_type,
             mtypes = ["SBS"+mtypes[0]]
         else:
             mtypes = ["CH"+mtypes[0]]
-        
-    ###############################################################################################################
-    
-        
-    ###########################################################################################################################################################################################
+
     elif input_type=="csv":
-    ################################# For matlab input files #######################################################
-    
+        ################################# For CSV input files #######################################################
         filename = project
         title = "" # set the title for plotting 
-        
         genomes, index, colnames, mtypes = sub.read_csv(filename)   
         allgenomes = genomes.copy()
         allcolnames = colnames.copy() 
-        
-        
         # Define the mtypes
         mtypes = [str(genomes.shape[0])]
         if mtypes[0] == "78":
             mtypes = ["DINUC"]
         elif mtypes[0] == "83":
             mtypes = ["ID"]
-        
-       
-        
-    
-    #################################################################################################################
-    
-    
-        ###########################################################################################################################################################################################
+
     elif input_type=="matobj":
         ################################# For matlab input files #######################################################
-        
         mat_file = project
-        title = "" # set the title for plotting 
-        
-            
-        
-        mat = scipy.io.loadmat(mat_file)
-        mat = sub.extract_input(mat)
-        genomes = mat[1]
+        title    = "" # set the title for plotting 
+        mat      = sio.loadmat(mat_file)
+        mat      = sub.extract_input(mat)
+        genomes  = mat[1]
         allgenomes = genomes.copy()  # save the allgenomes for the final results 
-        
-        
-      
-        
+
         #Contruct the indeces of the matrix
         #setting index and columns names of processAvg and exposureAvg
         index1 = mat[3]
         index2 = mat[4]
-        index = []
+        index  = []
         for i, j in zip(index1, index2):
             index.append(i[0]+"["+j+"]"+i[2])
-        colnames = np.array(pd.Series(mat[2]))
+        colnames    = np.array(pd.Series(mat[2]))
         allcolnames = colnames.copy() # save the allcolnames for the final results
-        index = np.array(pd.Series(index))
+        index       = np.array(pd.Series(index))
         
         #creating list of mutational type to sync with the vcf type input
         mtypes = [str(genomes.shape[0])]
@@ -590,31 +527,11 @@ def sigProfilerExtractor(input_type,
             mtypes = ["DINUC"]
         elif mtypes[0] == "83":
             mtypes = ["ID"]
-        
-        #################################################################################################################
-        
-        
+
     elif input_type=="vcf":
         ################################# For vcf input files #######################################################
-        
-        project = project
         title = project # set the title for plotting 
-        
-        refgen = refgen
-        
-        
-        exome = exome
-    
-        
-        
-    
-            
-        #project_name = project.split("/")[-1]
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
-        
-        
-        
-        
         # Selecting the mutation types    
         if mtype == ["default"]:
             mtypes = ["SBS96", "DBS78", "ID83"] 
@@ -625,38 +542,19 @@ def sigProfilerExtractor(input_type,
             mtype = mtype.upper()
             mtype = mtype.replace(" ", "")
             mtypes = mtype.split(",")
-# =============================================================================
-#             if any(x not in mkeys for x in mtypes):
-#                  raise Exception("Please pass valid mutation types seperated by comma with no space. Carefully check (using SigProfilerMatrixGenerator)"\
-#                                  "what mutation contexts should be generated by your VCF files. Also please use the uppercase characters")
-# =============================================================================
-            
-             
-            
-        
-        #change working directory 
-        
         #set the genome_build
         genome_build=refgen 
-        
     else:
         raise ValueError("Please provide a correct input_type. Check help for more details")
     
     #recording context types
     execution_parameters["context_type"]=",".join(mtypes) 
-  
-    
     record_parameters(sysdata, execution_parameters, start_time)
     sysdata.close()      
-    
-    
     ###########################################################################################################################################################################################                  
     
     for m in mtypes:
-        
-       
         mutation_context = m
-        
         # we need to rename the m because users input could be SBS96, SBS1536, DBS78, ID83 etc
         if m.startswith("SBS"):
             m = m[3:] #removing "SBS"
@@ -696,24 +594,18 @@ def sigProfilerExtractor(input_type,
                 mutation_type = "CNV48"
             elif m== "SV" or m.startswith("SV"):
                 mutation_type = "SV32"
-                
-       
             
         if input_type=="vcf":
-            
             try: 
-                
                 genomes = pd.DataFrame(data[m])
             except KeyError: 
                 sysdata = open(out_put+"/JOB_METADATA.txt", "a")
                 sysdata.write("Context {} is not available in the current vcf files".format(m)+"\n")
                 print("Context {} is not available in the current vcf files".format(m))
                 sysdata.close()
-                
                 continue
             #check if the genome is a nonzero matrix
-            shape= genomes.shape
-            if shape==(0,0):
+            if genomes.shape == (0,0):
                 sysdata = open(out_put+"/JOB_METADATA.txt", "a")
                 sysdata.write("Sample is not a nonzero matrix for the mutation context "+ m+"\n")
                 print("Sample is not a nozero matrix for the mutation context "+ m)
@@ -721,7 +613,6 @@ def sigProfilerExtractor(input_type,
                 continue
                 
             genomes = genomes.loc[:, (genomes != 0).any(axis=0)]
-            
             allgenomes = genomes.copy()  # save the allgenomes for the final results 
             index = genomes.index.values
             colnames  = genomes.columns
@@ -737,20 +628,15 @@ def sigProfilerExtractor(input_type,
             
         #create output directories to store all the results 
         output = out_put+"/"+mutation_type
-        
         est_genomes = np.zeros([1,1])
-        H_iteration = 1 
         genomes = np.array(genomes)
         information =[] 
         layer_directory = output
         try:
             if not os.path.exists(layer_directory):
                 os.makedirs(layer_directory)
-                #os.makedirs(output+"/pickle_objects")
-                #os.makedirs(output+"/All solutions")
         except: 
             print ("The {} folder could not be created".format("output"))
-        
         
         fh = open(layer_directory+"/All_solutions_stat.csv", "w")   
         fh.write("Total Signatures,Stability,Matrix Frobenius%,avgStability\n") 
@@ -758,20 +644,15 @@ def sigProfilerExtractor(input_type,
         # The following for loop operates to extract data from each number of signature
         
         all_similirities_list = [] #this list is going to store the dataframes of different similirieties as items
-        minimum_stabilities = []
-        #similarity_dataframe = pd.DataFrame({"Sample Name": list(colnames)})
-        
-        
-        
-        
+        minimum_stabilities   = []
+
         # get the cutoff for normatization to handle the hypermutators 
         
         normalization_cutoff = sub.get_normalization_cutoff(genomes, manual_cutoff=100*genomes.shape[0])
-        #print("Normalization Cutoff is :", normalization_cutoff)
-        execution_parameters["normalization_cutoff"]= normalization_cutoff
+        execution_parameters["normalization_cutoff"] = normalization_cutoff
         
         #pass the seed values to inner funtions:
-        execution_parameters["seeds"]= seed
+        execution_parameters["seeds"] = seed
 
         if genomes.shape[1]<endProcess:
             endProcess=genomes.shape[1]
@@ -796,33 +677,28 @@ def sigProfilerExtractor(input_type,
         else:
             sysdata.write("\n[{}] Normalization Custom with cutoff value set at {}\n". \
                               format(str(datetime.datetime.now()).split(".")[0],execution_parameters["matrix_normalization"]))
-            
-            
+
         sysdata.close()     
-
-        
-
 
         # Create list of pairs (x,y) where x is poisson generator (will be used to create the same noise at each rank)
         # and y is a random generator. The pair will be used to spawn more generators.
         # Note: Poisson seed will be same in each pair, but random generator will be different.
 
         # initialize root seed sequence with seed
-        seed_seq = SeedSequence(int(execution_parameters["seeds"]))
+        seed_seq     = SeedSequence(int(execution_parameters["seeds"]))
         poisson_seed = seed_seq.spawn(1)
+
         # create num rank copies of the poisson seed so that noise is consistent across ranks for same replicate number
         poisson_list = [copy.deepcopy(poisson_seed) for x in range(startProcess, endProcess+1)]
         replicate_generators = seed_seq.spawn(endProcess + 1 - startProcess)
-        cluster_generators = seed_seq.spawn(endProcess + 1 - startProcess)
-        noise_rep_pair=[]
+        cluster_generators   = seed_seq.spawn(endProcess + 1 - startProcess)
+        noise_rep_pair       = []
+
         for i, j, k in zip(poisson_list, replicate_generators, cluster_generators):
             noise_rep_pair.append([i,j,k])
 
-
-        for i in range(startProcess,endProcess+1):
+        for num_sigs in range(startProcess,endProcess+1):
             current_time_start = datetime.datetime.now()
-            
-            #memory_usage()    
             processAvg, \
             exposureAvg, \
             processStd, \
@@ -838,8 +714,8 @@ def sigProfilerExtractor(input_type,
             processes = sub.decipher_signatures(execution_parameters,
                                                 genomes= genomes, 
                                                 mut_context=m,
-                                                i = i,
-                                                noise_rep_pair=noise_rep_pair[i-startProcess])
+                                                i = num_sigs,
+                                                noise_rep_pair=noise_rep_pair[num_sigs - startProcess])
             
 
             # remove signatures only if the process stability is above a thresh-hold of 0.85
@@ -851,16 +727,11 @@ def sigProfilerExtractor(input_type,
                 pool.close()
                                     
                 for i in range(len(pooloutput)):
-                    
                     exposureAvg[:,i]=pooloutput[i][0] 
-                    
                 stoc = time.time()
                 print ("Optimization time is {} seconds".format(stoc-stic))    
-            
-            
             #Get total mutationation for each signature in reverse order and order the signatures from high to low mutation barden
             signature_total_mutations = np.sum(exposureAvg, axis =1).astype(int)
-            
             sorted_idx = np.argsort(-signature_total_mutations)
             processAvg = np.take(processAvg, sorted_idx, axis=1)
             exposureAvg = np.take(exposureAvg, sorted_idx, axis=0)
@@ -868,17 +739,12 @@ def sigProfilerExtractor(input_type,
             processStd=np.take(processStd, sorted_idx, axis=1)
             exposureStd=np.take(exposureStd, sorted_idx, axis=0)
             clusterSilhouetteCoefficients=np.take(clusterSilhouetteCoefficients, sorted_idx, axis=0)
-            
-            
             signature_stats = pd.DataFrame({"Stability": clusterSilhouetteCoefficients, "Total Mutations": signature_total_mutations})
             minimum_stabilities.append(round(np.mean(clusterSilhouetteCoefficients),2)) #here minimum stability is the average stability !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             # Compute the estimated genome from the processAvg and exposureAvg
             est_genomes = np.dot(processAvg, exposureAvg) 
-            
             #check the similarities between the original and estimated genome for each number of signatures
-            
             all_similarities, cosine_similarities = sub.calculate_similarities(genomes, est_genomes, colnames)
-            #print(totalMutations)
             ##########################################################################################################################################################################
             # store the resutls of the loop.  Here,  processStd and exposureStd are standard Errors, NOT STANDARD DEVIATIONS.           
             loopResults = [genomes, processAvg, exposureAvg, processStd, exposureStd, avgSilhouetteCoefficients, clusterSilhouetteCoefficients, signature_total_mutations, all_similarities, signature_stats, reconstruction_error, finalgenomeErrors, finalgenomesReconstructed, converge_information, finalWall, finalHall,  processes]    
@@ -886,67 +752,26 @@ def sigProfilerExtractor(input_type,
             
             ################################# Export the results ###########################################################    
             sub.export_information(loopResults, m, layer_directory, index, colnames, wall=wall, sequence=sequence)
-            
-          
-            
             all_similirities_list.append(all_similarities)
-                #
-            #similarity_dataframe["Total Signatures "+str(processes)] = cosine_similarities
-            
             current_time_end = datetime.datetime.now()
-            
             sysdata = open(out_put+"/JOB_METADATA.txt", "a")
             sysdata.write("\n[{}] {} de novo extraction completed for a total of {} signatures! \nExecution time:{}\n". \
                           format(str(datetime.datetime.now()).split(".")[0],mutation_type,processes,str(current_time_end-current_time_start).split(".")[0], current_time_end))
             sysdata.close()
-            
-        
-        ################################################################################################################
+
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
-        ################################################################################################################    
         # Print the Stabiltity vs Reconstruction Error as get the solution as well
         solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mtype=mutation_type, stability=stability, min_stability=min_stability, combined_stability=combined_stability)
         all_stats.insert(1, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
         all_stats=all_stats.set_index(["Signatures"])
         all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
-        
-        # add more information to results_stat.csv
-         
-        
-        #Set index for the  the Similarity Dataframe
-        #similarity_dataframe = similarity_dataframe.set_index("Sample Name")
-        
-        #Add the total mutations of each sample
-        #sample_total_mutations = list(np.sum(genomes, axis =0))
-       
-        #similarity_dataframe.insert(loc=0, column = "Total Mutations", value = sample_total_mutations)
-        
-        
-        
+
         # write the name of Samples and Matrix participating in each Layer.
         layer_genome = pd.DataFrame(genomes)
         layer_genome = layer_genome.set_index(index)
         layer_genome.columns = colnames
         layer_genome = layer_genome.rename_axis("Mutation Types", axis="columns")
-        
-        
-        
-        
-        
-# =============================================================================
-#                 data_stat_folder = output+"/Data_Stats"
-#                 try:
-#                     if not os.path.exists(data_stat_folder):
-#                         os.makedirs(data_stat_folder)
-#                 except: 
-#                         print ("The {} folder could not be created".format("Data_Stats"))
-#                 
-#                 layer_genome.to_csv(data_stat_folder+"/Samples.text", sep = "\t", index_label=[layer_genome.columns.name])
-#                 similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs.text", sep = "\t")
-#                 del layer_genome
-#                 for i in range(startProcess,endProcess+1):
-#                     all_similirities_list[i-startProcess].to_csv(data_stat_folder+"/Similatiry_Data_Sig_"+str(i)+".text", sep="\t")
-# =============================================================================
+
         # record the samples
         layer_genome.to_csv(output+"/Samples.txt", sep = "\t", index_label=[layer_genome.columns.name])
         #similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs"+str(H_iteration)+".text", sep = "\t")
@@ -959,8 +784,7 @@ def sigProfilerExtractor(input_type,
         signature_total_mutations = information[solution-startProcess][5]  
         signature_stats = information[solution-startProcess][6] 
         all_similarities = information[solution-startProcess][7]
-        
-       
+    
         # create the folder for the final solution/ De Novo Solution
         layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De-Novo_Solution"
         try:
@@ -968,31 +792,20 @@ def sigProfilerExtractor(input_type,
                 os.makedirs(layer_directory1)
         except: 
             print ("The {} folder could not be created".format("output"))
-        
+
         # make the texts for signature plotting
-       
         signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Stability", "float")
         signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
-        # make de novo solution(processAvg, allgenomes, layer_directory1)
-        
-   
-        
-        
-       
         listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_context)
         allgenomes = pd.DataFrame(allgenomes)
-        
-        
+     
         exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
                        allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
                        signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
                        signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
                        initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, \
                        de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence)    
-          
-        #try:
-        # create the folder for the final solution/ Decomposed Solution
-        
+
         layer_directory2 = output+"/Suggested_Solution/COSMIC_"+mutation_type+"_Decomposed_Solution"
         try:
             if not os.path.exists(layer_directory2):
@@ -1010,8 +823,7 @@ def sigProfilerExtractor(input_type,
             index = genomes.index
             processAvg = np.array(processAvg)
             genomes = np.array(genomes)
-            
-            
+               
         if processAvg.shape[0]==288 and collapse_to_SBS96==True: #collapse the 288 context into 96 only for the deocmposition 
             processAvg = pd.DataFrame(processAvg, index=index)
             processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
@@ -1039,27 +851,17 @@ def sigProfilerExtractor(input_type,
         background_sigs= final_signatures["background_sigs"]
         genomes = pd.DataFrame(genomes)
         
-        
         exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
                                 cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , \
                                 background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, \
                                 initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, \
                                 collapse_to_SBS96=collapse_to_SBS96,sequence=sequence,export_probabilities=export_probabilities)
         
-            
-           
-           
-    
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
     end_time = datetime.datetime.now()
     sysdata.write("\n[{}] Analysis ended: \n".format(str(end_time).split(".")[0]))
-    
     sysdata.write("\n-------Job Status------- \n")
     sysdata.write("Analysis of mutational signatures completed successfully! \nTotal execution time: "+str(end_time-start_time).split(".")[0]+" \nResults can be found in: "+" "+out_put+ " " +" folder")
     sysdata.close()
 
     print("\n\n \nYour Job Is Successfully Completed! Thank You For Using SigProfiler Extractor.\n ")
-             
-
-
-     

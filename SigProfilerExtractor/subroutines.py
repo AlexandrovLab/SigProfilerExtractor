@@ -8,7 +8,6 @@ Created on Sun Oct  7 15:21:55 2018
 from scipy.cluster import hierarchy
 import matplotlib.pyplot as plt
 plt.switch_backend('agg')
-#import nimfa 
 from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import pandas as pd
@@ -32,9 +31,7 @@ os.environ["OMP_NUM_THREADS"] = "1"
 import SigProfilerExtractor as cosmic
 from scipy.stats import  ranksums
 from SigProfilerExtractor import single_sample as ss
-#from sklearn.cluster import KMeans
 from SigProfilerExtractor import nmf_cpu
-#from sklearn.decomposition import NMF
 from sklearn import mixture
 from scipy.spatial.distance import cdist
 from scipy.spatial.distance import correlation as cor
@@ -52,28 +49,9 @@ except ImportError:
     _warnings.warn('Cannot pytorch - GPU unavailable')
 
 multiprocessing.set_start_method('spawn', force=True)
-"""################################################################## Vivid Functions #############################"""
+################################################################## Vivid Functions #############################
 
 ############################################################## FUNCTION ONE ##########################################
-
-def format_integer(number, thousand_separator=','):
-    def reverse(string):
-        string = "".join(reversed(string))
-        return string
-
-    s = reverse(str(number))
-    count = 0
-    result = ''
-    for char in s:
-        count = count + 1
-        if count % 3 == 0:
-            if len(s) == count:
-                result = char + result
-            else:
-                result = thousand_separator + char + result
-        else:
-            result = char + result
-    return result
 
 def make_letter_ids(idlenth = 10, mtype = "SBS96"):
     
@@ -100,6 +78,12 @@ def get_indeces(a, b):
     Parameters:
         a: list. where we want to get the index of the items.
         b: list. the items we want to get index of. 
+    #example: 
+    x = ['SBS1', 'SBS2', 'SBS3', 'SBS5', 'SBS8', 'SBS13', 'SBS40']
+    y = ['SBS1',  'SBS5']
+    get_indeces(x, y)
+    #result
+    >>> [1,3]
     """
 
     indeces = []
@@ -110,18 +94,8 @@ def get_indeces(a, b):
         except: 
             next
 
-    return indeces 
-
-    """
-    #example: 
-    x = ['SBS1', 'SBS2', 'SBS3', 'SBS5', 'SBS8', 'SBS13', 'SBS40']
-    y = ['SBS1',  'SBS5']
-    get_indeces(x, y)
-    #result
-    >>> [1,3]
-    """
+    return indeces
     
-
 def get_items_from_index(x,y):
     """ decipher the values of items in a list from their indices.
     """
@@ -132,16 +106,6 @@ def get_items_from_index(x,y):
         except:
             pass
     return z
-
-    """
-    #example: 
-    x = [1,3,5,8]
-    y = [1, 3]
-    get_items_from_index(x, y)
-    #result
-    >>> [3,8]
-    """
-
 
 ############################################################## FUNCTION ONE ##########################################    
 def signature_plotting_text(value, text, Type):
@@ -161,8 +125,6 @@ def signature_plotting_text(value, text, Type):
             name_list.append(name + str(i))
     return(name_list)
 
-
-############################################################## FUNCTION ONE ##########################################
 def split_list(lst, splitlenth):
     newlst = []
     for i in range(0, len(lst), splitlenth):
@@ -175,25 +137,8 @@ def split_list(lst, splitlenth):
     return newlst
 
 
-################################################################### FUNCTION ONE ###################################################################
-# Calculates elementwise standard deviations from a list of matrices 
-def mat_ave_std(matlst):
 
-    matsum = np.zeros(matlst[0].shape)
-    for i in matlst:
-        matsum = matsum+i
-    matavg = matsum/len(matlst)
-    
-    matvar=np.zeros(matlst[0].shape)
-    for i in matlst:
-        matvar = matvar+(i-matavg)**2
-    matvar= matvar/len(matlst)
-    matstd = matvar**(1/2)
-    
-    return matavg, matstd
-
-
-"""############################################## Functions for modifications of Sample Matrices ##################"""   
+############################################ Functions for modifications of Sample Matrices ############### 
 
 def get_normalization_cutoff(data, manual_cutoff=9600):
     
@@ -205,10 +150,6 @@ def get_normalization_cutoff(data, manual_cutoff=9600):
         try:
             # doing Kmean clustering
             col_sums_for_cluster = col_sums.reshape(-1,1)
-            
-            #separate distributions using kmean
-            #kmeans = KMeans(n_clusters=2, random_state=0).fit(col_sums_for_cluster)
-            #labels = kmeans.labels_
             
             #separate distributions using mixture model
             clf = mixture.GaussianMixture(n_components=2, covariance_type='full')
@@ -227,27 +168,15 @@ def get_normalization_cutoff(data, manual_cutoff=9600):
             bigger_cluster__dist_mean = np.mean(bigger_cluster__dist) 
             bigger_cluster__dist_std = np.std(bigger_cluster__dist) 
             smaller_cluster__dist_mean = np.mean(smaller_cluster__dist) 
-            #smaller_cluster__dist_std = np.std(smaller_cluster__dist) 
-            
-             
-            
-            #print("bigger_cluster__dist_mean ", bigger_cluster__dist_mean)
-            #print("bigger_cluster__dist_std ", bigger_cluster__dist_std)
-            #print("smaller_cluster__dist_mean ", smaller_cluster__dist_mean)
-            #print("smaller_cluster__dist_std ", smaller_cluster__dist_std)
-            
             # continue the loop if the differece the means is larger than the 2*STD of the larger cluster 
             
             if abs(bigger_cluster__dist_mean-smaller_cluster__dist_mean)< 2*2*bigger_cluster__dist_std:
                 break
-                
-            
             # col_sums will be equal to bigger_cluster__dist for the next iteration 
             col_sums = bigger_cluster__dist
         except:
             break
-            
-     
+
     mean = np.mean(col_sums)  
     std = np.std(col_sums)
     cutoff = (mean + 2*(std)).astype(int)
@@ -258,56 +187,50 @@ def get_normalization_cutoff(data, manual_cutoff=9600):
     return cutoff
         
 def normalize_samples(bootstrapGenomes,totalMutations,norm="100X", normalization_cutoff=10000000):
-        if norm=="gmm":
-            bootstrapGenomes = np.array(bootstrapGenomes)
-            indices = np.where(totalMutations>normalization_cutoff)[0]
-            norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
-            bootstrapGenomes[:,list(indices)] = norm_genome
-            bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-        elif norm == "100X":
+    """
+     Normalization of input data 
+    """
+
+    if norm=="gmm":
+        bootstrapGenomes = np.array(bootstrapGenomes)
+        indices = np.where(totalMutations>normalization_cutoff)[0]
+        norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*normalization_cutoff
+        bootstrapGenomes[:,list(indices)] = norm_genome
+        bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+    elif norm == "100X":
+        bootstrapGenomes = np.array(bootstrapGenomes)
+        rows = bootstrapGenomes.shape[0]
+        indices = np.where(totalMutations>(rows*100))[0]
+        norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
+        bootstrapGenomes[:,list(indices)] = norm_genome
+        bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
+    elif norm == "log2":
+        log2_of_tM = np.log2(totalMutations)
+        bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
+    elif norm == "none":
+        pass
+    else:
+        try:
             bootstrapGenomes = np.array(bootstrapGenomes)
             rows = bootstrapGenomes.shape[0]
-            indices = np.where(totalMutations>(rows*100))[0]
-            norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(rows*100)
-            bootstrapGenomes[:,list(indices)] = norm_genome
+            indices = np.where(totalMutations>int(norm))[0]
+            norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
             bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-            
-        elif norm == "log2":
-            log2_of_tM = np.log2(totalMutations)
-            bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
-        elif norm == "none":
+        except:
             pass
-        else:
-            try:
-                bootstrapGenomes = np.array(bootstrapGenomes)
-                rows = bootstrapGenomes.shape[0]
-                indices = np.where(totalMutations>int(norm))[0]
-                norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
-                bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
-            except:
-                pass
-        return bootstrapGenomes
-
-
-    
+    return bootstrapGenomes
 
 def split_samples(samples, intervals, rescaled_items, colnames):
 
     colnames = np.array(colnames)
     total_mutations = samples.sum(axis =0)
-
-    
     max_total = np.max(total_mutations)+1
-    
     intervals = np.array(intervals )
     rescaled_items = np.array(rescaled_items)
     selected_indices, = np.where(intervals<=max_total)
-    
     intervals=intervals[selected_indices]
     rescaled_items=rescaled_items[selected_indices]
-   
     rescaled_items = list(rescaled_items)
-   
     
     sample_list = []
     sample_total = []
@@ -315,7 +238,6 @@ def split_samples(samples, intervals, rescaled_items, colnames):
     rescale_values = []
     colnames_list = []
     ranges = list(intervals)+[max_total]
-    #print(ranges)
     for i in range(len(ranges)-1):    
         sub_sample, = np.where((total_mutations<=ranges[i+1]) & (total_mutations>ranges[i]))
         if samples[:,sub_sample].shape[1]>0:
@@ -324,86 +246,15 @@ def split_samples(samples, intervals, rescaled_items, colnames):
             sample_total.append(np.sum(samples[:,sub_sample], axis=0))
             rescale_list.append(rescaled_items[i])
             rescale_values.append(ranges[i])
-      
     return(sample_list, colnames_list, sample_total, rescale_list, rescale_values) 
-    
-   
+
 def denormalize_samples(genomes, original_totals, normalization_value=30000):
     normalized_totals = np.sum(genomes, axis=0)
     original_totals = np.array(original_totals)
     results = genomes/normalized_totals*original_totals
     results = np.round(results,0)
     results = results.astype(int)
-    return results 
-##################################################################################################################    
-
-"""###################################################### Fuctions for NON NEGATIVE MATRIX FACTORIZATION (NMF) #################"""
-
-def matmul(a,b):
-    return a*b
-
-
-def matdiv(a,b):
-    return a/b
-    
-
-    
-    
-    
-def inhouse_nmf(v, w=0, h=0, k=2, iterations=200000,tol=None):
-    
-    v = np.float32(v)
-    #min_v = np.min(v[v>0])
-    n,m = v.shape[0], v.shape[1]
-    EPS = np.float32(np.finfo(float).eps)
-    #h[h <= min_v] = min_v
-    #w[w <= min_v] = min_v
-    initcost = 1000000000000 # a big number
-    conv = 1
-    for i in range(iterations):
-        
-        #updata rule for h
-        x1 = np.repeat((np.sum(w,axis=0).T)[:,np.newaxis], m, axis=1)
-        #print(np.linalg.norm(x1))
-        dot1 = np.dot(w.T,(v/(np.dot(w,h))))
-        h= (h*dot1)/x1
-        #print(np.linalg.norm(h))
-        
-        #updata rule for w
-        x2 = np.repeat((np.sum(h,axis=1).T)[np.newaxis,:], n, axis=0)
-        #print(np.linalg.norm(x2))
-        dot2 =np.dot((v/(np.dot(w,h))),h.T)
-        w=(w*dot2)/x2
-        #print(np.linalg.norm(w))
-        
-        #Adjust small values every ten steps to avoid undeflow
-        if (i+1)%10==0:
-            h[h <= EPS] = EPS
-            w[w <= EPS] = EPS
-        if (i+1)%1000==0:    
-            est_v = np.dot(w, h)
-            
-            norm_v = np.linalg.norm(v)
-            norm_est_v = np.linalg.norm(est_v)
-            
-            cost = norm_est_v-norm_v
-            
-            diff = abs(initcost-cost)
-            initcost = cost
-            
-            
-            if diff <= tol:
-               #print(diff)
-               #print("diff is smaller than tol")
-               conv+=1
-               if conv==3:
-                  break
-            elif diff>tol:
-               conv =1
-    
-    
-    return w, h
-    
+    return results  
 
 def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, generator=None):
     
@@ -464,13 +315,9 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, generat
 
     return Ws, Hs, convergence
 
-
-
-
-
 def BootstrapCancerGenomes(genomes, seed=None):
     
-    """
+    '''
     index = genomes.index
     cols = genomes.columns
     genomes = np.array(genomes)
@@ -483,7 +330,8 @@ def BootstrapCancerGenomes(genomes, seed=None):
     dataframe = pd.DataFrame(genomes)
     dataframe.index = index
     dataframe.columns = cols 
-    """
+    '''
+
     #normalize the data 
     a = pd.DataFrame(genomes.sum(0))  #performing the sum of each column. variable a store the sum
     a = a.transpose()  #transfose the value so that if gets a proper dimention to normalize the data
@@ -527,15 +375,9 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
             
             bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
             totalMutations = np.sum(bootstrapGenomes, axis=0)
-            
-             
             bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
-                    
-            
             genome_list.append(bootstrapGenomes.values)
-            
-            #print(genomes.shape)
-        #print(len(genome_list))      
+                
         g = np.array(genome_list)
         
         W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters, generator=rand_rng)
@@ -551,22 +393,15 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
             results.append((_W, _H, _conv))
             print ("process " +str(totalProcesses)+" continues please wait... ")
             print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
-
         return results
 
     else:
         nmf_fn = nnmf_cpu
-       
         if resample == True:
             bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=poisson_rng)
         else:
             bootstrapGenomes=genomes
-            
-            #print(pool_constant)
-            #print(bootstrapGenomes.iloc[0,:].T)
-            #print("\n\n\n")
-            
-        
+
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
         # normalize the samples to handle the hypermutators
        
@@ -590,68 +425,8 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
         H = denormalize_samples(H, totalMutations) 
         print ("process " +str(totalProcesses)+" continues please wait... ")
         print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
-        
-        
         return W, H, kl
 
-
-
-# =============================================================================
-# def pnmf(seed=None, genomes=1, totalProcesses=1, resample=True, init="random", normalization_cutoff=10000000, gpu=False):
-#     
-#     tic = time.time()
-#     
-#     
-#     totalMutations = np.sum(genomes, axis =0)
-#     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
-#     
-#     
-#     if gpu:
-#         nmf_fn = nnmf_gpu
-#     else:
-#         nmf_fn = nnmf
-# 
-#     if resample == True:
-#         bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=seed)
-#         
-#         #print(pool_constant)
-#         #print(bootstrapGenomes.iloc[0,:].T)
-#         #print("\n\n\n")
-#         
-#         
-#         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
-#         
-#         # normalize the samples to handle the hypermutators
-#         bootstrapGenomes = np.array(bootstrapGenomes)
-#         #print(normalization_cutoff)
-#         #bootstrapGenomes = normalize_samples(bootstrapGenomes, normalize=True, all_samples=False, number=normalization_cutoff)
-#         #print(type(bootstrapGenomes))
-#         
-#         totalMutations = np.sum(bootstrapGenomes, axis=0)
-#         log2_of_tM = np.log2(totalMutations)
-#         bootstrapGenomes = bootstrapGenomes/totalMutations*log2_of_tM
-#         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init)  #uses custom function nnmf
-#         
-#     else:
-#         genomes = normalize_samples(genomes, normalize=False, all_samples=False, number=normalization_cutoff)
-#         W, H, kl = nmf_fn(genomes,totalProcesses, init= init)  #uses custom function nnmf
-#     #print ("initital W: ", W); print("\n");
-#     #print ("initial H: ", H); print("\n");
-#     W = np.array(W)
-#     H = np.array(H)
-#     total = W.sum(axis=0)[np.newaxis]
-#     #print ("total: ", total); print("\n");
-#     W = W/total
-#     H = H*total.T
-#     
-#     # denormalize H
-#     H = denormalize_samples(H, totalMutations, normalization_value=totalMutations) 
-#     print ("process " +str(totalProcesses)+" continues please wait... ")
-#     print ("execution time: {} seconds \n".format(round(time.time()-tic), 2))
-#     
-#     
-#     return W, H, kl
-# =============================================================================
 
 def parallel_runs(execution_parameters, genomes=1, totalProcesses=1, verbose = False, replicate_generators=None):
     iterations = execution_parameters["NMF_replicates"]
@@ -713,35 +488,12 @@ def parallel_runs(execution_parameters, genomes=1, totalProcesses=1, verbose = F
         pool.join()
         flat_list = result_list
     return flat_list
-# =============================================================================
-# def parallel_runs(genomes=1, totalProcesses=1, iterations=1,  n_cpu=-1, verbose = False, resample=True, seeds = None, init="random", normalization_cutoff=10000000, gpu=False):
-#     if verbose:
-#         print ("Process "+str(totalProcesses)+ " is in progress\n===================================>")
-#     if n_cpu==-1:
-#         pool = multiprocessing.Pool()
-#     else:
-#         pool = multiprocessing.Pool(processes=n_cpu)
-#         
-#     #print(seeds)
-#     pool_nmf=partial(pnmf, genomes=genomes, totalProcesses=totalProcesses, resample=resample, init=init, normalization_cutoff=normalization_cutoff, gpu=gpu)
-#     result_list = pool.map(pool_nmf, seeds) 
-#     pool.close()
-#     pool.join()
-#     
-#     return result_list
-# =============================================================================
-####################################################################################################################
 
-
-
-"""
-#############################################################################################################
 #################################### Decipher Signatures ###################################################
-#############################################################################################################
-"""
+
+
 def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=1, cpu=-1, mut_context="96", noise_rep_pair=None):
-    m = mut_context
-    
+    #m = mut_context
     tic = time.time()
     # The initial values accumute the results for each number of 
     totalMutationTypes = genomes.shape[0]
@@ -756,9 +508,7 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
     # poisson_generator is index 0, and random_generator is index 1
     replicate_generators = noise_rep_pair[:2]
     cluster_rand_seq = noise_rep_pair[2]
-
-
-    print ("Extracting signature {} for mutation type {}".format(i, m))  # m is for the mutation context
+    print ("Extracting signature {} for mutation type {}".format(totalProcesses, mut_context))  # m is for the mutation context
     
     if norm=="gmm":
         print("The matrix normalizing cutoff is {}\n\n".format(normalization_cutoff))
@@ -790,7 +540,7 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
         results = parallel_runs(execution_parameters, genomes=genomes, totalProcesses=totalProcesses, \
             verbose = False, replicate_generators=replicate_generators)
     toc = time.time()
-    print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , i, round(toc-tic, 2)))
+    print ("Time taken to collect {} iterations for {} signatures is {} seconds".format(totalIterations , totalProcesses, round(toc-tic, 2)))
     ##############################################################################################################################################################################       
     ######################################################### The parallel processing ends here ##################################################################################      
     ##############################################################################################################################################################################        
@@ -828,7 +578,7 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
 
 
 
-"""################################################################### FUNCTIONS TO CALCULATE DISTANCES BETWEEN VECTORS ###################################################################"""
+############################################################### FUNCTIONS TO CALCULATE DISTANCES BETWEEN VECTORS ##################################################
 ################################################################### FUNCTION ONE ###################################################################
 #function to calculate the cosine similarity
 def cos_sim(a, b):
@@ -891,10 +641,6 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
     for i in range(genomes.shape[1]):
         p_i = genomes[:,i]
         q_i = est_genomes[:, i]
-        #maxqp_i = np.max(np.concatenate((p_i[:,np.newaxis], q_i[:,np.newaxis]), axis=1), axis=1)
-        #p_i = p_i/np.sum(p_i)*100
-        #q_i = q_i/np.sum(q_i)*100
-        
         cosine_similarity_list.append(round(cos_sim(p_i,q_i ),3))
         kl_divergence_list.append(round(scipy.stats.entropy(p_i,q_i),5))
         correlation_list.append(round(scipy.stats.pearsonr(p_i,q_i)[0],3))
@@ -903,6 +649,7 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
         l2_norm_list.append(round(np.linalg.norm(p_i-q_i , ord=2),3))
         relative_l2_list.append(round((l2_norm_list[-1]/np.linalg.norm(p_i, ord=2))*100,3))
         total_mutations_list.append(np.sum(p_i))
+
     kl_divergence_list = np.array(kl_divergence_list)
     kl_divergence_list[kl_divergence_list == inf] =1000
     similarities_dataframe = pd.DataFrame({"Sample Names": sample_names, \
@@ -920,14 +667,14 @@ def calculate_similarities(genomes, est_genomes, sample_names=False):
 
 
 
-"""################################################################### CLUSTERING FUNCTIONS ###################################################################"""
+################################################################ CLUSTERING FUNCTIONS ################################################################
 ################################################################### FUNCTION ONE ###################################################################
 # function to calculate the centroids
 
 ################################################################### FUNCTION  ###################################################################
-def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist="cosine", gpu=False):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
+def pairwise_cluster_raw(mat1=([0]), mat2=([0]), dist="cosine"):  # the matrices (mat1 and mat2) are used to calculate the clusters and the lsts will be used to store the members of clusters
     
-    """ Takes a pair of matrices mat1 and mat2 as arguments. Both of the matrices should have the 
+    ''' Takes a pair of matrices mat1 and mat2 as arguments. Both of the matrices should have the 
     equal shapes. The function makes a partition based clustering (the number of clusters is equal 
     to the number of colums of the matrices, and not more column is assigned into a cluster from 
     a single matrix). It return the list of clusters  as "lstCluster" and the list of clusters 
@@ -942,19 +689,13 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist=
         *pairwise_cluster_elong
     
     
-    """
+    '''
 
-    
-   
-        
     if dist=="cosine":
         con_mat = cdist(mat1.T, mat2.T, "cosine")
     elif dist=="correlation":
         con_mat = cdist(mat1.T, mat2.T, "correlation")
-        
-    
-        
-    
+
     row_ind, col_ind = linear_sum_assignment(con_mat)
 
     idxPair=[]
@@ -962,11 +703,6 @@ def pairwise_cluster_raw(mat1=([0]), mat2=([0]), mat1T=([0]), mat2T=([0]), dist=
         idxPair.append([i,j])
         
     return idxPair
-         
-
-
-
-
 
 ################################################################### FUNCTION  ###################################################################
 def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosine",gpu=False):
@@ -980,20 +716,16 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
     
     for  iteration_number in range(len(idxIter)):
         
-        
-        #print(i)
         statidx = idxIter[iteration_number]
         loopidx = list(range(statidx, statidx+processes))
-        idxPair= pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], mat1T=exposureAvg, mat2T=tempHall[loopidx,:],dist=dist, gpu=gpu)
+        idxPair= pairwise_cluster_raw(mat1=processAvg, mat2=tempWall[:, loopidx], dist=dist)
         
         for cluster_items in idxPair:
             cluster_number = cluster_items[0]
             query_idx = cluster_items[1]
             processes3D[cluster_number,:,iteration_number]=tempWall[:,statidx+query_idx]
             exposure3D[cluster_number, iteration_number, :] = tempHall[statidx+query_idx,:]
-            
-    
-    
+
     count = 0
     labels=[]
     clusters = pd.DataFrame()
@@ -1003,9 +735,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
         for k in range(cluster_vectors.shape[1]):
             labels.append(count)
         count= count+1
-    
-    
-    
+
     try:
         if dist=="cosine":
             SilhouetteCoefficients = metrics.silhouette_samples(clusters, labels, metric='cosine')
@@ -1014,10 +744,7 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
         
     except:
         SilhouetteCoefficients = np.ones((len(labels),1))
-        
-        
-        
-        
+
     avgSilhouetteCoefficients = np.mean(SilhouetteCoefficients)
     
     #clusterSilhouetteCoefficients 
@@ -1034,9 +761,6 @@ def reclustering(tempWall=0, tempHall=0, processAvg=0, exposureAvg=0, dist="cosi
     
         
     return  processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
-
-
-
 
 def cluster_converge_innerloop(Wall, Hall, totalprocess, iteration_generator_pair, iteration=1, dist="cosine", gpu=False):
     
@@ -1099,13 +823,9 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
       
     return  processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
 
-
-
-
-################################### Dicompose the new signatures into global signatures   #########################
+################################### Decompose the new signatures into global signatures   #########################
 def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
-    
-    
+
     originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
         os.makedirs(directory+"/Solution_Stats")
@@ -1163,9 +883,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
     letters.extend([i+b for i in letters for b in letters])
     letters = letters[0:signatures.shape[1]]
     
-    
-     
-    
     # replace the probability data of the process matrix with the number of mutation
     for i in range(signatures.shape[1]):
         signatures[:, i] =  signatures[:, i]*5000      #(np.sum(exposureAvg[i, :]))
@@ -1198,12 +915,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                 check_rule_negatives = []
                 check_rule_penalty=1.0
             
-            #exposures, _, similarity = ss.add_signatures(sigDatabase, signatures[:,i][:,np.newaxis], presentSignatures=[], solver = "nnls", metric = "l2",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
-            #print("Exposure after adding", exposures)
-            #exposures, _, similarity = ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="l2", solver = "nnls", cutoff=0.01, background_sigs= [], verbose=False)
-            #print(exposures)
-            
-            
             _, exposures,L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(sigDatabase, 
                                                                                                          signatures[:,i], 
                                                                                                          metric="l2", 
@@ -1219,12 +930,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                                                                                                          directory = directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", 
                                                                                                          connected_sigs=connected_sigs,
                                                                                                          verbose=False)
-            #print(exposures)
-            #print("######################################################################")
-            #ss.remove_all_single_signatures(sigDatabase, exposures, signatures[:,i], metric="cosine", solver = "nnls", cutoff=0.05, background_sigs= [0,4], verbose=True)
-            #print("Expousre after remove", exposures)
-            #print("\n\n\n\n\n\n\n\n")
-        # for other contexts     
+    
         else:
             lognote = open(directory+"/Solution_Stats/Cosmic_"+mutation_context+"_Decomposition_Log.txt", "a")  
             lognote.write("\n\n\n\n######################## Decomposing "+j+" ########################\n"  )
@@ -1249,8 +955,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
         # calculate the L1 Error %
         L1dist = np.linalg.norm(signatures[:,i]-np.dot(sigDatabase,exposures) , ord=1)/np.linalg.norm(signatures[:,i], ord=1)
-        
-        #print(exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100)
         exposure_percentages = exposures[np.nonzero(exposures)]/np.sum(exposures[np.nonzero(exposures)])*100
         listofinformation = list("0"*len(np.nonzero(exposures)[0])*3)
         
@@ -1319,11 +1023,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             print("The context-" + str(mtype_par) + " decomposition plots pages were not able to be generated.")
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
-        #print(strings%(ListToTumple))
-        ##print(np.nonzero(exposures)[0])
-        ##print(similarity)
-        ##print("\n")
-        #print(strings%(ListToTumple))
         new_signature_thresh_hold = 0.8
         if  similarity>new_signature_thresh_hold and cosine_similarity_with_four_signatures > new_signature_thresh_hold: ########### minimum signtatures and cosine similarity needs to be fitted to become a unique signature 
             allsignatures = np.append(allsignatures, np.nonzero(exposures))
@@ -1366,9 +1065,6 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         globalsigmats=None
     
     newsigsmats=signatures[:,newsigmatrixidx]
-    
-    #for k, v in dictionary.items():
-        #print('{}: {}'.format(k, v))
         
     #only for SBS96
     if mtype == "96" or mtype=="288" or mtype=="1536":        
@@ -1381,27 +1077,10 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         
     # close the lognote
     lognote.close()
-    
-    
-    
-    # #delete the folder with sub_plots from the Decomposition_Polts
-    # if mtype_par!="none" and make_decomposition_plots==True:
-    #     merge_pdf(directory+"/Decomposition_Plots", directory+"/"+mutation_context+"_Decomposition_Plots" )
-    #     shutil.rmtree(directory+"/Decomposition_Plots")
-        
         
     #return values
     return {"globalsigids": list(detected_signatures), "newsigids": newsig, "globalsigs":globalsigmats, "newsigs":newsigsmats/5000, "dictionary": dictionary, 
             "background_sigs": background_sigs, "activity_percentages": activity_percentages} 
-
-
-
-
-
-
-
-
-
 
 ################################################### Generation of probabilities for each processes given to A mutation type ############################################
 def probabilities(W, H, index, allsigids, allcolnames):  
@@ -1421,22 +1100,12 @@ def probabilities(W, H, index, allsigids, allcolnames):
     for i in range(H.shape[1]): #here H.shape is the number of sample
         
         M = genomes[:,i][np.newaxis]
-        #print (M.shape)
-        
-        probs = W*H[:,i]/M.T
-        #print ("Sum of Probabilities for Sample {} is : ".format(i+1))
-        #print(probs)
-        #print ("Sum of Probabilities for Sample {} is: ".format(i+1))
-        #print(probs.sum(axis=1)[np.newaxis].T) 
-        
-        
+        probs = W*H[:,i]/M.T        
         probs = pd.DataFrame(probs)
         probs.columns = sigs
         col1 = [cols[i]]*len(rows)
         probs.insert(loc=0, column='Sample Names', value=col1)
         probs.insert(loc=1, column='MutationTypes', value = rows)
-        #print (probs)
-        #print ("\n")
         if i!=0:
             result = pd.concat([result, probs], axis=0)
         else:
@@ -1444,17 +1113,10 @@ def probabilities(W, H, index, allsigids, allcolnames):
     
         
     return result
-#########################################################################################################################################################################        
-
-
-
-
-
-"""        
+                
 ##########################################################################################################################################################################
 #################################################################### Data loading and Result Exporting  ###################################################################################
 ##########################################################################################################################################################################
-"""
 
 ########################################################### Functions to load the MATLAB OBJECTS ###################
 
@@ -1477,13 +1139,10 @@ def extract_input(data):
     types = extract_arrays(data, 'types', True)
     allFields = [cancerType, originalGenome, sampleNames, subTypes, types]
     return allFields
-########################################################################################################################
 
 ##################################### Get Input From CSV Files ##############################################
 
 def read_csv(filename, folder = False):
-    
-  
     if folder==False:
         if type(filename) == str:
             genomes = pd.read_csv(filename, sep=",").iloc[:, :]   
@@ -1500,12 +1159,6 @@ def read_csv(filename, folder = False):
             else:
                     genomes = pd.merge(genomes, df, on=["Mutation type", "Trinucleotide"])
             count += 1
-
-
-    
-
-    
-    
     mtypes = [str(genomes.shape[0])]
     
     if mtypes == ['96']:
@@ -1597,20 +1250,6 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         os.makedirs(signature_subdirectory) #processes, processSTE and SBS Plots will go here
         os.makedirs(activity_subdirectory)  #exposures, exposureSTE, TMB plot and activity plot
         os.makedirs(stats_subdirectory)     #all others
-    
-    
-    
-    #Export the loopResults as pickle objects
-    
-    #resultname = "signature"+str(i)
-    
-    # =============================================================================
-    #         f = open(output+"/pickle_objects/"+resultname, 'wb')
-    #         
-    #         pickle.dump(loopResults, f)
-    #         f.close()
-    # =============================================================================
-            
        
     #preparing the column and row indeces for the Average processes and exposures:  
     listOfSignatures = []
@@ -1622,25 +1261,16 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         listOfSignatures.append(mutation_type+l)
     listOfSignatures = np.array(listOfSignatures)
     
-    #print("print listOfSignares ok", listOfSignatures)
-        
-    
     #Extract the genomes, processAVG, processStabityAvg
     genome= loopResults[0]
-    #print ("genomes are ok", genome)
     processAvg= (loopResults[1])
     exposureAvg= (loopResults[2])
     process_stabililities = np.array(loopResults[6])
     minProcessStability= round(np.min(process_stabililities), 2) 
     meanProcessStability = round(np.mean(process_stabililities), 2)
-    #print ("processStabityAvg is ok", processStabityAvg)
-    
+
     # Calculating and listing the reconstruction error, process stability and signares to make a csv file at the end
     reconstruction_error = round(LA.norm(genome-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genome, 'fro'), 4)
-    
-    #print ("reconstruction_error is ok", reconstruction_error)
-    #print (' Initial reconstruction error is {} and the process stability is {} for {} signatures\n\n'.format(reconstruction_error, round(processStabityAvg,4), i))
-    # Preparing the results to export as textfiles for each signature
     
     #First exporting the Average of the processes
     processAvg= pd.DataFrame(processAvg)
@@ -1655,19 +1285,6 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
     exposures = exposureAvg.set_index(listOfSignatures)
     exposures.columns = colnames
-    #plot exposures
-    """for p in range(exposures.shape[0]):
-      plt.bar(colnames, exposures.iloc[p], bottom = np.sum(exposures.iloc[:p], axis = 0), label = listOfSignatures[p])
-        
-    plt.legend(loc=(1.01,0.0))
-    plt.title("Signature Activities on Samples")
-    plt.xlabel("Samples")
-    plt.ylabel("Mutation Count")
-    plt.xticks(colnames, rotation='vertical')
-    plt.tight_layout()
-    plt.savefig(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Activities_Plot.pdf", dpi=300)  
-    
-    plt.close()"""
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
     #print("exposures are ok", exposures)
@@ -1701,7 +1318,6 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     exposureSTE.to_csv(activity_subdirectory+"/"+mutation_type+"_S"+str(i)+"_NMF_Activities_SEM_Error.txt", "\t", float_format='%.2E', index_label=[exposures.columns.name]) 
     
     all_similarities = loopResults[8].copy() 
-    #all_similarities = all_similarities.replace(None, 1000)
     all_similarities['L1_Norm_%'] = all_similarities['L1_Norm_%'].astype(str) + '%'
     all_similarities['L2_Norm_%'] = all_similarities['L2_Norm_%'].astype(str) + '%'
     all_similarities.to_csv(stats_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Samples_stats.txt", sep="\t")
@@ -1753,16 +1369,6 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     else:
         custom_signatures_plot(processes, signature_subdirectory)
         
-        
-# =============================================================================
-#     processAvg = pd.read_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures_"+".txt", sep="\t", index_col=0)
-#     exposureAvg = pd.read_csv(subdirectory+"/"+mutation_type+"_S"+str(i)+"_Sig_activities.txt", sep="\t", index_col=0)
-#     probability = probabilities(processAvg, exposureAvg)
-#     probability=probability.set_index("Sample")
-#     probability.to_csv(subdirectory+"/mutation_probabilities.txt", "\t") 
-# =============================================================================
-    
-
 #############################################################################################################
 ######################################## MAKE THE FINAL FOLDER ##############################################
 #############################################################################################################
@@ -1906,16 +1512,9 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 #get the background_sig_idx for the add_remove function only for the decomposed solution:
                 if background_sigs != 0:  # in the decomposed solution only 
                     background_sig_idx = get_indeces(allsigids, ["SBS1", "SBS5"])
-                    #print(background_sig_idx)
-                
-                 
-                
-                
+               
                 # if the there is no other signatures to be added on top the existing signatures
                 try:
-                    
-                    
-                    
                     _, exposureAvg[:, r],L2dist,similarity, kldiv, correlation, cosine_similarity_with_four_signatures = ss.add_remove_signatures(processAvg, 
                                                                                                       allgenomes[:,r], 
                                                                                                       metric="l2", 
@@ -1946,35 +1545,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 except:
                     pass
             
-            
-            """
-            # add signatures
-            exposureAvg[:, r], _, similarity = ss.add_signatures(processAvg, allgenomes[:,r][:,np.newaxis], presentSignatures=copy.deepcopy(init_add_sig_idx),cutoff=penalty, metric="l2", solver = "nnls",check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
-            if verbose==True:
-                print("############################################################# After adding :")
-                print(exposureAvg[:, r])
-            #print("\n")
-            #remove signatures 
-            exposureAvg[:,r],_,_ = ss.remove_all_single_signatures(processAvg, exposureAvg[:, r], allgenomes[:,r], metric="l2", \
-                       solver = "nnls", cutoff=0.01, background_sigs= background_sig_idx, verbose=False)
-            if verbose==True:
-                print("############################################################# After Remove :")
-                print(exposureAvg[:, r])
-            
-            init_add_sig_idx = list(set().union(list(np.nonzero(exposureAvg[:, r])[0]), background_sigs))
-            #print(init_add_sig_idx)
-            
-            # add signatures
-            exposureAvg[:, r], _, similarity = ss.add_signatures(processAvg, allgenomes[:,r][:,np.newaxis], presentSignatures=copy.deepcopy(init_add_sig_idx),cutoff=penalty, metric="l2", solver = "nnls", check_rule_negatives=check_rule_negatives, check_rule_penalty=check_rule_penalty)
-            
-            if verbose==True:
-                print("############################################################# After adding :") 
-                print(exposureAvg[:, r])
-            """      
-               
     else:   
-        
-        
         # when refilt de_novo_signatures 
         if refit_denovo_signatures==True:
             exposureAvg=denovo_exposureAvg
@@ -1983,8 +1554,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 # Record information to lognote
                 lognote = open(layer_directory+"/Solution_Stats/"+solution_prefix_refit+"_Signature_Assignment_log.txt", "a")
                 lognote.write("\n\n\n\n\n                    ################ Sample "+str(g+1)+ " #################\n")
-                              
-                
+
                 lognote.write("############################# Initial Composition ####################################\n")
                 exposures = pd.DataFrame(exposureAvg[:, g],  index=allsigids).T
                 lognote.write("{}\n".format(exposures.iloc[:,exposures.to_numpy().nonzero()[1]])) 
@@ -2004,38 +1574,24 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
                 
         # when use the exposures from the initial NMF
         else:
-            
             exposureAvg=denovo_exposureAvg
-            
-        
-    
-    
-    
     
     processAvg= pd.DataFrame(processAvg.astype(float))
     processes = processAvg.set_index(index)
     processes.columns = allsigids
     processes = processes.rename_axis("MutationsType", axis="columns")
     processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
-    
-     
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
-    
     allsigids = np.array(allsigids)
     exposures = exposureAvg.set_index(allsigids)
     exposures.columns = allcolnames
-    
-    
-    
     exposures = exposures.T
     exposures = exposures.rename_axis("Samples", axis="columns")
-    
     if refit_denovo_signatures==True:
         exposures.to_csv(layer_directory+"/Activities"+"/"+solution_prefix+"_"+"Activities_refit.txt", "\t", index_label=[exposures.columns.name]) 
     else:
         exposures.to_csv(layer_directory+"/Activities"+"/"+solution_prefix+"_"+"Activities.txt", "\t", index_label=[exposures.columns.name]) 
-        
-    
+
     #plt tmb
     tmb_exposures = pd.melt(exposures)
     if refit_denovo_signatures==True:
@@ -2083,8 +1639,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
         signature_total_mutations = signature_plotting_text(signature_total_mutations, "Sig. Mutations", "integer")
         if (m == "1536" or m=="288") and collapse_to_SBS96==True: # collapse the 1536 to 96
             m = "96"  
-    
-       
+
     ########################################### PLOT THE SIGNATURES ################################################
     if m=="DINUC" or m=="78":
         plot.plotDBS(layer_directory+"/Signatures/"+solution_prefix+"_"+"Signatures.txt", layer_directory+"/Signatures"+"/" , solution_prefix, "78", True, custom_text_upper= signature_stabilities, custom_text_middle = signature_total_mutations )        
@@ -2105,9 +1660,6 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     else:
         custom_signatures_plot(processes, layer_directory+"/Signatures")
       
-        
-    #processAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Signatures.txt", sep="\t", index_col=0)
-    #exposureAvg = pd.read_csv(layer_directory+"/"+solution_type+"_"+"Activities.txt", sep="\t", index_col=0)
     
     probability = probabilities(processAvg, exposureAvg, index, allsigids, allcolnames)
     probability=probability.set_index("Sample Names" )
@@ -2121,20 +1673,13 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     if cosmic_sigs==True:
         probability.to_csv(layer_directory+"/Activities"+"/"+"Decomposed_Mutation_Probabilities.txt", "\t") 
     
-    """
-    try:
-        clusters = dendrogram(exposureAvg, 0.05, layer_directory)
-        clusters.to_csv(layer_directory+"/Cluster_of_Samples.txt", "\t") 
-    except:
-        pass
-    """
-    
+
     return exposures
-"""
+
 #############################################################################################################
 ######################################### PLOTTING FUNCTIONS ##############################################
 #############################################################################################################
-"""
+
 
 ######################################## Clustering ####################################################
 def dendrogram(data, threshold, layer_directory):
@@ -2266,18 +1811,12 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     probable_solutions = data.copy()
     avg_stability = data.iloc[:,2]
     data = data.drop(columns="avgStability")
-    
-    
-    
-    
     try: 
         alternative_solution = int(final_solution)
     except:
         alternative_solution = int(data.index[0])
         print("There is no solution over the thresh-hold minimum stability. We are selecting the minimum number of signature which could be wrong.")
 #---------------------------- alternative solution end -------------------------------------------------#
-    
-   
     # Create some mock data
     
     t = np.array(data.index).astype(int)
@@ -2285,54 +1824,32 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     #data1 = np.array(data.iloc[:,2])  #reconstruction error
     data1 = np.array(mean_cosine_dist)
     data2 = np.array(avg_stability)  #process stability
-    
-
-    
-    
     shadow_alternative_start = alternative_solution-0.2
     shadow_alternative_end=alternative_solution+0.2
-    
-    
     fig, ax1 = plt.subplots(num=None, figsize=(10, 6), dpi=300, facecolor='w', edgecolor='k')
-    
     color = 'tab:red'
     ax1.set_xlabel('Total Signatures')
     ax1.set_ylabel('Mean Sample Cosine Distance', color=color)
     ax1.set_title(title)
     lns1 = ax1.plot(t, data1, marker='o', linestyle=":", color=color, label = 'Mean Sample Cosine Distance')
-    
     ax1.tick_params(axis='y', labelcolor=color)
     ax1.xaxis.set_ticks(np.arange(min(t), max(t)+1, 1))
-    #ax1.axvspan(shadow_start, shadow_end, alpha=0.20, color='#ADD8E6')
     ax1.axvspan(shadow_alternative_start,  shadow_alternative_end, alpha=0.20, color='#696969')         
     # manipulate the y-axis values into percentage 
     vals = ax1.get_yticks()
     ax1.set_xticklabels(np.arange(min(t), max(t)+1, 1),list(), rotation=30)
-    
-    #ax1.set_yticklabels(['{:,.0}'.format(x) for x in vals])
-    
-    #ax1.legend(loc=0)
-    
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:blue'
     ax2.set_ylabel('Avg Stability', color=color)  # we already handled the x-label with ax1
     lns2 = ax2.plot(t, data2, marker='s', linestyle="-.", color=color, label = 'Avg Stability')
     ax2.tick_params(axis='y', labelcolor=color)
-    #ax2.legend(loc=1)
-    
     fig.tight_layout()  # otherwise the right y-label is slightly clipped
     #plt.show()
-    
-    # added these three lines
     lns = lns1+lns2
     labs = [l.get_label() for l in lns]
-    ax1.legend(lns, labs, loc=0)
-    
+    ax1.legend(lns, labs, loc=0)  
     plt.savefig(output+'/'+mtype+'_selection_plot.pdf')    
-    
     plt.close()
-    
-    
     #put * in the selected solution
     index = data.index.astype(int)
     index = list(index.astype(str))
@@ -2352,20 +1869,11 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     return alternative_solution, data
 ######################################## Plot Samples ####################################################
 def plot_csv_sbs_samples(filename, output_path, project, mtype="96", percentage=False, custom_text_upper=" " ):
-
-    
-    
     data, index, colnames, _ = read_csv(filename, folder = False)
     data.index.names= ["MutationType"]
     data.to_csv("new_file.text", sep="\t")
-
     plot.plotSBS("new_file.text", output_path, project, mtype, False, custom_text_upper=" ")
-    
     os.remove("new_file.text")
-    
-#plot_csv_sbs_samples("CNS-Oligo.96.csv" , "/Users/mishugeb/Desktop/new_plot", "project", mtype="96", percentage=False, custom_text_upper=" " )
-    
-    
     
 def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
     if true_sigs.shape[1]>=est_sigs.shape[1]:
@@ -2375,15 +1883,10 @@ def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
         mat1 = true_sigs
         mat2 = est_sigs
     
-    
-    
     if dist=="cos":
         con_mat = cdist(mat1.T, mat2.T, "cosine")
     elif dist=="cor":
         con_mat = cdist(mat1.T, mat2.T, "correlation")
-        
-  
-    
     row_ind, col_ind = linear_sum_assignment(con_mat)
     #print(con_mat[row_ind, col_ind].sum())
     con_mat=1-con_mat
@@ -2408,11 +1911,6 @@ def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
         
     false_positives=baseFalsePositives+computedFalsePositives
     false_negatives=baseFalseNegatives+computedFalseNegatives
-    
-    
-        
-        
-        
     number_of_ground_truth_signatures = true_sigs.shape[1]
     number_of_detected_signature = est_sigs.shape[1]
     try:
@@ -2426,8 +1924,6 @@ def evaluation(true_sigs, est_sigs, cutoff = 0.9, dist="cos", verbose=False):
     
     return number_of_ground_truth_signatures,  number_of_detected_signature, true_positives, false_positives,  false_negatives, precision, recall, f1_score, idxPair
 
-
-
 def custom_signatures_plot(signatures, output):
     with PdfPages(output+'/Custom_Signature_Plots.pdf') as pdf:
         plt.figure(figsize=(10, 3))
@@ -2438,9 +1934,6 @@ def custom_signatures_plot(signatures, output):
         plt.ylabel("Probabilities")
         pdf.savefig()  # saves the current figure into a pdf page
         plt.close()
-        
-        
-        
         for i in range(1,signatures.shape[1]):
             # if LaTeX is not installed or error caught, change to `usetex=False`
             plt.rc('text', usetex=False)
@@ -2451,11 +1944,10 @@ def custom_signatures_plot(signatures, output):
             plt.xlabel("Mutation Types")
             plt.ylabel("Probabilities")
             pdf.attach_note("signature plots")  
-                                               
             pdf.savefig()
             plt.close()
             
-            
+
 # merge the decomposition plots
 def merge_pdf(input_folder, output_file):
     pdf2merge = []
@@ -2465,8 +1957,6 @@ def merge_pdf(input_folder, output_file):
             pdf2merge.append(filename)
             
     pdf2merge.sort()
-    
-    
     pdfWriter = PyPDF2.PdfFileWriter()
     for filename in pdf2merge:
         pdfFileObj = open(input_folder+"/"+filename,'rb')
