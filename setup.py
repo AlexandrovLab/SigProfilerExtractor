@@ -27,7 +27,7 @@ Update = 'Heirarchy option deleted, clustering deleted and signatures orders by 
     fh.write(cnt % {'version': VERSION,})
     fh.close()
 requirements=[
-          'matplotlib>=3.4.2',
+          'matplotlib>=3.4.2,<=3.4.3',
           'scipy>=1.6.3',
           'torch>=1.8.1',
           'numpy>=1.21.2',
