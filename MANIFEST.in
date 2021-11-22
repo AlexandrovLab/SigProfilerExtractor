@@ -9,3 +9,4 @@ include SigProfilerExtractor/data/Reference_Signatures/rn6/*
 include SigProfilerExtractor/src/FormatFiles/*
 include SigProfilerExtractor/src/Fonts/*
 include SigProfilerExtractor/src/*
+include SigProfilerExtractor/cuda_algorithm/*

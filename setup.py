@@ -4,6 +4,8 @@ import os
 import sys
 import subprocess
 
+print("ENTERED SETUP.PY THIS IS A GOOD TEST TO SEE IF IT WORKS")
+
 #remove the dist folder first if exists
 if os.path.exists("dist"):
     shutil.rmtree("dist")
@@ -38,8 +40,9 @@ requirements=[
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
-	  'psutil>=5.6.1',
+          'psutil>=5.6.1',
           'reportlab>=3.5.42',
+          'pybind11>=2.8.1',
           'PyPDF2>=1.26.0'
            ]
 
@@ -79,3 +82,5 @@ setup(name='SigProfilerExtractor',
       install_requires=requirements,
       include_package_data=True,      
       zip_safe=False)
+
+#subprocess.Popen("make", cwd="/home/ubuntu/nov_2_updates/SigProfilerExtractor/SigProfilerExtractor/cuda_algorithm")

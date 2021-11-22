@@ -9,7 +9,7 @@ for each signature to cause a specific mutation type in a cancer sample. The too
 and SigProfilerPlotting. Detailed documentation can be found at: https://osf.io/t6j7u/wiki/home/
 
 # Table of contents
-- [Installation](#installation)
+- [CUDA GPU Branch Installation](#installation)
 - [Functions](#Functions)
   - [importdata](#importdata)
   - [sigProfilerExtractor](#sigProfilerExtractor)
@@ -21,22 +21,34 @@ and SigProfilerPlotting. Detailed documentation can be found at: https://osf.io/
 - [Contact Information](#contact)
 
 
-## <a name="installation"></a> Installation
+## <a name="installation"></a> CUDA GPU Branch Installation
 
-To install the current version of this Github repo, git clone this repo or download the zip file.
-Unzip the contents of SigProfilerExtractor-master.zip or the zip file of a corresponding branch.
+**NOTE: This branch uses a custom CUDA library for Multiplicative Updates and requires that NVIDIA V100 GPUs are used to run the code.**
+
+It is recommended that this branch be installed on Amazon Web Services (AWS) using a Deep Learning Base AMI. The following are necessary:
+   1. The GPUs are NVIDIA V100s (p3 instances)
+   2. CUDA 11.0 is installed
+
+Install CUDA 11.0 following the [AWS developer guide](https://docs.aws.amazon.com/dlami/latest/devguide/tutorial-base.html) by running the following:
+```bash
+$ sudo rm /usr/local/cuda
+$ sudo ln -s /usr/local/cuda-11.0 /usr/local/cuda
+```
+
+Install the current version of this Github repo by using git clone or downloading the zip file.
+Unzip the contents for the CUDA branch. 
 
 In the command line, please run the following:
 ```bash
-$ cd SigProfilerExtractor-master
+$ cd SigProfilerExtractor-SigProfilerExtractor_CUDA
+$ conda env create --file SigProfilerExtractor_CUDA.yml
+$ source activate 
+$ cd SigprofilerExtractor/cuda_algorithm/; make; cd -
 $ pip install .
 ```
-
-For most recent stable pypi version of this tool,
-In the command line, please run the following:
-```bash
-$ pip install SigProfilerExtractor
-```
+The environment should now be ready to run SigProfilerExtractor on V100 GPUs using the custom CUDA library. Include these two parameters to use the CUDA code:
+   1. gpu_algorithm="cuda"
+   2. gpu=True
 
 Install your desired reference genome from the command line/terminal as follows (available reference genomes are: GRCh37, GRCh38, mm9, and mm10):
 ```python
@@ -117,6 +129,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 | **Execution** |  |  |  | 
 |  | **cpu** | Integer | The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. | 
 |  | **gpu** | Boolean | Defines if the GPU resource will used if available. Default is False. If True, the GPU resources will be used in the computation. *Note: All available CPU processors are used by default, which may cause a memory error. This error can be resolved by reducing the number of CPU processes through the **cpu** parameter.*|
+|  | **gpu_algorithm** | String | Defines "cuda" to be the custom CUDA library for multiplicative updates and "torch" to be the Torch implementation. Note: The parameter GPU **must be set to True** for GPU to be used.|
 |  | **batch_size** | Integer | Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing. Default is 1. | 
 | **Solution Estimation Thresholds** |  |  |  | 
 |  | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. | 

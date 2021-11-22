@@ -41,6 +41,7 @@ from PyPDF2 import PdfFileMerger
 import warnings as _warnings
 _warnings.filterwarnings("ignore")
 from numpy.random import Generator, PCG64DXSM, SeedSequence
+from importlib import import_module
 
 try:
     import torch
@@ -264,7 +265,8 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, genera
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
     precision=execution_parameters["precision"]
-    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, init_method=init, generator=generator, floating_point_precision=precision)
+    net = nmf_cpu.NMF(genomes,rank=nfactors, min_iterations=min_iterations, max_iterations=max_iterations, \
+        tolerance=tolerance,test_conv=test_conv, init_method=init, generator=generator, floating_point_precision=precision)
     net.fit()
     Ws = []
     Hs = []
@@ -287,6 +289,47 @@ def nnmf_cpu(genomes, nfactors, init="nndsvd", execution_parameters=None, genera
     similarities = np.append(similarities, convergence)
     return W, H, similarities
 
+def nnmf_cuda(genomes, nfactors, init="nndsvd", execution_parameters=None, generator=None):
+    p = current_process()
+    identity = p._identity[0]
+    gpu_id = identity % torch.cuda.device_count()
+    genomes = genomes[0]
+    min_iterations=execution_parameters["min_NMF_iterations"]
+    max_iterations=execution_parameters["max_NMF_iterations"]
+    tolerance=execution_parameters["NMF_tolerance"]
+    test_conv=execution_parameters["NMF_test_conv"]
+    precision=execution_parameters["precision"]
+    genomes = torch.tensor(genomes)
+    if precision == "single":
+        tmp_alg = import_module("SigProfilerExtractor.cuda_algorithm.small_NMF_single")
+        net = tmp_alg.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, \
+            tolerance=tolerance, test_conv=test_conv, gpu_id=gpu_id, init_method=init, generator=generator, \
+            floating_point_precision=precision)
+    elif precision == "double":
+        tmp_alg = import_module("SigProfilerExtractor.cuda_algorithm.small_NMF_double")
+        net = tmp_alg.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, \
+            tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init, generator=generator, \
+            floating_point_precision=precision)
+    else:
+        raise ValueError("Program requires either single or double precision.")
+        
+    net.fit()
+    Ws = []
+    Hs = []
+    for H in net.H.detach().cpu().numpy():
+        Hs.append(np.matrix(H))
+    for W in net.W.detach().cpu().numpy():
+        Ws.append(np.matrix(W))
+
+    if len(Ws)==1:
+        convergence = int(net.conv)
+    else:
+        convergence = int(max_iterations)
+
+    convergence=[convergence]*len(Ws)
+
+    return Ws, Hs, convergence
+
 def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, generator=None):
     p = current_process()
     identity = p._identity[0]
@@ -297,7 +340,9 @@ def nnmf_gpu(genomes, nfactors, init="nndsvd",execution_parameters=None, generat
     tolerance=execution_parameters["NMF_tolerance"]
     test_conv=execution_parameters["NMF_test_conv"]
     precision=execution_parameters["precision"]
-    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init, generator=generator, floating_point_precision=precision)
+    net = nmf_gpu.NMF(genomes,rank=nfactors,min_iterations=min_iterations,max_iterations=max_iterations, \
+        tolerance=tolerance,test_conv=test_conv, gpu_id=gpu_id, init_method=init, generator=generator, \
+        floating_point_precision=precision)
     net.fit()
     Ws = []
     Hs = []
@@ -349,10 +394,14 @@ def BootstrapCancerGenomes(genomes, seed=None):
     return dataframe
 
 # NMF version for the multiprocessing library
-def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=True, init="nndsvd", normalization_cutoff=10000000, norm="log2", gpu=False, execution_parameters=None):
+def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, \
+    resample=True, init="nndsvd", normalization_cutoff=10000000, norm="log2", \
+    gpu=False, execution_parameters=None):
+
     tic = time.time()
     totalMutations = np.sum(genomes, axis =0)
     genomes = pd.DataFrame(genomes) #creating/loading a dataframe/matrix
+    gpu_algorithm = execution_parameters["gpu_algorithm"]
 
     # generators used for noise and matrix initialization
     poisson_generator=batch_generator_pair[1][0]
@@ -363,7 +412,10 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
     
     if gpu:
         batch_size=batch_generator_pair[0]
-        nmf_fn = nnmf_gpu
+        if gpu_algorithm == "torch":
+            nmf_fn = nnmf_gpu
+        elif gpu_algorithm == "cuda":
+            nmf_fn = nnmf_cuda
         results = []
         genome_list = []
 
@@ -382,7 +434,6 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
         
         W, H, Conv = nmf_fn(g, totalProcesses, init=init, execution_parameters=execution_parameters, generator=rand_rng)
         for i in range(len(W)):
-            
             _W = np.array(W[i])
             _H = np.array(H[i])
             total = _W.sum(axis=0)[np.newaxis]
