@@ -42,7 +42,7 @@ In the command line, please run the following:
 ```bash
 $ cd SigProfilerExtractor-SigProfilerExtractor_CUDA
 $ conda env create --file SigProfilerExtractor_CUDA.yml
-$ source activate 
+$ source activate spe_cuda
 $ cd SigprofilerExtractor/cuda_algorithm/; make; cd -
 $ pip install .
 ```
