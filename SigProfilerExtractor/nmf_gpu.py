@@ -71,8 +71,8 @@ class NMF:
         Initialise basis and coefficient matrices according to `init_method`
         """
         if init_method == 'random':
-            W = torch.unsqueeze(torch.from_numpy(self._generator.random((self._V.shape[1],self._rank), dtype=np.float64)),0).cuda()
-            H = torch.unsqueeze(torch.from_numpy(self._generator.random((self._rank, self._V.shape[2]), dtype=np.float64)),0).cuda()
+            W = torch.from_numpy(self._generator.random((self._V.shape[0], self._V.shape[1],self._rank), dtype=np.float64)).cuda()
+            H = torch.from_numpy(self._generator.random((self._V.shape[0], self._rank, self._V.shape[2]), dtype=np.float64)).cuda()
             if self._np_dtype is np.float32:
                 W = W.float()
                 H = H.float()
