@@ -64,7 +64,7 @@ class NMF:
         self._prev_loss = None
         self._iter = 0
         self._test_conv = test_conv
-        #self._gpu_id = gpu_id
+        self._gpu_id = gpu_id
         self._rank = rank
         self._generator = generator
         self._W, self._H = self._initialise_wh(init_method)
@@ -72,7 +72,8 @@ class NMF:
         self.nmf_handle = NMFHandleNew()
         # bit of a HACK: this could be created in c++
         ones = torch.ones(self._V.shape).type(self._tensor_type)
-        NMFHandleCreate(self._V.numpy()[0], self._W.numpy()[0], self._H.numpy()[0], ones.numpy()[0], self.nmf_handle)
+        NMFHandleCreate(self._V.numpy()[0], self._W.numpy()[0], \
+            self._H.numpy()[0], ones.numpy()[0], self.nmf_handle, self._gpu_id)
 
 
     def __del__(self):
@@ -157,6 +158,10 @@ class NMF:
     def generator(self):
         return self._generator
     
+    @property
+    def gpu_id(self):
+        return self._gpu_id
+
     #@property
     #def _kl_loss(self):
     #    return sum_matrix_elements((self._V * torch.from_numpy(ew_log((self._V / self.reconstruction).numpy()[0]))).numpy()[0]) - sum_matrix_elements(self._V.numpy()[0]) + sum_matrix_elements(self.reconstruction.numpy()[0])
@@ -211,7 +216,10 @@ class NMF:
             elif beta == 1:
                 ones = torch.ones(self._V.shape).type(self._tensor_type)
                 
-                self._conv = fit_loop(self._V.numpy()[0], self._W.numpy()[0], self._H.numpy()[0], ones.numpy()[0], self.nmf_handle, self._test_conv, self.max_iterations, self.min_iterations, self._tolerance)
+                self._conv = fit_loop(self._V.numpy()[0], self._W.numpy()[0], \
+                    self._H.numpy()[0], ones.numpy()[0], self.nmf_handle, \
+                    self._test_conv, self.max_iterations, self.min_iterations, \
+                    self._tolerance, self._gpu_id)
 
             else:
                 for self._iter in range(self.max_iterations):

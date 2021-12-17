@@ -57,9 +57,11 @@ void sum_matrix_elements_launch(
         cudaStream_t * stream,
         const dtype * d_C,
         dtype * d_sum,
-        int nr_rows, int nr_cols
+        int nr_rows, int nr_cols,
+        int gpu_id
     ) {
 
+    cudaSetDevice(gpu_id);
     int arraySize = nr_rows * nr_cols;
     sumCommSingleBlock<<<1, blockSize, 0, * stream>>>(d_C, d_sum, arraySize);
 }
@@ -79,57 +81,15 @@ __global__ void ew_log_kernel(dtype *C, int dx, int dy) {
 void ew_log_launch(
         cudaStream_t * stream,
         dtype * d_C,
-        int nr_rows, int nr_cols
+        int nr_rows, int nr_cols,
+        int gpu_id
     ) {
 
+    cudaSetDevice(gpu_id);
     dim3 block(block_size, block_size);  // dim3 variable holds 3 dimensions
     dim3 grid((nr_rows+block.x-1)/block.x, (nr_cols+block.y-1)/block.y);
     ew_log_kernel<<<grid, block, 0, * stream>>>(d_C, nr_rows, nr_cols);
 }
-
-
-//Function used to invoke CUDA kernels.
-py::array_t<dtype> ew_log(py::array_t<dtype> C) {
-
-    // Define shape of objects
-    int nr_rows = C.shape(0);
-    int nr_cols = C.shape(1);
-
-    // Allocate memory for restult
-    // py::array_t<dtype> C = py::array_t<dtype>({nr_rows, nr_cols});
-
-    // Get numpy buffers
-    py::buffer_info C_buf = C.request();
-
-    // Declare and allocate device variables
-    dtype * d_C;
-    cudaMalloc((void **) & d_C, nr_rows*nr_cols*sizeof(dtype));
-
-    // Obtain numpy data pointer
-    dtype * C_ptr = reinterpret_cast<dtype*>(C_buf.ptr);
-
-    // Copy host to device
-    cudaMemcpy(
-        d_C, C_ptr, nr_rows*nr_cols*sizeof(dtype), cudaMemcpyHostToDevice
-    );
-
-    cudaStream_t stream;
-    cudaStreamCreate(& stream);
-    ew_log_launch(& stream, d_C, nr_rows, nr_cols);
-    cudaDeviceSynchronize();
-
-    // Copu result into z
-    cudaMemcpy(
-        C_ptr, d_C, nr_rows*nr_cols*sizeof(dtype), cudaMemcpyDeviceToHost
-    );
-
-    // Free memory
-    cudaFree(d_C);
-
-    return C;
-}
-
-
 
 // matrix multiply element wise (naive) kernel: C = A * B (element wise)
 __global__ void ew_multiplication_kernel(const dtype *A, const dtype *B, dtype *C, int dx, int dy) {
@@ -146,9 +106,11 @@ __global__ void ew_multiplication_kernel(const dtype *A, const dtype *B, dtype *
 void ew_multiplication_launch(
         cudaStream_t * stream,
         const dtype * d_A, const dtype * d_B, dtype * d_C,
-        int nr_rows, int nr_cols
+        int nr_rows, int nr_cols,
+        int gpu_id
     ) {
 
+    cudaSetDevice(gpu_id);
     dim3 block(block_size, block_size);  // dim3 variable holds 3 dimensions
     dim3 grid((nr_rows+block.x-1)/block.x, (nr_cols+block.y-1)/block.y);
     ew_multiplication_kernel<<<grid, block, 0, * stream>>>(d_A, d_B, d_C, nr_rows, nr_cols);
@@ -169,9 +131,10 @@ __global__ void ew_division_kernel(const dtype *A, const dtype *B, dtype *C, int
 void ew_division_launch(
         cudaStream_t * stream, 
         const dtype * d_A, const dtype * d_B, dtype * d_C,
-        int nr_rows, int nr_cols
+        int nr_rows, int nr_cols, int gpu_id
     ) {
 
+    cudaSetDevice(gpu_id);
     dim3 block(ew_block_size);
     dim3 grid((nr_rows*nr_cols-1)/ew_block_size+1);
     ew_division_kernel<<<grid, block, 0, * stream>>>(d_A, d_B, d_C, nr_rows, nr_cols);
@@ -185,13 +148,15 @@ void ew_division_launch(
 void gpu_blas_mmul_rightT(
         cublasHandle_t * handle,
         dtype * C, const dtype * A, const dtype * B,
-        const int m, const int k, const int n
+        const int m, const int k, const int n, int gpu_id
     ) {
     // m is rowsA, k is colsA, n is colsB
     // lda=k <= swap row <-> column as fortran order is expected
     int lda=k, ldb=k, ldc=n;
     const dtype alpha = 1;
     const dtype beta  = 0;
+
+    cudaSetDevice(gpu_id);
 
     // cuBLAS single-precision matrix-matrix multiply
     // http://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-gemm
@@ -212,13 +177,15 @@ void gpu_blas_mmul_rightT(
 void gpu_blas_mmul_leftT(
         cublasHandle_t * handle,
         dtype * C, const dtype * A, const dtype * B,
-        const int m, const int k, const int n
+        const int m, const int k, const int n, int gpu_id
     ) {
     // m is rowsA, k is colsA, n is colsB
     // lda=k <= swap row <-> column as fortran order is expected
     int lda=m, ldb=n, ldc=n;
     const dtype alpha = 1;
     const dtype beta  = 0;
+
+    cudaSetDevice(gpu_id);
 
     // cuBLAS single-precision matrix-matrix multiply
     // http://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-gemm
@@ -239,13 +206,15 @@ void gpu_blas_mmul_leftT(
 void gpu_blas_mmul(
         cublasHandle_t * handle,
         dtype * C, const dtype * A, const dtype * B, 
-        const int m, const int k, const int n
+        const int m, const int k, const int n, int gpu_id
     ) {
 
     // lda=k <= swap row <-> column as fortran order is expected
     int lda=k, ldb=n, ldc=n;
     const dtype alpha = 1;
     const dtype beta  = 0;
+
+    cudaSetDevice(gpu_id);
 
     // cuBLAS single-precision matrix-matrix multiply
     // http://docs.nvidia.com/cuda/cublas/index.html#cublas-lt-t-gt-gemm
@@ -328,7 +297,8 @@ void NMFHandleCreate(
         py::array_t<dtype> W,
         py::array_t<dtype> H,
         py::array_t<dtype> ones,
-        ptr_wrapper<NMFHandle> nmf_handle
+        ptr_wrapper<NMFHandle> nmf_handle,
+        int gpu_id
     ) {
 
     // Define shape of objects
@@ -341,6 +311,7 @@ void NMFHandleCreate(
     int nr_rows_ones = ones.shape(0);
     int nr_cols_ones = ones.shape(1);
 
+    cudaSetDevice(gpu_id);
     cudaStreamCreate(& nmf_handle->stream);
 
     // Declare and allocate device variables
@@ -451,7 +422,8 @@ int fit_loop(
         int test_conv,
         int max_iterations,
         int min_iterations,
-        dtype tolerance
+        dtype tolerance,
+        int gpu_id
     ) {
 
 
@@ -511,24 +483,24 @@ int fit_loop(
                 //
 
                 // w @ h
-                gpu_blas_mmul(& nmf_handle->handle_c, nmf_handle->d_wh, nmf_handle->d_W, nmf_handle->d_H, nr_rows_W, nr_cols_W, nr_cols_H);
+                gpu_blas_mmul(& nmf_handle->handle_c, nmf_handle->d_wh, nmf_handle->d_W, nmf_handle->d_H, nr_rows_W, nr_cols_W, nr_cols_H, gpu_id);
                 // v / (w@h)
-                ew_division_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_wh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V);
+                ew_division_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_wh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V, gpu_id);
                 // numerator_w = v / (w@h) @ transpose(h)
-                gpu_blas_mmul_rightT(& nmf_handle->handle_a, nmf_handle->d_numerator_w, nmf_handle->d_vwh, nmf_handle->d_H, nr_rows_V, nr_cols_V, nr_rows_H);
+                gpu_blas_mmul_rightT(& nmf_handle->handle_a, nmf_handle->d_numerator_w, nmf_handle->d_vwh, nmf_handle->d_H, nr_rows_V, nr_cols_V, nr_rows_H, gpu_id);
                 // denominator_w = ones @ transpose(h)
-                gpu_blas_mmul_rightT(& nmf_handle->handle_b, nmf_handle->d_denominator_w, nmf_handle->d_ones, nmf_handle->d_H, nr_rows_ones, nr_cols_ones, nr_rows_H);
+                gpu_blas_mmul_rightT(& nmf_handle->handle_b, nmf_handle->d_denominator_w, nmf_handle->d_ones, nmf_handle->d_H, nr_rows_ones, nr_cols_ones, nr_rows_H, gpu_id);
                 // numerator_w / denominator_w
-                ew_division_launch(& nmf_handle->stream, nmf_handle->d_numerator_w, nmf_handle->d_denominator_w, nmf_handle->d_NDW, nr_rows_W, nr_cols_W);
+                ew_division_launch(& nmf_handle->stream, nmf_handle->d_numerator_w, nmf_handle->d_denominator_w, nmf_handle->d_NDW, nr_rows_W, nr_cols_W, gpu_id);
                 // update d_W
-                ew_multiplication_launch(& nmf_handle->stream, nmf_handle->d_W, nmf_handle->d_NDW, nmf_handle->d_W, nr_rows_W, nr_cols_W);
+                ew_multiplication_launch(& nmf_handle->stream, nmf_handle->d_W, nmf_handle->d_NDW, nmf_handle->d_W, nr_rows_W, nr_cols_W, gpu_id);
 
                 //--------------------------------------------------------------------------
 
 
                 // Re-calulate V/(W@H) after W has been updated
-                gpu_blas_mmul(& nmf_handle->handle_d, nmf_handle->d_wh, nmf_handle->d_W, nmf_handle->d_H, nr_rows_W, nr_cols_W, nr_cols_H);
-                ew_division_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_wh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V);
+                gpu_blas_mmul(& nmf_handle->handle_d, nmf_handle->d_wh, nmf_handle->d_W, nmf_handle->d_H, nr_rows_W, nr_cols_W, nr_cols_H, gpu_id);
+                ew_division_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_wh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V, gpu_id);
 
 
                 //__________________________________________________________________________
@@ -536,13 +508,13 @@ int fit_loop(
                 //
 
                 // numerator_h = transpose(w) @ (v / (w@h))
-                gpu_blas_mmul_leftT(& nmf_handle->handle_e, nmf_handle->d_numerator_h, nmf_handle->d_W, nmf_handle->d_vwh, nr_cols_W, nr_rows_W, nr_cols_V);
+                gpu_blas_mmul_leftT(& nmf_handle->handle_e, nmf_handle->d_numerator_h, nmf_handle->d_W, nmf_handle->d_vwh, nr_cols_W, nr_rows_W, nr_cols_V, gpu_id);
                 // denominator_h = transpose(w) @ ones
-                gpu_blas_mmul_leftT(& nmf_handle->handle_f, nmf_handle->d_denominator_h, nmf_handle->d_W, nmf_handle->d_ones, nr_cols_W, nr_rows_W, nr_cols_ones);
+                gpu_blas_mmul_leftT(& nmf_handle->handle_f, nmf_handle->d_denominator_h, nmf_handle->d_W, nmf_handle->d_ones, nr_cols_W, nr_rows_W, nr_cols_ones, gpu_id);
                 // numerator_h / denominator_h
-                ew_division_launch(& nmf_handle->stream, nmf_handle->d_numerator_h, nmf_handle->d_denominator_h, nmf_handle->d_NDH, nr_rows_H, nr_cols_H);
+                ew_division_launch(& nmf_handle->stream, nmf_handle->d_numerator_h, nmf_handle->d_denominator_h, nmf_handle->d_NDH, nr_rows_H, nr_cols_H, gpu_id);
                 // update d_H
-                ew_multiplication_launch(& nmf_handle->stream, nmf_handle->d_H, nmf_handle->d_NDH, nmf_handle->d_H, nr_rows_H, nr_cols_H);
+                ew_multiplication_launch(& nmf_handle->stream, nmf_handle->d_H, nmf_handle->d_NDH, nmf_handle->d_H, nr_rows_H, nr_cols_H, gpu_id);
 
                 cudaStreamEndCapture(nmf_handle->stream, & nmf_handle->graph);
                 cudaGraphInstantiate(& nmf_handle->instance, nmf_handle->graph, NULL, NULL, 0); 
@@ -562,25 +534,25 @@ int fit_loop(
             cudaStreamBeginCapture(nmf_handle->stream, cudaStreamCaptureModeGlobal);
 
             // create reconstruction: d_w @ d_h = d_w @ d_h
-            gpu_blas_mmul(& nmf_handle->handle_g, nmf_handle->d_wh, nmf_handle->d_W, nmf_handle->d_H, nr_rows_W, nr_cols_W, nr_cols_H);
+            gpu_blas_mmul(& nmf_handle->handle_g, nmf_handle->d_wh, nmf_handle->d_W, nmf_handle->d_H, nr_rows_W, nr_cols_W, nr_cols_H, gpu_id);
 
             // d_v / d_w @ d_h
-            ew_division_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_wh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V);
+            ew_division_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_wh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V, gpu_id);
             
             //log(d_v / d_w @ d_h)
-            ew_log_launch(& nmf_handle->stream, nmf_handle->d_vwh, nr_rows_V, nr_cols_V);
+            ew_log_launch(& nmf_handle->stream, nmf_handle->d_vwh, nr_rows_V, nr_cols_V, gpu_id);
 
             //ew multiply v * log(d_v / d_w @ d_h)
-            ew_multiplication_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_vwh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V);
+            ew_multiplication_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_vwh, nmf_handle->d_vwh, nr_rows_V, nr_cols_V, gpu_id);
 
             // sum of v*log()
-            sum_matrix_elements_launch(& nmf_handle->stream, nmf_handle->d_vwh, nmf_handle->d_sum, nr_rows_V, nr_cols_V);
+            sum_matrix_elements_launch(& nmf_handle->stream, nmf_handle->d_vwh, nmf_handle->d_sum, nr_rows_V, nr_cols_V, gpu_id);
 
             // sum of v
-            sum_matrix_elements_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_Vsum, nr_rows_V, nr_cols_V);
+            sum_matrix_elements_launch(& nmf_handle->stream, nmf_handle->d_V, nmf_handle->d_Vsum, nr_rows_V, nr_cols_V, gpu_id);
             
             // sum of reconstruction (WH)
-            sum_matrix_elements_launch(& nmf_handle->stream, nmf_handle->d_wh, nmf_handle->d_WHsum, nr_rows_V, nr_cols_V);
+            sum_matrix_elements_launch(& nmf_handle->stream, nmf_handle->d_wh, nmf_handle->d_WHsum, nr_rows_V, nr_cols_V, gpu_id);
 
             //cudagraph
             cudaStreamEndCapture(nmf_handle->stream, & nmf_handle->kl_loss_graph);
@@ -614,7 +586,7 @@ int fit_loop(
         
         //--------------------------------------------------------------------------
 
-        if(iter > (min_iterations / test_conv) && loss_converged) {
+        if(((iter + 1) >= (min_iterations / test_conv)) && loss_converged) {
             // Copy result into z -- returns result
             cudaMemcpy(
                 W_ptr, nmf_handle->d_W, nr_rows_W*nr_cols_W*sizeof(dtype), cudaMemcpyDeviceToHost
@@ -624,12 +596,20 @@ int fit_loop(
             cudaMemcpy(
                 H_ptr, nmf_handle->d_H, nr_rows_H*nr_cols_H*sizeof(dtype), cudaMemcpyDeviceToHost
             );
-
-            return iter * test_conv;
+            return (iter+1) * test_conv;
         } // check loss converged
     } // outer loop end
 
-    // if it does not converge
+    // if it does not converge copy over results and print out max iterations
+    // Copy result into z -- returns result
+    cudaMemcpy(
+        W_ptr, nmf_handle->d_W, nr_rows_W*nr_cols_W*sizeof(dtype), cudaMemcpyDeviceToHost
+    );
+
+    // Copy result into z -- returns result
+    cudaMemcpy(
+        H_ptr, nmf_handle->d_H, nr_rows_H*nr_cols_H*sizeof(dtype), cudaMemcpyDeviceToHost
+    );
     return max_iterations;
 } // fit_loop end
 
