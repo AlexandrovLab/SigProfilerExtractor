@@ -23,7 +23,7 @@ from SigProfilerExtractor import plotActivity as plot_ac
 from SigProfilerExtractor import tmbplot as tmb
 import string 
 import PyPDF2
-import os
+import os,sys
 import scipy
 os.environ["MKL_NUM_THREADS"] = "1" 
 os.environ["NUMEXPR_NUM_THREADS"] = "1" 
@@ -871,13 +871,16 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
         connected_sigs=False
         
       
-    if type(signature_database)==pd.core.frame.DataFrame:
-        
+    if signature_database != None:#pd.core.frame.DataFrame:
+        print("################## USING CUSTOM SIGNATURE DATBASE ##################")
+        signature_database= pd.read_csv(signature_database,sep="\t",index_col=0)
         if signatures.shape[0]==signature_database.shape[0]:
             sigDatabase=signature_database
             signames = sigDatabase.columns 
             #make_decomposition_plots=False
-            del signature_database    
+            del signature_database
+        else:
+            sys.exit("The Signatures and the custom signature database have different context types.")   
     sigDatabases = sigDatabase.reset_index()
     letters = list(string.ascii_uppercase)
     letters.extend([i+b for i in letters for b in letters])
