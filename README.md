@@ -228,6 +228,7 @@ decompose(signatures, activities, samples,  output, signature_database=None, nnl
 | **nnls_remove_penalty** | Float | Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample. Optional parameter. |
 | **initial_remove_penalty** | Float | Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample. Optional parameter. |
 | **genome_build** | String | The genome type. Example: "GRCh37", "GRCh38", "mm9", "mm10". The default value is "GRCh37" |
+| **signature_database** | String or None | Path to custom database. Default is None  |
 | **verbose** | Boolean | Prints statements. Default value is False.  |
         
 #### Decompose Example
@@ -237,9 +238,8 @@ signatures = "path/to/De_Novo_Solution_Signatures.txt"
 activities="path/to/De_Novo_Solution_Activities.txt"
 samples="path/to/Samples.txt"
 output="name or path/to/output"
-decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", verbose=False)
+decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", signature_database=None, verbose=False)
 ```   
-
 #### Decompose Output   
 Values:
   The files below will be generated in the output folder:
