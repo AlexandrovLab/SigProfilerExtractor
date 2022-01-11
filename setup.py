@@ -4,8 +4,6 @@ import os
 import sys
 import subprocess
 
-print("ENTERED SETUP.PY THIS IS A GOOD TEST TO SEE IF IT WORKS")
-
 #remove the dist folder first if exists
 if os.path.exists("dist"):
     shutil.rmtree("dist")
@@ -82,5 +80,3 @@ setup(name='SigProfilerExtractor',
       install_requires=requirements,
       include_package_data=True,      
       zip_safe=False)
-
-#subprocess.Popen("make", cwd="/home/ubuntu/nov_2_updates/SigProfilerExtractor/SigProfilerExtractor/cuda_algorithm")

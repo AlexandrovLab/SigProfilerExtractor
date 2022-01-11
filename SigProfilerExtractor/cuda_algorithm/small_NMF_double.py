@@ -88,49 +88,46 @@ class NMF:
         if init_method == 'random':
             W = torch.unsqueeze(torch.from_numpy(self._generator.random((self._V.shape[1],self._rank), dtype=np.float64)),0)
             H = torch.unsqueeze(torch.from_numpy(self._generator.random((self._rank, self._V.shape[2]), dtype=np.float64)),0)
-            if self._np_dtype is np.float32:
-                W = W.float()
-                H = H.float()
             return W, H
 
         elif init_method == 'nndsvd':
             # print("Using multiplicate_kl_cuda_merged_loss_foat_ew_1D nndsvd for initialization")
-            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
-            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank], order="C")
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]], order="C")
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
                 vin = np.mat(self._V.cpu().numpy()[i])
                 W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 0})
                 
         elif init_method == 'nndsvda':
-            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
-            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank], order="C")
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]], order="C")
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
                 vin = np.mat(self._V.cpu().numpy()[i])
                 W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 1})
 
         elif init_method == 'nndsvdar':
-            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
-            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank], order="C")
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]], order="C")
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
                 vin = np.mat(self._V.cpu().numpy()[i])
                 W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 2})
         elif init_method =='nndsvd_min':
-           W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
-           H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
-           nv = nndsvd.Nndsvd()
-           for i in range(self._V.shape[0]):
-               vin = np.mat(self._V.cpu().numpy()[i])
-               w, h = nv.initialize(vin, self._rank, options={'flag': 2})
-               min_X = np.min(vin[vin>0])
-               h[h <= min_X] = min_X
-               w[w <= min_X] = min_X
-               #W= np.expand_dims(W, axis=0)
-               #H = np.expand_dims(H, axis=0)
-               W[i,:,:]=w
-               H[i,:,:]=h
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank], order="C")
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]], order="C")
+            nv = nndsvd.Nndsvd()
+            for i in range(self._V.shape[0]):
+                vin = np.mat(self._V.cpu().numpy()[i])
+                w, h = nv.initialize(vin, self._rank, options={'flag': 2})
+                min_X = np.min(vin[vin>0])
+                h[h <= min_X] = min_X
+                w[w <= min_X] = min_X
+                #W= np.expand_dims(W, axis=0)
+                #H = np.expand_dims(H, axis=0)
+                W[i,:,:]=w
+                H[i,:,:]=h
         #W,H=initialize_nm(vin, nfactors, init=init, eps=1e-6,random_state=None)   
         W = torch.from_numpy(W).type(self._tensor_type)
         H = torch.from_numpy(H).type(self._tensor_type)
