@@ -120,7 +120,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **seeds** | String | It can be used to get reproducible resamples for the NMF replicates. A path of a tab separated .txt file containing the replicated id and preset seeds in a two columns dataframe can be passed through this parameter. The Seeds.txt file in the results folder from a previous analysis can be used for the seeds parameter in a new analysis. The Default value for this parameter is "random". When "random", the seeds for resampling will be random for different analysis. | 
 | **NMF Engines** |  |  |  | 
 |  | **matrix_normalization** | String | Method of normalizing the genome matrix before it is analyzed by NMF. Default is value is "gmm". Other options are, "log2", "custom" or "none". | 
-|  | **nmf_init** | String | The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'. Default is 'nndsvd_min'. | 
+|  | **nmf_init** | String | The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'. Default is 'random'. | 
 |  | **precision** | String | Values should be single or double. Default is single. | 
 |  | **min_nmf_iterations** | Integer | Value defines the minimum number of iterations to be completed before NMF converges. Default is 10000. | 
 |  | **max_nmf_iterations** | Integer | Value defines the maximum number of iterations to be completed before NMF converges. Default is 1000000. | 
@@ -236,6 +236,7 @@ decompose(signatures, activities, samples,  output, signature_database=None, nnl
 | **activities** | String | Path to a tab delimilted file that contains the activity table where the rows are sample IDs and colunms are signature IDs. |
 | **samples** | String | Path to a tab delimilted file that contains the activity table where the rows are mutation types and colunms are sample IDs. |
 | **output** | String | Path to the output folder. |
+| **signature_database** | String or None | Path to custom database. Default is None  |
 | **de_novo_fit_penalty** | Float | Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to be assigned denovo signatures to a sample. Optional parameter. |
 | **nnls_add_penalty** | Float | Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample. Optional parameter. |
 | **nnls_remove_penalty** | Float | Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample. Optional parameter. |
@@ -250,9 +251,8 @@ signatures = "path/to/De_Novo_Solution_Signatures.txt"
 activities="path/to/De_Novo_Solution_Activities.txt"
 samples="path/to/Samples.txt"
 output="name or path/to/output"
-decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", verbose=False)
+decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", signature_database=None, verbose=False)
 ```   
-
 #### Decompose Output   
 Values:
   The files below will be generated in the output folder:
