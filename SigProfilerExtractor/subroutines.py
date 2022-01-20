@@ -824,7 +824,7 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
     return  processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
 
 ################################### Decompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None,new_signature_thresh_hold = 0.8):
 
     originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
@@ -1026,7 +1026,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             print("The context-" + str(mtype_par) + " decomposition plots pages were not able to be generated.")
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
-        new_signature_thresh_hold = 0.8
+        #new_signature_thresh_hold = 0.8
         if  similarity>new_signature_thresh_hold and cosine_similarity_with_four_signatures > new_signature_thresh_hold: ########### minimum signtatures and cosine similarity needs to be fitted to become a unique signature 
             allsignatures = np.append(allsignatures, np.nonzero(exposures))
             fh = open(directory+"/De_Novo_map_to_COSMIC_"+mutation_context+".csv", "a")

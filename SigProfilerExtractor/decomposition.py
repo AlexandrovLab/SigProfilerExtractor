@@ -18,7 +18,7 @@ import os
 def decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, 
               nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, 
               genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, 
-              collapse_to_SBS96=True,connected_sigs=True, verbose=False):
+              collapse_to_SBS96=True,connected_sigs=True, verbose=False, newsignature_threshold=0.8):
 
     
     """
@@ -155,7 +155,7 @@ def decompose(signatures, activities, samples,  output, signature_database=None,
         processAvg = np.array(processAvg)
             
     
-    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=0.05, connected_sigs=connected_sigs,remove_penalty=0.01, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)    
+    final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build,signature_database=signature_database, mutation_context=mutation_context, add_penalty=0.05, connected_sigs=connected_sigs,remove_penalty=0.01, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg,new_signature_thresh_hold = newsignature_threshold)    
     #final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build)
     # extract the global signatures and new signatures from the final_signatures dictionary
     globalsigs = final_signatures["globalsigs"]
