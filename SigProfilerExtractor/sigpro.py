@@ -724,7 +724,10 @@ def sigProfilerExtractor(input_type,
             # remove signatures only if the process stability is above a thresh-hold of 0.85
             if  avgSilhouetteCoefficients> -1.0:   
                 stic = time.time() 
-                pool = mp.Pool()
+                if cpu > 0:
+                    pool = mp.Pool(processes=cpu)
+                else:
+                    pool = mp.Pool()
                 results = [pool.apply_async(ss.fit_signatures_pool, args=(genomes,processAvg,x,)) for x in range(genomes.shape[1])]
                 pooloutput = [p.get() for p in results]
                 pool.close()

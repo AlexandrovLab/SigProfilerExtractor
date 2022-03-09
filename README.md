@@ -227,7 +227,7 @@ The files below will be generated in the output folder:
 Decomposes the De Novo Signatures into COSMIC Signatures and assigns COSMIC signatures into samples
 
 ```python 
-decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False)
+decompose(signatures, activities, samples,  output, signature_database=None, nnls_add_penalty=0.05, nnls_remove_penalty=0.01, initial_remove_penalty=0.05, de_novo_fit_penalty=0.02, genome_build="GRCh37", refit_denovo_signatures=True, make_decomposition_plots=True, connected_sigs=True, verbose=False,collapse_to_SBS96=True,newsignature_threshold=0.8)
 ``` 
 
 | Parameter | Variable Type | Parameter Description |
@@ -243,6 +243,9 @@ decompose(signatures, activities, samples,  output, signature_database=None, nnl
 | **initial_remove_penalty** | Float | Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample. Optional parameter. |
 | **genome_build** | String | The genome type. Example: "GRCh37", "GRCh38", "mm9", "mm10". The default value is "GRCh37" |
 | **verbose** | Boolean | Prints statements. Default value is False.  |
+| **collapse_to_SBS96** | Boolean |  It collapses the signatures of context type 288 and 1536 to 96. Use False if your custom signature database is 288 or 1536 and signatures are also of the same context type other than 96. Default value is True. |
+| **newsignature_threshold** | Float |  Threshold on cosine similarity to assign a new signature. Default value is 0.8. |
+
         
 #### Decompose Example
 ```python 
@@ -251,7 +254,7 @@ signatures = "path/to/De_Novo_Solution_Signatures.txt"
 activities="path/to/De_Novo_Solution_Activities.txt"
 samples="path/to/Samples.txt"
 output="name or path/to/output"
-decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", signature_database=None, verbose=False)
+decomp.decompose(signatures, activities, samples, output, genome_build="GRCh37", signature_database=None, verbose=False,collapse_to_SBS96=True)
 ```   
 #### Decompose Output   
 Values:

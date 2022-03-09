@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.4'
+VERSION = '1.1.5'
 
 
 with open('README.md') as f:
@@ -61,7 +61,7 @@ if operating_system  in ['win32','cygwin','windows']:
             if code != 0:
                 raise Exception('Torch instalation failed !')
         except:
-            print('Failed to install pytroch, please install pytroch manually be following the simple instructions over at: https://pytorch.org/get-started/locally/')
+            print('Failed to install pytorch, please install pytorch manually be following the simple instructions over at: https://pytorch.org/get-started/locally/')
     if code == 0:
         print('Successfully installed pytorch version! (If you need the GPU version, please install it manually, checkout the mindsdb docs and the pytroch docs if you need help)')
     

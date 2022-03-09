@@ -619,7 +619,8 @@ def decipher_signatures(execution_parameters, genomes=[0], i=1, totalIterations=
     
     processes=i #renamed the i as "processes"    
     processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients = \
-        cluster_converge_outerloop(Wall, Hall, processes, dist=dist, gpu=gpu, cluster_rand_seq=cluster_rand_seq)
+        cluster_converge_outerloop(Wall, Hall, processes, dist=dist, gpu=gpu,
+                                   cluster_rand_seq=cluster_rand_seq, n_cpu=execution_parameters["cpu"])
     reconstruction_error = round(LA.norm(genomes-np.dot(processAvg, exposureAvg), 'fro')/LA.norm(genomes, 'fro'), 2)   
     
 
@@ -857,12 +858,15 @@ def parallel_clustering(Wall, Hall, totalProcesses, iterations=50,  n_cpu=-1, di
     return result_list
 
 # To select the best clustering converge of the cluster_converge_innerloop
-def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=False, cluster_rand_seq=None):
+def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine",
+                               gpu=False, cluster_rand_seq=None, n_cpu=-1):
     
     avgSilhouetteCoefficients = -1  # intial avgSilhouetteCoefficients 
     
     #do the parallel clustering 
-    result_list = parallel_clustering(Wall, Hall, totalprocess, iterations=50,  n_cpu=-1,  dist=dist, gpu=gpu, cluster_rand_seq=cluster_rand_seq)
+    result_list = parallel_clustering(Wall, Hall, totalprocess, iterations=50,
+                                      n_cpu=n_cpu,  dist=dist, gpu=gpu,
+                                      cluster_rand_seq=cluster_rand_seq)
     
     for i in range(50):  # using 10 iterations to get the best clustering 
         
@@ -875,7 +879,7 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine", gpu=Fals
     return  processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
 
 ################################### Decompose the new signatures into global signatures   #########################
-def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None):
+def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37", cosmic_version=3.2,signature_database=None, add_penalty=0.05, remove_penalty=0.01, mutation_context=None, connected_sigs=True, make_decomposition_plots=True, originalProcessAvg=None,new_signature_thresh_hold = 0.8):
 
     originalProcessAvg = originalProcessAvg.reset_index()
     if not os.path.exists(directory+"/Solution_Stats"):
@@ -1077,7 +1081,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
             print("The context-" + str(mtype_par) + " decomposition plots pages were not able to be generated.")
         
         strings ="Signature %s-%s,"+" Signature %s (%0.2f%s) &"*(len(np.nonzero(exposures)[0])-1)+" Signature %s (%0.2f%s), %0.2f,  %0.2f, %0.3f, %0.2f, %0.2f\n" 
-        new_signature_thresh_hold = 0.8
+        #new_signature_thresh_hold = 0.8
         if  similarity>new_signature_thresh_hold and cosine_similarity_with_four_signatures > new_signature_thresh_hold: ########### minimum signtatures and cosine similarity needs to be fitted to become a unique signature 
             allsignatures = np.append(allsignatures, np.nonzero(exposures))
             fh = open(directory+"/De_Novo_map_to_COSMIC_"+mutation_context+".csv", "a")
