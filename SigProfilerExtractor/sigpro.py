@@ -406,7 +406,7 @@ def sigProfilerExtractor(input_type,
     genome_build  = opportunity_genome
     refgen        = reference_genome
 
-    #set the squence type ("genome" or "exome") for the tmb plot inside the make_final_solution function
+    #set the sequence type ("genome" or "exome") for selection criteria and tmb plot inside the make_final_solution function
     if exome==False:
         sequence="genome"
     if exome==True:
@@ -764,7 +764,7 @@ def sigProfilerExtractor(input_type,
 
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
         # Print the Stabiltity vs Reconstruction Error as get the solution as well
-        solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mtype=mutation_type, stability=stability, min_stability=min_stability, combined_stability=combined_stability)
+        solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mtype=mutation_type, stability=stability, min_stability=min_stability, combined_stability=combined_stability, sequence=sequence)
         all_stats.insert(1, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
         all_stats=all_stats.set_index(["Signatures"])
         all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")

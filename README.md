@@ -167,14 +167,15 @@ To learn about the output, please visit https://osf.io/t6j7u/wiki/home/
 Estimate the optimum solution (rank) among different number of solutions (ranks). 
 
 ```python
-ebs.estimate_solution(base_csvfile="All_solutions_stat.csv", 
+estimate_solution(base_csvfile="All_solutions_stat.csv", 
           All_solution="All_Solutions", 
           genomes="Samples.txt", 
           output="results", 
           title="Selection_Plot",
           stability=0.8, 
           min_stability=0.2, 
-          combined_stability=1.25)
+          combined_stability=1.25,
+          exome=False)
 ```  
     
 | Parameter | Variable Type | Parameter Description |
@@ -187,6 +188,8 @@ ebs.estimate_solution(base_csvfile="All_solutions_stat.csv",
 | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. |
 | **min_stability** | Float | Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. |
 | **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. |
+| **exome** | Boolean | Default is "False". Defines if exomes samples are used. | 
+
         
 #### Estimation of the Optimum Solution Example
 ```python 
@@ -198,7 +201,8 @@ ebs.estimate_solution(base_csvfile="All_solutions_stat.csv",
           title="Selection_Plot",
           stability=0.8, 
           min_stability=0.2, 
-          combined_stability=1.25)
+          combined_stability=1.25,
+          exome=False)
 ```                
 
 #### Estimation of the Optimum Solution Output

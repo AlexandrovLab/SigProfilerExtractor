@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.5'
+VERSION = '1.1.6'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Heirarchy option deleted, clustering deleted and signatures orders by the mutation burden'
+Update = 'Update normalization, selection and default NMF replicates'
     
     """
     fh = open(filename, 'w')
