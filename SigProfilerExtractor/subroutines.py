@@ -215,6 +215,7 @@ def normalize_samples(bootstrapGenomes,totalMutations,norm="100X", normalization
             rows = bootstrapGenomes.shape[0]
             indices = np.where(totalMutations>int(norm))[0]
             norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
+            bootstrapGenomes[:,list(indices)] = norm_genome
             bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
         except:
             pass
@@ -401,17 +402,18 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, resample=Tr
             bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=poisson_rng)
         else:
             bootstrapGenomes=genomes
-
+        
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+        bootstrapGenomes = bootstrapGenomes.astype(float)
+
         # normalize the samples to handle the hypermutators
        
         totalMutations = np.sum(bootstrapGenomes, axis=0)
-        
-        #print(normalization_cutoff)
+
         bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
-            
+
         bootstrapGenomes=np.array(bootstrapGenomes)
-    
+
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters, generator=rand_rng)  #uses custom function nnmf
         
         
