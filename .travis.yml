@@ -5,6 +5,8 @@ python:
   - '3.7'
 
 install:
+  - pip install torch
   - pip install .
+
 
 script: python3 test.py
