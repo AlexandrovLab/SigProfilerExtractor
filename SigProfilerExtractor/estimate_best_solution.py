@@ -22,7 +22,8 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
                     min_stability=0.2, 
                     combined_stability=1.0,
                     statistics=True,
-                    select=None):
+                    select=None,
+                    exome=False):
     
     
     
@@ -42,7 +43,13 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
         mtype="CNV48"
     else:
         mtype="SBS"+str(genomes.shape[0])
-    
+
+    #set the squence type ("genome" or "exome") for selection criteria
+    if exome==False:
+        sequence="genome"
+    if exome==True:
+        sequence="exome"
+
     #prepare the csvfile
     csvfile=np.zeros([len(signatures),4])
     csvfile=csvfile
@@ -84,7 +91,8 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
                                           combined_stability=combined_stability, 
                                           mtype=mtype,
                                           statistics=statistics,
-                                          select=select)
+                                          select=select,
+                                          sequence=sequence)
     
     all_stats.insert(1, 'Stability (Avg Silhouette)', csvfile["avgStability"]) 
     all_stats=all_stats.set_index(["Signatures"])

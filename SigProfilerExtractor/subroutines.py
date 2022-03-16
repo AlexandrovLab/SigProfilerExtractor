@@ -216,6 +216,7 @@ def normalize_samples(bootstrapGenomes,totalMutations,norm="100X", normalization
             rows = bootstrapGenomes.shape[0]
             indices = np.where(totalMutations>int(norm))[0]
             norm_genome = bootstrapGenomes[:,list(indices)]/totalMutations[list(indices)][:,np.newaxis].T*(int(norm))
+            bootstrapGenomes[:,list(indices)] = norm_genome
             bootstrapGenomes = pd.DataFrame(bootstrapGenomes)
         except:
             pass
@@ -452,17 +453,18 @@ def pnmf(batch_generator_pair=[1,None], genomes=1, totalProcesses=1, \
             bootstrapGenomes= BootstrapCancerGenomes(genomes, seed=poisson_rng)
         else:
             bootstrapGenomes=genomes
-
+        
         bootstrapGenomes[bootstrapGenomes<0.0001]= 0.0001
+        bootstrapGenomes = bootstrapGenomes.astype(float)
+
         # normalize the samples to handle the hypermutators
        
         totalMutations = np.sum(bootstrapGenomes, axis=0)
-        
-        #print(normalization_cutoff)
+
         bootstrapGenomes=normalize_samples(bootstrapGenomes,totalMutations,norm=norm, normalization_cutoff=normalization_cutoff)
-            
+
         bootstrapGenomes=np.array(bootstrapGenomes)
-    
+
         W, H, kl = nmf_fn(bootstrapGenomes,totalProcesses, init=init, execution_parameters=execution_parameters, generator=rand_rng)  #uses custom function nnmf
         
         
@@ -1764,7 +1766,7 @@ def dendrogram(data, threshold, layer_directory):
 
 
 ######################################## Plot the reconstruction error vs stabilities and select the optimum number of signature ####################################################   
-def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= "", statistics=True, select=None):
+def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= "", statistics=True, select=None, sequence="genome"):
     
     if input_type=="csvfile":
         data = pd.read_csv(csvfile, sep=",")
@@ -1835,9 +1837,14 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
             current_l2_dist = all_similarities["L2_Norm_%"]
             current_mean = all_similarities["L2_Norm_%"].median()
             wiltest = ranksums(np.array(init_l2_dist), np.array(current_l2_dist))[1]
+            # p_value threshold for wiltest
+            if sequence=="exome":
+                wiltest_thr = 1.0
+            else:
+                wiltest_thr = 0.05
             probabilities[idx_within_thresh_hold]="{:.2e}".format(wiltest)
             stable_solutions[idx_within_thresh_hold]="YES"
-            if (wiltest<0.05) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
+            if (wiltest<wiltest_thr) and (current_mean-init_mean>0) or idx_within_thresh_hold==0:
                 final_solution=signatures_within_thresh_hold+(list_of_idx_over_thresh_hold[strating_idx]-list_of_idx_over_thresh_hold[strating_idx-1]) #select the previous stable signatures
                 break
             strating_idx=strating_idx-1
