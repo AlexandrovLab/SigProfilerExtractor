@@ -1,4 +1,5 @@
-from setuptools import setup
+from setuptools import setup, Extension
+from torch.utils.cpp_extension import BuildExtension, CUDAExtension
 import shutil
 import os
 import sys
@@ -8,7 +9,16 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.6'
+VERSION = '1.1.7'
+
+# Determine if CUDA code can be installed on system.
+cuda_ready = False
+try:
+    subprocess.check_output('nvidia-smi')
+    cuda_ready=True
+    print('Nvidia GPU and drivers are available.')
+except Exception: # this command not being found can raise quite a few different errors depending on the configuration
+    print('Nvidia GPU and drivers are not available. CUDA code can not be used at this time.')
 
 
 with open('README.md') as f:
@@ -41,7 +51,8 @@ requirements=[
           'psutil>=5.6.1',
           'reportlab>=3.5.42',
           'pybind11>=2.8.1',
-          'PyPDF2>=1.26.0'
+          'PyPDF2>=1.26.0',
+          'ninja>=1.10.2.3'
            ]
 
 operating_system = sys.platform   
@@ -54,12 +65,12 @@ if operating_system  in ['win32','cygwin','windows']:
     try:
         code = subprocess.call(['pip', 'install', 'torch===1.5.1+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
         if code != 0:
-            raise Exception('Torch  instalation failed !')
+            raise Exception('Torch  installation failed !')
     except:
         try:
             code = subprocess.call(['pip3', 'install', 'torch===1.5.1+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
             if code != 0:
-                raise Exception('Torch instalation failed !')
+                raise Exception('Torch installation failed!')
         except:
             print('Failed to install pytorch, please install pytorch manually be following the simple instructions over at: https://pytorch.org/get-started/locally/')
     if code == 0:
@@ -67,16 +78,41 @@ if operating_system  in ['win32','cygwin','windows']:
     
     
 write_version_py()
-setup(name='SigProfilerExtractor',
-      version=VERSION,
-      description='Extracts mutational signatures from mutational catalogues',
-      long_description=long_description,
-      long_description_content_type='text/markdown',  # This is important!	
-      url="https://github.com/AlexandrovLab/SigProfilerExtractor.git",
-      author='S Mishu Ashiqul Islam',
-      author_email='m0islam@ucsd.edu',
-      license='UCSD',
-      packages=['SigProfilerExtractor'],
-      install_requires=requirements,
-      include_package_data=True,      
-      zip_safe=False)
+
+# Installation with CUDA code
+if cuda_ready:
+    setup(name='SigProfilerExtractor',
+        version=VERSION,
+        description='Extracts mutational signatures from mutational catalogues',
+        long_description=long_description,
+        long_description_content_type='text/markdown',  # This is important!
+        url="https://github.com/AlexandrovLab/SigProfilerExtractor.git",
+        author='S Mishu Ashiqul Islam',
+        author_email='m0islam@ucsd.edu',
+        license='UCSD',
+        packages=['SigProfilerExtractor'],
+        install_requires=requirements,
+        include_package_data=True,
+        ext_modules=[
+                    CUDAExtension(
+                        name="SigProfilerExtractor/cuda_algorithm/cuda_nmf_single",
+                        sources=["SigProfilerExtractor/cuda_algorithm/cuda_nmf_single.cu"]),
+                    CUDAExtension(
+                        name="SigProfilerExtractor/cuda_algorithm/cuda_nmf_double",
+                        sources=["SigProfilerExtractor/cuda_algorithm/cuda_nmf_double.cu"])],
+        cmdclass={'build_ext': BuildExtension},
+        zip_safe=False)
+else:
+    setup(name='SigProfilerExtractor',
+        version=VERSION,
+        description='Extracts mutational signatures from mutational catalogues',
+        long_description=long_description,
+        long_description_content_type='text/markdown',  # This is important!
+        url="https://github.com/AlexandrovLab/SigProfilerExtractor.git",
+        author='S Mishu Ashiqul Islam',
+        author_email='m0islam@ucsd.edu',
+        license='UCSD',
+        packages=['SigProfilerExtractor'],
+        install_requires=requirements,
+        include_package_data=True,
+        zip_safe=False)

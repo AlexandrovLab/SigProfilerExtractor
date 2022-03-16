@@ -134,6 +134,8 @@ def record_parameters(sysdata, execution_parameters, start_time):
         sysdata.write("\tcpu: {}; Maximum number of CPU is {}\n".format(execution_parameters["cpu"], multiprocessing.cpu_count()))
 
     sysdata.write("\tgpu: {}\n".format(execution_parameters["gpu"]))
+    if execution_parameters["gpu"]:
+        sysdata.write("\tgpu_algorithm: {}\n".format(execution_parameters["gpu_algorithm"]))
     sysdata.write("Solution Estimation\n")
     sysdata.write("\tstability: {}\n".format(execution_parameters["stability"]))
     sysdata.write("\tmin_stability: {}\n".format(execution_parameters["min_stability"]))
@@ -141,7 +143,7 @@ def record_parameters(sysdata, execution_parameters, start_time):
     
     sysdata.write("COSMIC MATCH\n")
     sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
-    sysdata.write("\cosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
+    sysdata.write("\tcosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
     sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
     sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
     sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
