@@ -44,6 +44,9 @@ from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as
 import multiprocessing as mp
 import SigProfilerExtractor as cosmic
 from SigProfilerExtractor import single_sample as ss
+import SigProfilerAssignment as spa
+from SigProfilerAssignment import decomposition as decomp
+from SigProfilerAssignment import Analyzer as Analyze
 from numpy.random import SeedSequence
 import pdb
 def memory_usage():
@@ -787,78 +790,98 @@ def sigProfilerExtractor(input_type,
         signature_total_mutations = information[solution-startProcess][5]  
         signature_stats = information[solution-startProcess][6] 
         all_similarities = information[solution-startProcess][7]
-    
-        # create the folder for the final solution/ De Novo Solution
-        layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De-Novo_Solution"
-        try:
-            if not os.path.exists(layer_directory1):
-                os.makedirs(layer_directory1)
-        except: 
-            print ("The {} folder could not be created".format("output"))
 
-        # make the texts for signature plotting
         signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Stability", "float")
         signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
         listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_context)
-        allgenomes = pd.DataFrame(allgenomes)
-     
-        exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
-                       allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
-                       signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
-                       signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
-                       initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, \
-                       de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence)    
 
+        layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De-Novo_Solution"
         layer_directory2 = output+"/Suggested_Solution/COSMIC_"+mutation_type+"_Decomposed_Solution"
-        try:
-            if not os.path.exists(layer_directory2):
-                os.makedirs(layer_directory2)
-        except: 
-            print ("The {} folder could not be created".format("output"))
+        devopts={}
+        devopts['denovo_outpath'] =  layer_directory1
+        devopts['decompose_outpath'] = layer_directory2
+        devopts['Assignment_outpath'] =layer_directory2
+        devopts['signature_stabilities']=signature_stabilities
+        devopts['signature_total_mutations']=signature_total_mutations
+        devopts['listOfSignatures']=listOfSignatures
+        devopts['index']=index
+        devopts['colnames']=allcolnames
+
+        decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build="GRCh37", verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=True,devopts=devopts)
+
+
+    
+        # # create the folder for the final solution/ De Novo Solution
+        # layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De-Novo_Solution"
+        # try:
+        #     if not os.path.exists(layer_directory1):
+        #         os.makedirs(layer_directory1)
+        # except: 
+        #     print ("The {} folder could not be created".format("output"))
+
+        # # make the texts for signature plotting
+        # signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Stability", "float")
+        # signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
+        # listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_context)
+        # allgenomes = pd.DataFrame(allgenomes)
+     
+        # exposureAvg = sub.make_final_solution(processAvg, allgenomes, listOfSignatures, layer_directory1, m, index, \
+        #                allcolnames, process_std_error = processSTE, signature_stabilities = signature_stabilities, \
+        #                signature_total_mutations = signature_total_mutations,denovo_exposureAvg  = exposureAvg, \
+        #                signature_stats = signature_stats, add_penalty=add_penalty, remove_penalty=remove_penalty, \
+        #                initial_remove_penalty=initial_remove_penalty, refit_denovo_signatures=refit_denovo_signatures, \
+        #                de_novo_fit_penalty=de_novo_fit_penalty, sequence=sequence)    
+
+        # layer_directory2 = output+"/Suggested_Solution/COSMIC_"+mutation_type+"_Decomposed_Solution"
+        # try:
+        #     if not os.path.exists(layer_directory2):
+        #         os.makedirs(layer_directory2)
+        # except: 
+        #     print ("The {} folder could not be created".format("output"))
             
-        originalProcessAvg=pd.DataFrame(processAvg, index=index)
+        # originalProcessAvg=pd.DataFrame(processAvg, index=index)
         
-        if processAvg.shape[0]==1536 and collapse_to_SBS96==True: #collapse the 1596 context into 96 only for the deocmposition 
-            processAvg = pd.DataFrame(processAvg, index=index)
-            processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
-            genomes = pd.DataFrame(genomes, index=index)
-            genomes = genomes.groupby(genomes.index.str[1:8]).sum()
-            index = genomes.index
-            processAvg = np.array(processAvg)
-            genomes = np.array(genomes)
+        # if processAvg.shape[0]==1536 and collapse_to_SBS96==True: #collapse the 1596 context into 96 only for the deocmposition 
+        #     processAvg = pd.DataFrame(processAvg, index=index)
+        #     processAvg = processAvg.groupby(processAvg.index.str[1:8]).sum()
+        #     genomes = pd.DataFrame(genomes, index=index)
+        #     genomes = genomes.groupby(genomes.index.str[1:8]).sum()
+        #     index = genomes.index
+        #     processAvg = np.array(processAvg)
+        #     genomes = np.array(genomes)
                
-        if processAvg.shape[0]==288 and collapse_to_SBS96==True: #collapse the 288 context into 96 only for the deocmposition 
-            processAvg = pd.DataFrame(processAvg, index=index)
-            processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
-            genomes = pd.DataFrame(genomes, index=index)
-            genomes = genomes.groupby(genomes.index.str[2:9]).sum()
-            index = genomes.index
-            processAvg = np.array(processAvg)
-            genomes = np.array(genomes)
+        # if processAvg.shape[0]==288 and collapse_to_SBS96==True: #collapse the 288 context into 96 only for the deocmposition 
+        #     processAvg = pd.DataFrame(processAvg, index=index)
+        #     processAvg = processAvg.groupby(processAvg.index.str[2:9]).sum()
+        #     genomes = pd.DataFrame(genomes, index=index)
+        #     genomes = genomes.groupby(genomes.index.str[2:9]).sum()
+        #     index = genomes.index
+        #     processAvg = np.array(processAvg)
+        #     genomes = np.array(genomes)
         
-        originalProcessAvg.columns = listOfSignatures    
-        final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, cosmic_version=cosmic_version, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
+        # originalProcessAvg.columns = listOfSignatures    
+        # final_signatures = sub.signature_decomposition(processAvg, m, layer_directory2, genome_build=genome_build, cosmic_version=cosmic_version, add_penalty=0.05, remove_penalty=0.01, mutation_context=mutation_context, make_decomposition_plots=make_decomposition_plots, originalProcessAvg=originalProcessAvg)
         
-        # extract the global signatures and new signatures from the final_signatures dictionary
-        globalsigs = final_signatures["globalsigs"]
-        globalsigs = np.array(globalsigs)
-        newsigs = final_signatures["newsigs"]
-        try:    
-            processAvg = np.hstack([globalsigs, newsigs])  
-            allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
-        except: 
-            processAvg=newsigs
-            allsigids=final_signatures["newsigids"]
+        # # extract the global signatures and new signatures from the final_signatures dictionary
+        # globalsigs = final_signatures["globalsigs"]
+        # globalsigs = np.array(globalsigs)
+        # newsigs = final_signatures["newsigs"]
+        # try:    
+        #     processAvg = np.hstack([globalsigs, newsigs])  
+        #     allsigids = final_signatures["globalsigids"]+final_signatures["newsigids"]
+        # except: 
+        #     processAvg=newsigs
+        #     allsigids=final_signatures["newsigids"]
             
-        attribution = final_signatures["dictionary"]
-        background_sigs= final_signatures["background_sigs"]
-        genomes = pd.DataFrame(genomes)
+        # attribution = final_signatures["dictionary"]
+        # background_sigs= final_signatures["background_sigs"]
+        # genomes = pd.DataFrame(genomes)
         
-        exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
-                                cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , \
-                                background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, \
-                                initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, \
-                                collapse_to_SBS96=collapse_to_SBS96,sequence=sequence,export_probabilities=export_probabilities)
+        # exposureAvg = sub.make_final_solution(processAvg, genomes, allsigids, layer_directory2, m, index, colnames, \
+        #                         cosmic_sigs=True, attribution = attribution, denovo_exposureAvg  = exposureAvg , \
+        #                         background_sigs=background_sigs, add_penalty=add_penalty, remove_penalty=remove_penalty, \
+        #                         initial_remove_penalty=initial_remove_penalty, genome_build=genome_build, \
+        #                         collapse_to_SBS96=collapse_to_SBS96,sequence=sequence,export_probabilities=export_probabilities)
         
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
     end_time = datetime.datetime.now()

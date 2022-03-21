@@ -35,6 +35,7 @@ requirements=[
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.1.30', 
           'sigProfilerPlotting>=1.1.15', 
+          'SigProfilerAssignment',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',

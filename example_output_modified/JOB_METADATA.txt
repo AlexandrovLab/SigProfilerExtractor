@@ -1,0 +1,84 @@
+THIS FILE CONTAINS THE METADATA ABOUT SYSTEM AND RUNTIME
+
+
+-------System Info-------
+Operating System Name: Darwin
+Nodename: C02G51YEMD6T
+Release: 21.4.0
+Version: Darwin Kernel Version 21.4.0: Mon Feb 21 20:34:37 PST 2022; root:xnu-8020.101.4~2/RELEASE_X86_64
+
+-------Python and Package Versions------- 
+Python Version: 3.10.0
+SigProfilerExtractor Version: 1.1.6
+SigProfilerPlotting Version: 1.2.1
+SigProfilerMatrixGenerator Version: 1.2.4
+Pandas version: 1.4.1
+Numpy version: 1.22.3
+Scipy version: 1.8.0
+Scikit-learn version: 1.0.2
+
+--------------EXECUTION PARAMETERS--------------
+INPUT DATA
+	input_type: text
+	output: example_output_modified
+	input_data: /Users/rvangara/Documents/Spa_SPE/SigProfilerExtractor/SigProfilerExtractor/data/Samples.txt
+	reference_genome: GRCh37
+	context_types: SBS96
+	exome: False
+NMF REPLICATES
+	minimum_signatures: 1
+	maximum_signatures: 3
+	NMF_replicates: 3
+NMF ENGINE
+	NMF_init: random
+	precision: single
+	matrix_normalization: gmm
+	resample: True
+	seeds: random
+	min_NMF_iterations: 10,000
+	max_NMF_iterations: 1,000,000
+	NMF_test_conv: 10,000
+	NMF_tolerance: 1e-15
+CLUSTERING
+	clustering_distance: cosine
+EXECUTION
+	cpu: 16; Maximum number of CPU is 16
+	gpu: False
+Solution Estimation
+	stability: 0.8
+	min_stability: 0.2
+	combined_stability: 1.0
+COSMIC MATCH
+	opportunity_genome: GRCh37
+\cosmic_version: 3.1
+	nnls_add_penalty: 0.05
+	nnls_remove_penalty: 0.01
+	initial_remove_penalty: 0.05
+	de_novo_fit_penalty: 0.02
+	refit_denovo_signatures: True
+	collapse_to_SBS96: True
+
+-------Analysis Progress------- 
+[2022-03-21 10:16:06] Analysis started: 
+
+##################################
+
+[2022-03-21 10:16:06] Analysis started for SBS96. Matrix size [96 rows x 21 columns]
+
+[2022-03-21 10:16:06] Normalization GMM with cutoff value set at 11723
+
+[2022-03-21 10:16:22] SBS96 de novo extraction completed for a total of 1 signatures! 
+Execution time:0:00:15
+
+[2022-03-21 10:16:38] SBS96 de novo extraction completed for a total of 2 signatures! 
+Execution time:0:00:16
+
+[2022-03-21 10:16:54] SBS96 de novo extraction completed for a total of 3 signatures! 
+Execution time:0:00:16
+
+[2022-03-21 10:18:12] Analysis ended: 
+
+-------Job Status------- 
+Analysis of mutational signatures completed successfully! 
+Total execution time: 0:02:05 
+Results can be found in:  example_output_modified  folder
