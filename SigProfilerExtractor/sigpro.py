@@ -807,7 +807,7 @@ def sigProfilerExtractor(input_type,
         devopts['index']=index
         devopts['colnames']=allcolnames
 
-        decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build="GRCh37", verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=True,devopts=devopts)
+        decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build="GRCh37", verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
 
 
     
