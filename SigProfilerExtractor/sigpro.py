@@ -48,7 +48,7 @@ import SigProfilerAssignment as spa
 from SigProfilerAssignment import decomposition as decomp
 from SigProfilerAssignment import Analyzer as Analyze
 from numpy.random import SeedSequence
-import pdb
+
 def memory_usage():
     pid = os.getpid()
     py = psutil.Process(pid)
@@ -806,6 +806,10 @@ def sigProfilerExtractor(input_type,
         devopts['listOfSignatures']=listOfSignatures
         devopts['index']=index
         devopts['colnames']=allcolnames
+        devopts['signature_stats']=signature_stats
+        devopts['sequence']=sequence
+        devopts['processSTE']=processSTE
+        devopts['sequence']=sequence
 
         decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build="GRCh37", verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
 
