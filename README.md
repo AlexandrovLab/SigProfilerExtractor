@@ -214,7 +214,7 @@ The files below will be generated in the output folder:
 
 ### <a name="decompose"></a> Decompose
 
-For decomposition of denovo signatures please use [SigProfilerAssignmnt](https://github.com/AlexandrovLab/SigProfilerAssignment)
+For decomposition of denovo signatures please use [SigProfilerAssignment](https://github.com/AlexandrovLab/SigProfilerAssignment)
         
 ### <a name="plotActivity"></a> Activity Stacked Bar Plot
 Generates a stacked bar plot showing activities in individuals
