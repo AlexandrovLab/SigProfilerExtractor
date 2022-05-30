@@ -347,6 +347,7 @@ def sigProfilerExtractor(input_type,
     sysdata.write("SigProfilerExtractor Version: "+cosmic.__version__+"\n")
     sysdata.write("SigProfilerPlotting Version: "+sigProfilerPlotting.__version__+"\n")
     sysdata.write("SigProfilerMatrixGenerator Version: "+SigProfilerMatrixGenerator.__version__+"\n")
+    sysdata.write("SigProfilerAssignment Version: "+spa.__version__+"\n")
     sysdata.write("Pandas version: "+pd.__version__+"\n")
     sysdata.write("Numpy version: "+np.__version__+"\n")
     sysdata.write("Scipy version: "+scipy.__version__+"\n")
