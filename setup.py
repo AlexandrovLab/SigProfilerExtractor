@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Adding SigProfilerAssignment version to Job Metadata file \n Updating "opportunity_genome" parameter passed to SPA'
+Update = 'Adding SigProfilerAssignment version to Job Metadata file; Updating "opportunity_genome" parameter passed to SPA'
     
     """
     fh = open(filename, 'w')
