@@ -45,6 +45,7 @@ import multiprocessing as mp
 import SigProfilerExtractor as cosmic
 # from SigProfilerExtractor import single_sample as ss
 import SigProfilerAssignment as spa
+from SigProfilerAssignment import single_sample as spasub
 from SigProfilerAssignment import decomposition as decomp
 # from SigProfilerAssignment import Analyzer as Analyze
 from numpy.random import SeedSequence
@@ -730,7 +731,7 @@ def sigProfilerExtractor(input_type,
                     pool = mp.Pool(processes=cpu)
                 else:
                     pool = mp.Pool()
-                results = [pool.apply_async(sub.fit_signatures_pool, args=(genomes,processAvg,x,)) for x in range(genomes.shape[1])]
+                results = [pool.apply_async(spasub.fit_signatures_pool, args=(genomes,processAvg,x,)) for x in range(genomes.shape[1])]
                 pooloutput = [p.get() for p in results]
                 pool.close()
                                     
