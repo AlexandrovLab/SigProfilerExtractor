@@ -1018,7 +1018,7 @@ def signature_decomposition(signatures, mtype, directory, genome_build="GRCh37",
                 # Get the names of the columns for each dataframe
                 denovo_col_names = originalProcessAvg.columns
                 cosmic_col_names = sigDatabases_DF.columns
-                # Get the name for the MutationTypes column
+                # Get the name for the MutationType column
                 cosmic_mut_types_col = cosmic_col_names[0]
                 denovo_mut_types_col =  denovo_col_names[0]
                 # create lists of implemented columns
@@ -1114,7 +1114,7 @@ def probabilities(W, H, index, allsigids, allcolnames):
         probs.columns = sigs
         col1 = [cols[i]]*len(rows)
         probs.insert(loc=0, column='Sample Names', value=col1)
-        probs.insert(loc=1, column='MutationTypes', value = rows)
+        probs.insert(loc=1, column='MutationType', value = rows)
         if i!=0:
             result = pd.concat([result, probs], axis=0)
         else:
@@ -1588,7 +1588,7 @@ def make_final_solution(processAvg, allgenomes, allsigids, layer_directory, m, i
     processAvg= pd.DataFrame(processAvg.astype(float))
     processes = processAvg.set_index(index)
     processes.columns = allsigids
-    processes = processes.rename_axis("MutationsType", axis="columns")
+    processes = processes.rename_axis("MutationType", axis="columns")
     processes.to_csv(layer_directory+"/Signatures"+"/"+solution_prefix+"_"+"Signatures.txt", "\t", float_format='%.8f',index_label=[processes.columns.name]) 
     exposureAvg = pd.DataFrame(exposureAvg.astype(int))
     allsigids = np.array(allsigids)
