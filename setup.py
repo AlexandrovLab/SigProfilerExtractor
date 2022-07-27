@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.8'
+VERSION = '1.1.9'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Adding SigProfilerAssignment version to Job Metadata file; Updating "opportunity_genome" parameter passed to SPA'
+Update = 'Fix typos, requirements, and remove legacy decomposition code'
     
     """
     fh = open(filename, 'w')
@@ -33,9 +33,9 @@ requirements=[
           'numpy>=1.21.2',
           'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.1.30', 
-          'sigProfilerPlotting>=1.1.15', 
-          'SigProfilerAssignment>=0.0.5',
+          'SigProfilerMatrixGenerator>=1.2.8', 
+          'sigProfilerPlotting>=1.2.2', 
+          'SigProfilerAssignment>=0.0.8',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
