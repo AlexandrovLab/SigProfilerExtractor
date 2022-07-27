@@ -832,7 +832,6 @@ def cluster_converge_outerloop(Wall, Hall, totalprocess, dist="cosine",
     return  processAvg, exposureAvg, processSTE,  exposureSTE, avgSilhouetteCoefficients, clusterSilhouetteCoefficients
 
 
-
 ################################################### Generation of probabilities for each processes given to A mutation type ############################################
 def probabilities(W, H, index, allsigids, allcolnames):  
     
@@ -856,7 +855,7 @@ def probabilities(W, H, index, allsigids, allcolnames):
         probs.columns = sigs
         col1 = [cols[i]]*len(rows)
         probs.insert(loc=0, column='Sample Names', value=col1)
-        probs.insert(loc=1, column='MutationTypes', value = rows)
+        probs.insert(loc=1, column='MutationType', value = rows)
         if i!=0:
             result = pd.concat([result, probs], axis=0)
         else:
@@ -1119,6 +1118,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
         custom_signatures_plot(processes, signature_subdirectory)
+
 
 # #############################################################################################################
 ######################################### PLOTTING FUNCTIONS ##############################################
