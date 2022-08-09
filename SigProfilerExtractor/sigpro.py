@@ -146,7 +146,7 @@ def record_parameters(sysdata, execution_parameters, start_time):
     
     sysdata.write("COSMIC MATCH\n")
     sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
-    sysdata.write("\cosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
+    sysdata.write("\tcosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
     sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
     sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
     sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
@@ -814,7 +814,7 @@ def sigProfilerExtractor(input_type,
         devopts['processSTE']=processSTE
         devopts['sequence']=sequence
 
-        decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build=genome_build, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
+        decomp.spa_analyze(allgenomes, output, signatures=processAvg, genome_build=genome_build, cosmic_version=cosmic_version, exome=exome, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
 
         
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
