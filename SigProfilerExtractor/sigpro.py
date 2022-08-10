@@ -162,7 +162,7 @@ def sigProfilerExtractor(input_type,
                          input_data, 
                          reference_genome="GRCh37", 
                          opportunity_genome = "GRCh37", 
-                         cosmic_version=3.1,
+                         cosmic_version=3.3,
                          context_type = "default", 
                          exome = False, 
                          minimum_signatures=1,
@@ -814,6 +814,7 @@ def sigProfilerExtractor(input_type,
         devopts['processSTE']=processSTE
         devopts['sequence']=sequence
 
+
         # Check if genome_build is available in COSMIC, if not reset to GRCh37
         if genome_build == "GRCh37" or genome_build == "GRCh38" or genome_build == "mm9" or genome_build == "mm10" or genome_build == "rn6":
             genome_build = genome_build
@@ -825,7 +826,7 @@ def sigProfilerExtractor(input_type,
             sysdata.close()
             genome_build = "GRCh37"
 
-        decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build=genome_build, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
+        decomp.spa_analyze(allgenomes, output, signatures=processAvg, genome_build=genome_build, cosmic_version=cosmic_version, exome=exome, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
 
         
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
