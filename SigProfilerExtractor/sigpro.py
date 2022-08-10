@@ -146,7 +146,7 @@ def record_parameters(sysdata, execution_parameters, start_time):
     
     sysdata.write("COSMIC MATCH\n")
     sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
-    sysdata.write("\cosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
+    sysdata.write("\tcosmic_version: {}\n".format(execution_parameters["cosmic_version"]))
     sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
     sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
     sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
@@ -162,7 +162,7 @@ def sigProfilerExtractor(input_type,
                          input_data, 
                          reference_genome="GRCh37", 
                          opportunity_genome = "GRCh37", 
-                         cosmic_version=3.1,
+                         cosmic_version=3.3,
                          context_type = "default", 
                          exome = False, 
                          minimum_signatures=1,
@@ -213,7 +213,7 @@ def sigProfilerExtractor(input_type,
             
     reference_genome: A string, optional. The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf".
        
-    opportunity_genome: The build or version of the reference signatures for the reference genome. The default opportunity genome is GRCh37. If the input_type is "vcf", the genome_build automatically matches the input reference genome value.    
+    opportunity_genome: The build or version of the reference genome for the reference signatures. The default opportunity genome is GRCh37. If the input_type is "vcf", the opportunity_genome automatically matches the input reference genome value. Only the genomes available in COSMIC are supported (GRCh37, GRCh38, mm9, mm10 and rn6). If a different opportunity genome is selected, the default genome GRCh37 will be used.
      
     context_type: A list of strings, optional. The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "SBS96,DBS78,ID83". 
     
@@ -814,7 +814,19 @@ def sigProfilerExtractor(input_type,
         devopts['processSTE']=processSTE
         devopts['sequence']=sequence
 
-        decomp.spa_analyze( allgenomes, output, signatures=processAvg,genome_build=genome_build, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
+
+        # Check if genome_build is available in COSMIC, if not reset to GRCh37
+        if genome_build == "GRCh37" or genome_build == "GRCh38" or genome_build == "mm9" or genome_build == "mm10" or genome_build == "rn6":
+            genome_build = genome_build
+        else:
+            sysdata = open(out_put+"/JOB_METADATA.txt", "a")
+            sysdata.write("\n[{}] The selected opportunity genome is {}. COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37.\n". \
+                          format(str(datetime.datetime.now()).split(".")[0], str(genome_build)))
+            print("The selected opportunity genome is "+str(genome_build)+". COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37.")
+            sysdata.close()
+            genome_build = "GRCh37"
+
+        decomp.spa_analyze(allgenomes, output, signatures=processAvg, genome_build=genome_build, cosmic_version=cosmic_version, exome=exome, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
 
         
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
