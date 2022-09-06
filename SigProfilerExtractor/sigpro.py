@@ -456,15 +456,15 @@ def sigProfilerExtractor(input_type,
             else:
                 orderlist1=list(feature_map[0])
                 orderlist2=list(feature_order[0])
-                #sort the mutation types first step
-                data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist1)
-                data = data.sort_values("Mutation Types")
+                #sort the MutationType first step
+                data["MutationType"]= pd.Categorical(data["MutationType"], orderlist1)
+                data = data.sort_values("MutationType")
                 data = data.reset_index()
                 data = data.drop(columns='index')
-                #sort the mutation types second step
-                data["Mutation Types"]=feature_map[1]
-                data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist2)
-                data = data.sort_values("Mutation Types")
+                #sort the MutationType second step
+                data["MutationType"]=feature_map[1]
+                data["MutationType"]= pd.Categorical(data["MutationType"], orderlist2)
+                data = data.sort_values("MutationType")
                 
         
         data = data.dropna(axis=1, inplace=False)
@@ -538,7 +538,7 @@ def sigProfilerExtractor(input_type,
         ################################# For vcf input files #######################################################
         title = project # set the title for plotting 
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
-        # Selecting the mutation types    
+        # Selecting the MutationType
         if mtype == ["default"]:
             mtypes = ["SBS96", "DBS78", "ID83"] 
         elif mtype == "default":
@@ -779,7 +779,7 @@ def sigProfilerExtractor(input_type,
         layer_genome = pd.DataFrame(genomes)
         layer_genome = layer_genome.set_index(index)
         layer_genome.columns = colnames
-        layer_genome = layer_genome.rename_axis("Mutation Types", axis="columns")
+        layer_genome = layer_genome.rename_axis("MutationType", axis="columns")
 
         # record the samples
         layer_genome.to_csv(output+"/Samples.txt", sep = "\t", index_label=[layer_genome.columns.name])
