@@ -93,9 +93,9 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 | Category | Parameter | Variable Type | Parameter Description |
 | --------- | --------------------- | -------- |-------- |
 | **Input Data** |  |  | |
-|  | **input_type** | String | The type of input:<br><ul><li>"vcf": used for vcf format inputs.</li><li>"matrix": used for table format inputs using a tab seperated file.</li><li>"bedpe": used for bedpe file with each SV annotated with its type, size bin, and clustered/non-clustered status.</li><li>"seg:TYPE": used for a segmentation file for copy number analysis. The accepted callers for TYPE are the following {"ASCAT", "ASCAT_NGS", "SEQUENZA", "ABSOLUTE", "BATTENBERG", "FACETS", "PURPLE", "TCGA"}. For example, when using segmentation file from BATTENBERG then set input_type to "seg:BATTENBERG".</li></ul> |
+|  | **input_type** | String | The type of input:<br><ul><li>"vcf": used for vcf format inputs.</li><li>"matrix": used for table format inputs using a tab seperated file.</li><li>"bedpe": used for bedpe file with each SV annotated with its type, size bin, and clustered/non-clustered status.</li><li>"seg:TYPE": used for a multi-sample segmentation file for copy number analysis. The accepted callers for TYPE are the following {"ASCAT", "ASCAT_NGS", "SEQUENZA", "ABSOLUTE", "BATTENBERG", "FACETS", "PURPLE", "TCGA"}. For example, when using segmentation file from BATTENBERG then set input_type to "seg:BATTENBERG".</li></ul> |
 |  | **output** | String | The name of the output folder. The output folder will be generated in the current working directory.  |
-|  | **input_data** | String | <br>Path to input folder for input_type:<ul><li>vcf</li><li>bedpe</li></ul><br>Path to file for input_type:<ul><li>matrix</li><li>seg:TYPE</li></ul> |
+|  | **input_data** | String | <br>Path to input folder for input_type:<ul><li>vcf</li><li>bedpe</li></ul>Path to file for input_type:<ul><li>matrix</li><li>seg:TYPE</li></ul> |
 |  | **reference_genome** | String | The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf". | 
 |  | **opportunity_genome** | String | The build or version of the reference genome for the reference signatures. The default opportunity genome is GRCh37. If the input_type is "vcf", the opportunity_genome automatically matches the input reference genome value. Only the genomes available in COSMIC are supported (GRCh37, GRCh38, mm9, mm10 and rn6). If a different opportunity genome is selected, the default genome GRCh37 will be used. | 
 |  | **context_type** | String | A string of mutaion context name/names separated by comma (","). The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "96,DINUC,ID", where "96" is the SBS96 context, "DINUC" is the DINUCLEOTIDE context and ID is INDEL context. | 
@@ -136,26 +136,29 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **export_probabilities** | Boolean | Defualt is True. If False, then doesn't create the probability matrix. | 
     
 #### sigProfilerExtractor Example
+VCF Files as Input
 ```python    
-
 from SigProfilerExtractor import sigpro as sig
 def main_function():
     # to get input from vcf files
     path_to_example_folder_containing_vcf_files = sig.importdata("vcf")
-    data = path_to_example_folder_containing_vcf_files # you can put the path to your folder containing the vcf     samples
+    # you can put the path to your folder containing the vcf samples
+    data = path_to_example_folder_containing_vcf_files
     sig.sigProfilerExtractor("vcf", "example_output", data, minimum_signatures=1, maximum_signatures=3)
-if __name__="__main__":
+if __name__=="__main__":
    main_function()
-
-#Wait untill the excecution is finished. The process may a couple of hours based on the size of the data.
-#Check the current working directory for the "example_output" folder.
-
+# Wait until the excecution is finished. The process may a couple of hours based on the size of the data.
+# Check the current working directory for the "example_output" folder.
+```
+Matrix File as Input
+```python
+from SigProfilerExtractor import sigpro as sig
 def main_function():    
    # to get input from table format (mutation catalog matrix)
    path_to_example_table = sig.importdata("matrix")
    data = path_to_example_table # you can put the path to your tab delimited file containing the mutational catalog matrix/table
-   sig.sigProfilerExtractor("matrix", "example_output", data, opportunity_genome="GRCh38", minimum_signatures=1,            maximum_signatures=3)
-if __name__="__main__":
+   sig.sigProfilerExtractor("matrix", "example_output", data, opportunity_genome="GRCh38", minimum_signatures=1, maximum_signatures=3)
+if __name__=="__main__":
    main_function()
 ```
 
