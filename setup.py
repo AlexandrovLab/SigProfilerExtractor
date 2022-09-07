@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.10'
+VERSION = '1.1.11'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = '1. Reset reference genome to GRCh37 if a not supported genome is selected. 2. Add support for COSMIC exome reference signatures'
+Update = '1. Add support for CNV and SV. 2. MutationType consistency. 3. README updates.'
     
     """
     fh = open(filename, 'w')
@@ -33,7 +33,7 @@ requirements=[
           'numpy>=1.21.2',
           'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.2.9', 
+          'SigProfilerMatrixGenerator>=1.2.12', 
           'sigProfilerPlotting>=1.2.2', 
           'SigProfilerAssignment>=0.0.10',
           'pillow',

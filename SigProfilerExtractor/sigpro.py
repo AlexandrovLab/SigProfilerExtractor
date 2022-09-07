@@ -41,6 +41,8 @@ import multiprocessing
 from SigProfilerExtractor import subroutines as sub
 import SigProfilerMatrixGenerator
 from SigProfilerMatrixGenerator.scripts import SigProfilerMatrixGeneratorFunc as datadump   
+from SigProfilerMatrixGenerator.scripts import SVMatrixGenerator as sv
+from SigProfilerMatrixGenerator.scripts import CNVMatrixGenerator as scna
 import multiprocessing as mp
 import SigProfilerExtractor as cosmic
 # from SigProfilerExtractor import single_sample as ss
@@ -328,7 +330,7 @@ def sigProfilerExtractor(input_type,
     start_time = datetime.datetime.now()
     
     #set the output variable
-    out_put = output; 
+    out_put = output 
     
     if gpu == True:
         import torch
@@ -456,17 +458,16 @@ def sigProfilerExtractor(input_type,
             else:
                 orderlist1=list(feature_map[0])
                 orderlist2=list(feature_order[0])
-                #sort the mutation types first step
-                data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist1)
-                data = data.sort_values("Mutation Types")
+                #sort the MutationType first step
+                data["MutationType"]= pd.Categorical(data["MutationType"], orderlist1)
+                data = data.sort_values("MutationType")
                 data = data.reset_index()
                 data = data.drop(columns='index')
-                #sort the mutation types second step
-                data["Mutation Types"]=feature_map[1]
-                data["Mutation Types"]= pd.Categorical(data["Mutation Types"], orderlist2)
-                data = data.sort_values("Mutation Types")
+                #sort the MutationType second step
+                data["MutationType"]=feature_map[1]
+                data["MutationType"]= pd.Categorical(data["MutationType"], orderlist2)
+                data = data.sort_values("MutationType")
                 
-        
         data = data.dropna(axis=1, inplace=False)
         data = data.loc[:, (data != 0).any(axis=0)]
         genomes = data.iloc[:,1:]
@@ -536,9 +537,9 @@ def sigProfilerExtractor(input_type,
 
     elif input_type=="vcf":
         ################################# For vcf input files #######################################################
-        title = project # set the title for plotting 
+        title = project # set the title for plotting
         data = datadump.SigProfilerMatrixGeneratorFunc(project_name, refgen, project, exome=exome,  bed_file=None, chrom_based=False, plot=False, gs=False)
-        # Selecting the mutation types    
+        # Selecting the MutationType
         if mtype == ["default"]:
             mtypes = ["SBS96", "DBS78", "ID83"] 
         elif mtype == "default":
@@ -549,7 +550,33 @@ def sigProfilerExtractor(input_type,
             mtype = mtype.replace(" ", "")
             mtypes = mtype.split(",")
         #set the genome_build
-        genome_build=refgen 
+        genome_build=refgen
+    elif input_type.lower()=="bedpe":
+        ##################### For SV's bedpe input files #####################
+        # create a directory to write the output matrices to
+        mtypes = ["SV32"]
+        sv_outputs = os.path.join(os.path.split(input_data)[0], "SV_Matrices")
+
+        # SV input processing, execution parameters
+        genomes = sv.generateSVMatrix(project, project_name, sv_outputs)
+        index = genomes.index.values
+        colnames = genomes.columns
+        allcolnames = colnames.copy()
+        allgenomes = genomes.copy()
+    elif input_type.split(":")[0].lower()=="seg": # seg
+        ################# For CNV's segmentation input files #################
+        title = project
+        mtypes = ["CNV48"]
+        cnv_file_type = input_type.split(":")[1].upper()
+        # cnv_outputs = os.path.join(os.path.split(input_data)[0], "CNV_Matrices")
+
+        # SV input processing, execution parameters
+        #project needs to be something NOT a file
+        genomes = scna.generateCNVMatrix(cnv_file_type, input_data, cnv_file_type, output)
+        index = genomes.index.values
+        colnames = genomes.columns
+        allcolnames = colnames.copy()
+        allgenomes = genomes.copy()
     else:
         raise ValueError("Please provide a correct input_type. Check help for more details")
     
@@ -617,7 +644,7 @@ def sigProfilerExtractor(input_type,
                 print("Sample is not a nozero matrix for the mutation context "+ m)
                 sysdata.close()
                 continue
-                
+
             genomes = genomes.loc[:, (genomes != 0).any(axis=0)]
             allgenomes = genomes.copy()  # save the allgenomes for the final results 
             index = genomes.index.values
@@ -779,7 +806,7 @@ def sigProfilerExtractor(input_type,
         layer_genome = pd.DataFrame(genomes)
         layer_genome = layer_genome.set_index(index)
         layer_genome.columns = colnames
-        layer_genome = layer_genome.rename_axis("Mutation Types", axis="columns")
+        layer_genome = layer_genome.rename_axis("MutationType", axis="columns")
 
         # record the samples
         layer_genome.to_csv(output+"/Samples.txt", sep = "\t", index_label=[layer_genome.columns.name])
