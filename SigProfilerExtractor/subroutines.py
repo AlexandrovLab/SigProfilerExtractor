@@ -1150,7 +1150,7 @@ def dendrogram(data, threshold, layer_directory):
 
 
 ######################################## Plot the reconstruction error vs stabilities and select the optimum number of signature ####################################################   
-def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= "", statistics=True, select=None, sequence="genome"):
+def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvfile", stability=0.8, min_stability=0.2, combined_stability=1.0, mtype= "", statistics=True, select=None, sequence="genome", allow_stability_drop=False):
     
     if input_type=="csvfile":
         data = pd.read_csv(csvfile, sep=",")
@@ -1173,13 +1173,16 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     except: #if there is no solution over thresh-hold
         selection_data_to_sort=selection_data
         highest_stable_idx = selection_data.index[0]
-        print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signtures.")
+        print("There is no signature over the thresh-hold stability. We are selecting the lowest possible number of signatures.")
     
     highest_stable_signature=list(selection_data["Total Signatures"])[highest_stable_idx]
     selection_data=selection_data_to_sort.sort_values(by=['avgStability', 'Total Signatures'], ascending=[False, True])
     resorted_idx=list(selection_data.index)
     default_idx=resorted_idx.index(highest_stable_idx)
-    selected_resorted_idx=resorted_idx[0:default_idx+1]
+    if allow_stability_drop == False:
+        selected_resorted_idx=resorted_idx[0:default_idx+1]
+    else:
+        selected_resorted_idx=resorted_idx
     selected_resorted_idx.sort()
     idx_within_thresh_hold=highest_stable_idx 
     signatures_within_thresh_hold=highest_stable_signature

@@ -122,6 +122,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. | 
 |  | **min_stability** | Float | Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered.  | 
 |  | **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. | 
+|  | **allow_stability_drop** | Boolean | Default is False. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered. | 
 | **Decomposition** |  |  |  | 
 |  | **cosmic_version** | Float | Takes a positive float among 1, 2, 3, 3.1, 3.2 and 3.3. Default is 3.3. Defines the version of the COSMIC reference signatures. | 
 |  | **de_novo_fit_penalty** | Float | Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to assign denovo signatures to a sample. | 
@@ -177,7 +178,8 @@ estimate_solution(base_csvfile="All_solutions_stat.csv",
           title="Selection_Plot",
           stability=0.8, 
           min_stability=0.2, 
-          combined_stability=1.25,
+          combined_stability=1.0,
+          allow_stability_drop=False,
           exome=False)
 ```  
     
@@ -191,6 +193,7 @@ estimate_solution(base_csvfile="All_solutions_stat.csv",
 | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. |
 | **min_stability** | Float | Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. |
 | **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. |
+| **allow_stability_drop** | Boolean | Default is False. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered. | 
 | **exome** | Boolean | Default is "False". Defines if exomes samples are used. | 
 
         
@@ -204,7 +207,8 @@ ebs.estimate_solution(base_csvfile="All_solutions_stat.csv",
           title="Selection_Plot",
           stability=0.8, 
           min_stability=0.2, 
-          combined_stability=1.25,
+          combined_stability=1.0,
+          allow_stability_drop=False,
           exome=False)
 ```                
 
