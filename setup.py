@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.11'
+VERSION = '1.1.12'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = '1. Add support for CNV and SV. 2. MutationType consistency. 3. README updates.'
+Update = '1. Add allow_stability_drop parameter.'
     
     """
     fh = open(filename, 'w')
