@@ -23,7 +23,8 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
                     combined_stability=1.0,
                     statistics=True,
                     select=None,
-                    exome=False):
+                    exome=False,
+                    allow_stability_drop=False):
     
     
     
@@ -92,7 +93,8 @@ def estimate_solution(base_csvfile="All_solutions_stat.csv",
                                           mtype=mtype,
                                           statistics=statistics,
                                           select=select,
-                                          sequence=sequence)
+                                          sequence=sequence,
+                                          allow_stability_drop=allow_stability_drop)
     
     all_stats.insert(1, 'Stability (Avg Silhouette)', csvfile["avgStability"]) 
     all_stats=all_stats.set_index(["Signatures"])

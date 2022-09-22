@@ -145,6 +145,7 @@ def record_parameters(sysdata, execution_parameters, start_time):
     sysdata.write("\tstability: {}\n".format(execution_parameters["stability"]))
     sysdata.write("\tmin_stability: {}\n".format(execution_parameters["min_stability"]))
     sysdata.write("\tcombined_stability: {}\n".format(execution_parameters["combined_stability"]))
+    sysdata.write("\tallow_stability_drop: {}\n".format(execution_parameters["allow_stability_drop"]))
     
     sysdata.write("COSMIC MATCH\n")
     sysdata.write("\topportunity_genome: {}\n".format(execution_parameters["opportunity_genome"]))
@@ -194,6 +195,7 @@ def sigProfilerExtractor(input_type,
                          stability=0.8, 
                          min_stability=0.2, 
                          combined_stability=1.0,
+                         allow_stability_drop=False,
                          get_all_signature_matrices= False): 
     """
     Extracts mutational signatures from an array of samples.
@@ -272,6 +274,8 @@ def sigProfilerExtractor(input_type,
 
     combined_stability: A float. Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered.            
     
+    allow_stability_drop: Boolean, optional. Default is False. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered.
+
     
     DECOMPOSITION:-
     
@@ -402,6 +406,7 @@ def sigProfilerExtractor(input_type,
                         "stability":stability, 
                         "min_stability":min_stability, 
                         "combined_stability":combined_stability,
+                        "allow_stability_drop":allow_stability_drop,
                         "get_all_signature_matrices":get_all_signature_matrices}
                         
     ################################ take the inputs from the general optional arguments ####################################
@@ -797,7 +802,7 @@ def sigProfilerExtractor(input_type,
 
         ########################################## Plot Stabiltity vs Reconstruction Error #############################        
         # Print the Stabiltity vs Reconstruction Error as get the solution as well
-        solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mtype=mutation_type, stability=stability, min_stability=min_stability, combined_stability=combined_stability, sequence=sequence)
+        solution, all_stats = sub.stabVsRError(layer_directory+"/All_solutions_stat.csv", layer_directory, title, all_similirities_list, mtype=mutation_type, stability=stability, min_stability=min_stability, combined_stability=combined_stability, sequence=sequence, allow_stability_drop=allow_stability_drop)
         all_stats.insert(1, 'Stability (Avg Silhouette)', minimum_stabilities) #!!!!!!!!!!!!!!!!1 here minimum stability is avg stability
         all_stats=all_stats.set_index(["Signatures"])
         all_stats.to_csv(layer_directory+"/All_solutions_stat.csv", sep = ",")
