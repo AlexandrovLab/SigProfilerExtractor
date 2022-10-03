@@ -153,7 +153,6 @@ def record_parameters(sysdata, execution_parameters, start_time):
     sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
     sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
     sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
-    sysdata.write("\tde_novo_fit_penalty: {}\n".format(execution_parameters["de_novo_fit_penalty"])) 
     sysdata.write("\trefit_denovo_signatures: {}\n".format(execution_parameters["refit_denovo_signatures"]))
     sysdata.write("\tcollapse_to_SBS96: {}\n".format(execution_parameters["collapse_to_SBS96"]))
     
@@ -185,7 +184,6 @@ def sigProfilerExtractor(input_type,
                          nmf_tolerance= 1e-15, 
                          nnls_add_penalty=0.05, 
                          nnls_remove_penalty=0.01,
-                         de_novo_fit_penalty=0.02,
                          initial_remove_penalty=0.05,
                          refit_denovo_signatures=True,
                          collapse_to_SBS96=True,
@@ -279,13 +277,11 @@ def sigProfilerExtractor(input_type,
     
     DECOMPOSITION:-
     
-    de_novo_fit_penalty: Float, optional. Takes any positive float. Default is 0.02. Defines the weak (remove) thresh-hold cutoff to be assigned denovo signatures to a sample. 
+    nnls_add_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to be assigned signatures to a sample. 
     
-    nnls_add_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the strong (add) thresh-hold cutoff to be assigned COSMIC signatures to a sample. 
-    
-    nnls_remove_penalty: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample.
+    nnls_remove_penalty: Float, optional. Takes any positive float. Default is 0.01. Defines the weak (remove) thresh-hold cutoff to be assigned signatures to a sample.
      
-    initial_remove_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be COSMIC assigned signatures to a sample.
+    initial_remove_penalty: Float, optional. Takes any positive float. Default is 0.05. Defines the initial weak (remove) thresh-hold cutoff to be assigned COSMIC signatures to a sample.
     
     refit_denovo_signatures: Boolean, optional. Default is False. If True, then refit the denovo signatures with nnls.
     
@@ -397,7 +393,6 @@ def sigProfilerExtractor(input_type,
                         "nnls_add_penalty":nnls_add_penalty,
                         "nnls_remove_penalty":nnls_remove_penalty,
                         "initial_remove_penalty":initial_remove_penalty,
-                        "de_novo_fit_penalty":de_novo_fit_penalty,
                         "refit_denovo_signatures":refit_denovo_signatures,
                         "collapse_to_SBS96":collapse_to_SBS96,
                         "dist":clustering_distance,
