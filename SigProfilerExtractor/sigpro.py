@@ -435,7 +435,7 @@ def sigProfilerExtractor(input_type,
             seed  = np.array(seeds["Seed"])
 
         except:
-            "Please set valid seeds"
+            raise ValueError("Please set valid seeds")
     
     if input_type=="text" or input_type =="table" or input_type=="matrix":
         
