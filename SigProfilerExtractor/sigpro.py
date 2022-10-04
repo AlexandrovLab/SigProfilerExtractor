@@ -587,7 +587,6 @@ def sigProfilerExtractor(input_type,
     ###########################################################################################################################################################################################                  
     
     for m in mtypes:
-        mutation_context = m
         # we need to rename the m because users input could be SBS96, SBS1536, DBS78, ID83 etc
         if m.startswith("SBS"):
             m = m[3:] #removing "SBS"
@@ -823,7 +822,7 @@ def sigProfilerExtractor(input_type,
 
         signature_stabilities = sub.signature_plotting_text(signature_stabilities, "Stability", "float")
         signature_total_mutations = sub.signature_plotting_text(signature_total_mutations, "Total Mutations", "integer")
-        listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_context)
+        listOfSignatures = sub.make_letter_ids(idlenth = processAvg.shape[1], mtype=mutation_type)
 
         layer_directory1 = output+"/Suggested_Solution/"+mutation_type+"_De-Novo_Solution"
         layer_directory2 = output+"/Suggested_Solution/COSMIC_"+mutation_type+"_Decomposed_Solution"
