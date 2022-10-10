@@ -10,13 +10,14 @@ and SigProfilerPlotting. Detailed documentation can be found at: https://osf.io/
 
 # Table of contents
 - [Installation](#installation)
-- [Functions](#Functions)
+- [Functions](#functions)
   - [importdata](#importdata)
   - [sigProfilerExtractor](#sigProfilerExtractor)
   - [estimate_solution](#estimate_solution)
   - [decompose](#decompose)
   - [PlotActivity.py](#plotActivity)
 - [Video Tutorials](#video_tutorials)
+- [Citation](#citation)
 - [Copyright](#copyright)
 - [Contact Information](#contact)
 
@@ -260,6 +261,10 @@ Take a look at our video tutorials for step-by-step instructions on how to insta
 If CUDA out of memory exceptions occur, it will be necessary to reduce the number of CPU processes used (the `cpu` parameter).
 
 #### For more information, help, and examples, please visit: https://osf.io/t6j7u/wiki/home/
+
+## <a name="citation"></a> Citation
+Islam SMA, Díaz-Gay M, Wu Y, Barnes M, Vangara R, Bergstrom EN, He Y, Vella M, Wang J, Teague JW, Clapham P, Moody S, Senkin S, Li YR, Riva L, Zhang T, Gruber AJ, Steele CD, Otlu B, Khandekar A, Abbasi A, Humphreys L, Syulyukina N, Brady SW, Alexandrov BS, Pillay N, Zhang J, Adams DJ, Martincorena I, Wedge DC, Landi MT, Brennan P, Stratton MR, Rozen SG, and Alexandrov LB (2022) Uncovering novel mutational signatures by _de novo_ extraction with SigProfilerExtractor. __Cell Genomics__. doi: [10.1016/j.xgen.2022.100179](https://doi.org/10.1016/j.xgen.2022.100179).
+
 
 ## <a name="copyright"></a> Copyright
 This software and its documentation are copyright 2018 as a part of the sigProfiler project. The SigProfilerExtractor framework is free software and is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
