@@ -554,6 +554,7 @@ def sigProfilerExtractor(input_type,
     elif input_type.lower()=="bedpe":
         ##################### For SV's bedpe input files #####################
         # create a directory to write the output matrices to
+        title = project
         mtypes = ["SV32"]
         sv_outputs = os.path.join(os.path.split(input_data)[0], "SV_Matrices")
 
@@ -573,6 +574,7 @@ def sigProfilerExtractor(input_type,
         # SV input processing, execution parameters
         #project needs to be something NOT a file
         genomes = scna.generateCNVMatrix(cnv_file_type, input_data, cnv_file_type, output)
+        genomes = genomes.set_index('MutationType')
         index = genomes.index.values
         colnames = genomes.columns
         allcolnames = colnames.copy()
