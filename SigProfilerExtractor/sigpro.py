@@ -154,6 +154,7 @@ def record_parameters(sysdata, execution_parameters, start_time):
     sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
     sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
     sysdata.write("\trefit_denovo_signatures: {}\n".format(execution_parameters["refit_denovo_signatures"]))
+    sysdata.write("\texport_probabilities: {}\n".format(execution_parameters["export_probabilities"]))
     sysdata.write("\tcollapse_to_SBS96: {}\n".format(execution_parameters["collapse_to_SBS96"]))
     
     sysdata.write("\n-------Analysis Progress------- \n")
@@ -854,7 +855,8 @@ def sigProfilerExtractor(input_type,
             sysdata.close()
             genome_build = "GRCh37"
 
-        decomp.spa_analyze(allgenomes, output, signatures=processAvg, genome_build=genome_build, cosmic_version=cosmic_version, exome=exome, verbose=False,decompose_fit_option= True,denovo_refit_option=True,cosmic_fit_option=False,devopts=devopts)
+        decomp.spa_analyze(allgenomes, output, signatures=processAvg, genome_build=genome_build, cosmic_version=cosmic_version, exome=exome, verbose=False,
+                           decompose_fit_option= True, denovo_refit_option=True, cosmic_fit_option=False, export_probabilities=export_probabilities, devopts=devopts)
 
         
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
@@ -864,4 +866,4 @@ def sigProfilerExtractor(input_type,
     sysdata.write("Analysis of mutational signatures completed successfully! \nTotal execution time: "+str(end_time-start_time).split(".")[0]+" \nResults can be found in: "+" "+out_put+ " " +" folder")
     sysdata.close()
 
-    print("\n\n \nYour Job Is Successfully Completed! Thank You For Using SigProfiler Extractor.\n ")
+    print("\n\n \nYour Job Is Successfully Completed! Thank You For Using SigProfilerExtractor.\n ")

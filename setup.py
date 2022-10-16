@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.14'
+VERSION = '1.1.15'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = '1. Resolve input handling issues with bedpe and seg files'
+Update = 'Sync export_probabilities parameter with new SPA version'
     
     """
     fh = open(filename, 'w')
@@ -35,7 +35,7 @@ requirements=[
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.2.12', 
           'sigProfilerPlotting>=1.2.2', 
-          'SigProfilerAssignment>=0.0.10',
+          'SigProfilerAssignment>=0.0.15',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
