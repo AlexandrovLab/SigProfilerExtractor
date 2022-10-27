@@ -153,7 +153,6 @@ def record_parameters(sysdata, execution_parameters, start_time):
     sysdata.write("\tnnls_add_penalty: {}\n".format(execution_parameters["nnls_add_penalty"]))
     sysdata.write("\tnnls_remove_penalty: {}\n".format(execution_parameters["nnls_remove_penalty"]))
     sysdata.write("\tinitial_remove_penalty: {}\n".format(execution_parameters["initial_remove_penalty"]))
-    sysdata.write("\trefit_denovo_signatures: {}\n".format(execution_parameters["refit_denovo_signatures"]))
     sysdata.write("\texport_probabilities: {}\n".format(execution_parameters["export_probabilities"]))
     sysdata.write("\tcollapse_to_SBS96: {}\n".format(execution_parameters["collapse_to_SBS96"]))
     
@@ -186,7 +185,6 @@ def sigProfilerExtractor(input_type,
                          nnls_add_penalty=0.05, 
                          nnls_remove_penalty=0.01,
                          initial_remove_penalty=0.05,
-                         refit_denovo_signatures=True,
                          collapse_to_SBS96=True,
                          clustering_distance="cosine",
                          export_probabilities=True,
@@ -394,7 +392,6 @@ def sigProfilerExtractor(input_type,
                         "nnls_add_penalty":nnls_add_penalty,
                         "nnls_remove_penalty":nnls_remove_penalty,
                         "initial_remove_penalty":initial_remove_penalty,
-                        "refit_denovo_signatures":refit_denovo_signatures,
                         "collapse_to_SBS96":collapse_to_SBS96,
                         "dist":clustering_distance,
                         "export_probabilities":export_probabilities,
