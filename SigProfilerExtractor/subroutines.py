@@ -19,8 +19,8 @@ from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
 # from SigProfilerExtractor import PlotDecomposition as sp
-from SigProfilerExtractor import plotActivity as plot_ac
-from SigProfilerExtractor import tmbplot as tmb
+from sigProfilerPlotting import plotActivity as plot_ac
+from sigProfilerPlotting import tmbplot as tmb
 import string 
 import PyPDF2
 import os,sys
@@ -1289,7 +1289,8 @@ def stabVsRError(csvfile, output, title, all_similarities_list, input_type="csvf
     ax1.axvspan(shadow_alternative_start,  shadow_alternative_end, alpha=0.20, color='#696969')         
     # manipulate the y-axis values into percentage 
     vals = ax1.get_yticks()
-    ax1.set_xticklabels(np.arange(min(t), max(t)+1, 1),list(), rotation=30)
+    # ax1.set_xticklabels(np.arange(min(t), max(t)+1, 1),list(), rotation=30)
+    ax1.set_xticklabels(list(np.arange(min(t), max(t)+1, 1)), rotation=30)
     ax2 = ax1.twinx()  # instantiate a second axes that shares the same x-axis
     color = 'tab:blue'
     ax2.set_ylabel('Avg Stability', color=color)  # we already handled the x-label with ax1
