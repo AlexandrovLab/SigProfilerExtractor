@@ -19,8 +19,8 @@ from functools import partial
 from numpy import linalg as LA
 import sigProfilerPlotting as plot
 # from SigProfilerExtractor import PlotDecomposition as sp
-from SigProfilerExtractor import plotActivity as plot_ac
-from SigProfilerExtractor import tmbplot as tmb
+from sigProfilerPlotting import plotActivity as plot_ac
+from sigProfilerPlotting import tmbplot as tmb
 import string 
 import PyPDF2
 import os,sys
