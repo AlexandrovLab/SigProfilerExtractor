@@ -839,6 +839,7 @@ def sigProfilerExtractor(input_type,
         devopts['sequence']=sequence
         devopts['processSTE']=processSTE
         devopts['sequence']=sequence
+        devopts['make_decomposition_plots']=make_decomposition_plots
 
 
         # Check if genome_build is available in COSMIC, if not reset to GRCh37
