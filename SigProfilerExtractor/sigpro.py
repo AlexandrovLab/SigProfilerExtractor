@@ -45,13 +45,11 @@ from SigProfilerMatrixGenerator.scripts import SVMatrixGenerator as sv
 from SigProfilerMatrixGenerator.scripts import CNVMatrixGenerator as scna
 import multiprocessing as mp
 import SigProfilerExtractor as cosmic
-# from SigProfilerExtractor import single_sample as ss
 import SigProfilerAssignment as spa
 from SigProfilerAssignment import single_sample as spasub
 from SigProfilerAssignment import decomposition as decomp
-# from SigProfilerAssignment import Analyzer as Analyze
 from numpy.random import SeedSequence
-# from scipy.optimize import nnls
+MUTTYPE = "MutationType"
 
 def memory_usage():
     pid = os.getpid()
@@ -90,18 +88,20 @@ def importdata(datatype="matrix"):
     
     paths = cosmic.__path__[0]
     if datatype=="matobj":
-        data = paths+"/data/21_breast_WGS_substitutions.mat"
+        data = paths+"/data/MatObjInput/21_breast_WGS_substitutions.mat"
     elif datatype=="text" or datatype=="table" or datatype=="matrix":
-        data = paths+"/data/Samples.txt"
+        data = paths+"/data/TextInput/Samples.txt"
     elif datatype=="csv":
-        data = paths+"/data/csvexample.csv"
+        data = paths+"/data/CSVInput/csv_example.csv"
+    elif datatype=="seg:BATTENBERG":
+        data = paths+"/data/CNVInput/Battenberg_test.tsv"
     elif datatype=="vcf":
         directory = os.getcwd()
-        dataold = paths+"/data/vcftest"
-        datanew = directory+"/vcftest"
+        dataold = paths+"/data/VCFInput"
+        datanew = directory+"/VCFInput"
         if not os.path.exists(datanew):
             shutil.copytree(dataold , datanew)
-        data="vcftest"
+        data="VCFInput"
     return data
     
 def record_parameters(sysdata, execution_parameters, start_time):
@@ -449,8 +449,10 @@ def sigProfilerExtractor(input_type,
         
         if data.shape[0]==48:
             paths = cosmic.__path__[0]
-            feature_map=pd.read_csv(paths+"/data/CN_classes_dictionary.txt", sep="\t", header=None)
-            feature_order=pd.read_csv(paths+"/data/CNV_features.tsv", sep="\t", header=None)
+            feature_map=pd.read_csv(paths + "/data/ReferenceFiles/" + \
+                    "CN_classes_dictionary.txt", sep="\t", header=None)
+            feature_order=pd.read_csv(paths + "/data/ReferenceFiles/" + \
+                    "CNV_features.tsv", sep="\t", header=None)
             if list(data.iloc[:,0])==list(feature_order[0]):
                 pass
             else:
@@ -507,6 +509,8 @@ def sigProfilerExtractor(input_type,
             mtypes = ["ID"]
 
     elif input_type=="matobj":
+        import pdb
+        breakpoint()
         ################################# For matlab input files #######################################################
         mat_file = project
         title    = "" # set the title for plotting 
@@ -572,7 +576,8 @@ def sigProfilerExtractor(input_type,
         # SV input processing, execution parameters
         #project needs to be something NOT a file
         genomes = scna.generateCNVMatrix(cnv_file_type, input_data, cnv_file_type, output)
-        genomes = genomes.set_index('MutationType')
+        if MUTTYPE in genomes.columns:
+            genomes = genomes.set_index('MutationType')
         index = genomes.index.values
         colnames = genomes.columns
         allcolnames = colnames.copy()
