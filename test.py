@@ -42,7 +42,7 @@ def run_csv():
 
 if __name__ == '__main__':
     run_text()
-    run_vcf()
+    # run_vcf()
     run_cnv()
     # run_matobj()
     # run_csv()
