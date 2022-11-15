@@ -33,7 +33,7 @@ requirements=[
           'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.2.12', 
-          'sigProfilerPlotting>=1.3.3',
+          'sigProfilerPlotting>=1.3.4', 
           'SigProfilerAssignment>=0.0.15',
           'pillow',
           'statsmodels>=0.9.0',
