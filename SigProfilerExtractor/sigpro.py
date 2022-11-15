@@ -97,10 +97,10 @@ def importdata(datatype="matrix"):
         data = paths+"/data/CNVInput/Battenberg_test.tsv"
     elif datatype=="vcf":
         directory = os.getcwd()
-        dataold = paths+"/data/VCFInput"
-        datanew = directory+"/VCFInput"
+        dataold = os.path.join(paths, "data/VCFInput")
+        datanew = os.path.join(directory, "VCFInput")
         if not os.path.exists(datanew):
-            shutil.copytree(dataold , datanew)
+            shutil.copytree(dataold, datanew)
         data="VCFInput"
     return data
     

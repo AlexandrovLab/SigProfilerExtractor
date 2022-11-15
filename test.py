@@ -6,6 +6,8 @@ Created on Wed Jul 10 11:45:38 2019
 @author: mishugeb
 """
 from SigProfilerExtractor import sigpro as sig
+import SigProfilerExtractor as spe_mod
+import os
 
 def run_text():
     data = sig.importdata("text")
@@ -14,8 +16,8 @@ def run_text():
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
 def run_vcf():
-    data = sig.importdata("vcf")
-    sig.sigProfilerExtractor("vcf", "test_vcf_output", data,
+    vcf_data = os.path.join(spe_mod.__path__[0], "data/VCFInput/")
+    sig.sigProfilerExtractor("vcf", "test_vcf_output", vcf_data,
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
