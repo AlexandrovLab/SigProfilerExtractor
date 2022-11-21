@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.15'
+VERSION = '1.1.16'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Sync export_probabilities parameter with new SPA version'
+Update = 'Remove decomposition plots from SPE. Expand Travis tests.'
     
     """
     fh = open(filename, 'w')
@@ -33,7 +33,7 @@ requirements=[
           'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.2.12', 
-          'sigProfilerPlotting>=1.3.2', 
+          'sigProfilerPlotting>=1.3.4', 
           'SigProfilerAssignment>=0.0.15',
           'pillow',
           'statsmodels>=0.9.0',

@@ -129,3 +129,11 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# test script output
+test_csv_output/
+test_matobj_output/
+test_segCNV_output/
+test_text_output/
+test_vcf_output/
+VCFInput/

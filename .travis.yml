@@ -1,10 +1,25 @@
 dist: xenial
 language: python
 
+vm:
+  size: large
+
 python:
   - '3.8'
 
+before_install:
+  if ! [ -f ./src/GRCh37.tar.gz ]; then
+    wget ftp://alexandrovlab-ftp.ucsd.edu/pub/tools/SigProfilerMatrixGenerator/GRCh37.tar.gz -P ./src/;
+  fi
+
 install:
   - pip install .
+
+cache:
+  directories:
+    - $TRAVIS_BUILD_DIR/src/
+  
+before_script:
+  - python3 install_genome.py $TRAVIS_BUILD_DIR/src/
 
 script: python3 test.py
