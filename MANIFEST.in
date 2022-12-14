@@ -5,6 +5,4 @@ include SigProfilerExtractor/data/CSVInput/*
 include SigProfilerExtractor/data/CNVInput/*
 include SigProfilerExtractor/data/MatObjInput/*
 include SigProfilerExtractor/data/ReferenceFiles/*
-include SigProfilerExtractor/src/FormatFiles/*
-include SigProfilerExtractor/src/Fonts/*
-include SigProfilerExtractor/src/*
+
