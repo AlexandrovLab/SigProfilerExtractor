@@ -90,7 +90,9 @@ def importdata(datatype="matrix"):
     if datatype=="matobj":
         data = paths+"/data/MatObjInput/21_breast_WGS_substitutions.mat"
     elif datatype=="text" or datatype=="table" or datatype=="matrix":
-        data = paths+"/data/TextInput/Samples.txt"
+        data = paths+"/data/TextInput/Samples_SBS.txt"
+    elif datatype=="matrix_DBS":
+        data = paths+"/data/TextInput/Samples_DBS.txt"
     elif datatype=="csv":
         data = paths+"/data/CSVInput/csv_example.csv"
     elif datatype=="seg:BATTENBERG":
