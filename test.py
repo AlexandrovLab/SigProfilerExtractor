@@ -9,9 +9,15 @@ from SigProfilerExtractor import sigpro as sig
 import SigProfilerExtractor as spe_mod
 import os
 
-def run_text():
-    data = sig.importdata("text")
-    sig.sigProfilerExtractor("text", "test_text_output", data,
+def run_matrix_96():
+    data = sig.importdata("matrix")
+    sig.sigProfilerExtractor("matrix", "test_matrix_96_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
+
+def run_matrix_78():
+    data = sig.importdata("matrix_DBS")
+    sig.sigProfilerExtractor("matrix", "test_matrix_78_output", data,
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
@@ -41,7 +47,8 @@ def run_csv():
 
 
 if __name__ == '__main__':
-    run_text()
+    run_matrix_96()
+    run_matrix_78()
     # run_vcf()
     run_cnv()
     # run_matobj()

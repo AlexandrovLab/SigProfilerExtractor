@@ -90,7 +90,9 @@ def importdata(datatype="matrix"):
     if datatype=="matobj":
         data = paths+"/data/MatObjInput/21_breast_WGS_substitutions.mat"
     elif datatype=="text" or datatype=="table" or datatype=="matrix":
-        data = paths+"/data/TextInput/Samples.txt"
+        data = paths+"/data/TextInput/Samples_SBS.txt"
+    elif datatype=="matrix_DBS":
+        data = paths+"/data/TextInput/Samples_DBS.txt"
     elif datatype=="csv":
         data = paths+"/data/CSVInput/csv_example.csv"
     elif datatype=="seg:BATTENBERG":
@@ -859,7 +861,7 @@ def sigProfilerExtractor(input_type,
             genome_build = "GRCh37"
 
         decomp.spa_analyze(allgenomes, output, signatures=processAvg, genome_build=genome_build, cosmic_version=cosmic_version, exome=exome, verbose=False,
-                           decompose_fit_option= True, denovo_refit_option=True, cosmic_fit_option=False, export_probabilities=export_probabilities, devopts=devopts)
+                           decompose_fit_option= True, denovo_refit_option=True, cosmic_fit_option=False, export_probabilities=export_probabilities, devopts=devopts, make_metadata=False)
 
         
     sysdata = open(out_put+"/JOB_METADATA.txt", "a")
