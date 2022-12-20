@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.17'
+VERSION = '1.1.18'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Add DBS test and require plotting v1.3.8 or newer.'
+Update = 'Add ID test and SPA version requirement for ID decomposition plot fix.'
     
     """
     fh = open(filename, 'w')
@@ -34,7 +34,7 @@ requirements=[
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.2.12', 
           'sigProfilerPlotting>=1.3.8', 
-          'SigProfilerAssignment>=0.0.22',
+          'SigProfilerAssignment>=0.0.23',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
