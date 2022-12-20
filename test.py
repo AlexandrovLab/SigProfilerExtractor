@@ -21,6 +21,12 @@ def run_matrix_78():
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
+def run_matrix_83():
+    data = sig.importdata("matrix_ID")
+    sig.sigProfilerExtractor("matrix", "test_matrix_83_output", data, exome=True, reference_genome="GRCh38",
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
+
 def run_vcf():
     vcf_data = os.path.join(spe_mod.__path__[0], "data/VCFInput/")
     sig.sigProfilerExtractor("vcf", "test_vcf_output", vcf_data,
@@ -49,6 +55,7 @@ def run_csv():
 if __name__ == '__main__':
     run_matrix_96()
     run_matrix_78()
+    run_matrix_83()
     # run_vcf()
     run_cnv()
     # run_matobj()
