@@ -95,6 +95,8 @@ def importdata(datatype="matrix"):
         data = paths+"/data/TextInput/Samples_DBS.txt"
     elif datatype=="matrix_ID":
         data = paths+"/data/TextInput/Samples_ID.txt"
+    elif datatype=="matrix_CNV":
+        data = paths+"/data/TextInput/Samples_CNV.txt"
     elif datatype=="csv":
         data = paths+"/data/CSVInput/csv_example.csv"
     elif datatype=="seg:BATTENBERG":

@@ -33,7 +33,13 @@ def run_vcf():
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
-def run_cnv():
+def run_matrix_48():
+    data = sig.importdata("matrix_CNV")
+    sig.sigProfilerExtractor("matrix", "test_segCNV_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
+
+def run_seg_48():
     data = sig.importdata("seg:BATTENBERG")
     sig.sigProfilerExtractor("seg:BATTENBERG", "test_segCNV_output", data,
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
@@ -56,7 +62,8 @@ if __name__ == '__main__':
     run_matrix_96()
     run_matrix_78()
     run_matrix_83()
+    run_matrix_48()
+    run_seg_48()
     # run_vcf()
-    run_cnv()
     # run_matobj()
     # run_csv()
