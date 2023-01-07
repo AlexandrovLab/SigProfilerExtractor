@@ -55,10 +55,50 @@ def run_csv_change_cosmic_version():
     data = sig.importdata("csv")
     sig.sigProfilerExtractor("csv", "test_csv_output", data,
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
-            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.3)
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
+def run_matrix_96_change_cosmic_version():
+    data = sig.importdata("matrix")
+    sig.sigProfilerExtractor("matrix", "test_matrix_96_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
 
+def run_matrix_78_change_cosmic_version():
+    data = sig.importdata("matrix_DBS")
+    sig.sigProfilerExtractor("matrix", "test_matrix_78_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
+
+def run_matrix_83_change_cosmic_version():
+    data = sig.importdata("matrix_ID")
+    sig.sigProfilerExtractor("matrix", "test_matrix_83_output", data, exome=True, reference_genome="GRCh38",
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
+
+def run_vcf_change_cosmic_version():
+    vcf_data = os.path.join(spe_mod.__path__[0], "data/VCFInput/")
+    sig.sigProfilerExtractor("vcf", "test_vcf_output", vcf_data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
+
+def run_cnv_change_cosmic_version():
+    data = sig.importdata("seg:BATTENBERG")
+    sig.sigProfilerExtractor("seg:BATTENBERG", "test_segCNV_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
+
+def run_matobj_change_cosmic_version():
+    data = sig.importdata("matobj")
+    sig.sigProfilerExtractor("matobj", "test_matobj_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100,cosmic_version=3.2)
 if __name__ == '__main__':
     run_csv_change_cosmic_version()
+    run_matrix_96_change_cosmic_version()
+    run_matrix_78_change_cosmic_version()
+    run_matrix_83_change_cosmic_version()
+    run_vcf_change_cosmic_version()
+    run_cnv_change_cosmic_version()
+    run_matobj_change_cosmic_version()
     # run_matrix_96()
     # run_matrix_78()
     # run_matrix_83()
