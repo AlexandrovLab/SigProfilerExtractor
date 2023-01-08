@@ -137,3 +137,7 @@ test_segCNV_output/
 test_text_output/
 test_vcf_output/
 VCFInput/
+.idea/
+test_matrix_78_output/
+test_matrix_83_output/
+test_matrix_96_output

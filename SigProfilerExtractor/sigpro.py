@@ -197,7 +197,7 @@ def sigProfilerExtractor(input_type,
                          min_stability=0.2, 
                          combined_stability=1.0,
                          allow_stability_drop=False,
-                         get_all_signature_matrices= False): 
+                         get_all_signature_matrices= False):
     """
     Extracts mutational signatures from an array of samples.
     
