@@ -16,15 +16,15 @@ with open('README.md') as f:
 
 def write_version_py(filename='SigProfilerExtractor/version.py'):
     # Copied from numpy setup.py
-    cnt = """
+    cnt = f"""
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
-short_version = '%(version)s'
-version = '%(version)s'
+short_version = '{VERSION}'
+version = '{VERSION}'
 Update = 'Update SigProfilerAssignment version requirement'
     
     """
     fh = open(filename, 'w')
-    fh.write(cnt % {'version': VERSION,})
+    fh.write(cnt)
     fh.close()
 requirements=[
           'scipy>=1.6.3',
@@ -46,25 +46,24 @@ requirements=[
 operating_system = sys.platform   
 print(operating_system)
 if operating_system  in ['win32','cygwin','windows']:
-    if 'matplotlib>=3.3.0' in requirements:
-        requirements.remove('matplotlib>=3.3.0')
-    if 'torch==1.5.1' in requirements:
-        requirements.remove('torch==1.5.1')
-    print('Trying to install pytorch!')
+    torch_version = [requirement for requirement in requirements if requirement.startswith("torch")] # find torch version specified in requirements list
+    if len(torch_version)>1: 
+        requirements.remove(torch_version) # remove torch from requirements list if exists
+    print('Trying to install PyTorch!')
     code = 1
     try:
-        code = subprocess.call(['pip', 'install', 'torch===1.5.1+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+        code = subprocess.call(['pip', 'install', f'{torch_version}+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
         if code != 0:
-            raise Exception('Torch  installation failed !')
+            raise Exception('PyTorch installation failed!')
     except:
         try:
-            code = subprocess.call(['pip3', 'install', 'torch===1.5.1+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+            code = subprocess.call(['pip3', 'install', f'{torch_version}+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
             if code != 0:
-                raise Exception('Torch instalation failed !')
+                raise Exception('PyTorch installation failed!')
         except:
-            print('Failed to install pytorch, please install pytorch manually be following the simple instructions over at: https://pytorch.org/get-started/locally/')
+            print('Failed to install PyTorch, please install PyTorch manually be following the simple instructions over at: https://pytorch.org/get-started/locally/')
     if code == 0:
-        print('Successfully installed pytorch version! (If you need the GPU version, please install it manually, checkout the mindsdb docs and the pytroch docs if you need help)')
+        print('Successfully installed PyTorch version! (If you need the GPU version, please install it manually, checkout the mindsdb docs and the pytroch docs if you need help)')
     
     
 write_version_py()
