@@ -54,9 +54,9 @@ def run_csv():
 
 if __name__ == '__main__':
     run_matrix_96()
-    run_matrix_78()
-    run_matrix_83()
-    # run_vcf()
-    run_cnv()
+    # run_matrix_78()
+    # run_matrix_83()
+    # # run_vcf()
+    # run_cnv()
     # run_matobj()
     # run_csv()
