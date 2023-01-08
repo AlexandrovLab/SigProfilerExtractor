@@ -47,17 +47,19 @@ operating_system = sys.platform
 print(operating_system)
 if operating_system  in ['win32','cygwin','windows']:
     torch_version = [requirement for requirement in requirements if requirement.startswith("torch")] # find torch version specified in requirements list
-    if len(torch_version)>1: 
-        requirements.remove(torch_version) # remove torch from requirements list if exists
+    if len(torch_version)>=1: 
+        for version in torch_version: # in case there is more than 1 torch version specified
+            requirements.remove(version) # remove torch from requirements list if exists
+
     print('Trying to install PyTorch!')
     code = 1
     try:
-        code = subprocess.call(['pip', 'install', f'{torch_version}+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+        code = subprocess.call(['pip', 'install', f'{torch_version[0]}+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
         if code != 0:
             raise Exception('PyTorch installation failed!')
     except:
         try:
-            code = subprocess.call(['pip3', 'install', f'{torch_version}+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
+            code = subprocess.call(['pip3', 'install', f'{torch_version[0]}+cpu',  '-f', 'https://download.pytorch.org/whl/torch_stable.html'])
             if code != 0:
                 raise Exception('PyTorch installation failed!')
         except:
