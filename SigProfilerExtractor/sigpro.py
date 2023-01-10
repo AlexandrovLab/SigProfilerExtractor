@@ -797,7 +797,7 @@ def sigProfilerExtractor(input_type,
             information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchycal approach
             
             ################################# Export the results ###########################################################    
-            sub.export_information(loopResults, m, layer_directory, index, colnames, wall=wall, sequence=sequence)
+            sub.export_information(loopResults, mutation_type, layer_directory, index, colnames, wall=wall, sequence=sequence)
             all_similirities_list.append(all_similarities)
             current_time_end = datetime.datetime.now()
             sysdata = open(out_put+"/JOB_METADATA.txt", "a")

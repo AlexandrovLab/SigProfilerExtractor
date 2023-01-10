@@ -965,10 +965,7 @@ def read_csv(filename, folder = False):
 
 
 ###################################################################################### Export Results ###########################################
-def export_information(loopResults, mutation_context, output, index, colnames, sequence="genome", wall=False):
-    
-  
-    
+def export_information(loopResults, mutation_type, output, index, colnames, sequence="genome", wall=False):
     
     # get the number of processes
     i = loopResults[-1]
@@ -980,15 +977,7 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     
     # get the mutational contexts    
     #print ("The mutaion type is", mutation_type)    
-    m = mutation_context
-    if not (m=="DINUC"or m=="INDEL"):
-        mutation_type = "SBS"+m
-            
-    else:
-        if m == "DINUC":
-            mutation_type = "DBS78"
-        elif m== "INDEL":
-            mutation_type = "ID83"
+    m = mutation_type
     # Create the neccessary directories
     subdirectory = output+"/All_Solutions/"+mutation_type+"_"+str(i)+"_Signatures"
     signature_subdirectory=subdirectory+"/Signatures"
@@ -1105,15 +1094,15 @@ def export_information(loopResults, mutation_context, output, index, colnames, s
     
     
     
-    if m=="DINUC" or m=="78":        
+    if m=="DBS78":        
         plot.plotDBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "78", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
-    elif m=="INDEL" or m=="83":
+    elif m=="ID83":
         plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
-    elif m=="CNV" or m=="48":
+    elif m=="CNV48":
          plot.plotCNV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
-    elif m=="SV" or m=="32":
+    elif m=="SV32":
          plot.plotSV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
-    elif m=="96" or m=="288" or m=="384" or m=="1536":
+    elif m=="SBS96" or m=="SBS288" or m=="SBS384" or m=="SBS1536" or m=="4608":
         plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     else:
         custom_signatures_plot(processes, signature_subdirectory)

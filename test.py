@@ -35,7 +35,7 @@ def run_vcf():
 
 def run_matrix_48():
     data = sig.importdata("matrix_CNV")
-    sig.sigProfilerExtractor("matrix", "test_segCNV_output", data,
+    sig.sigProfilerExtractor("matrix", "test_matrix_48_output", data,
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
