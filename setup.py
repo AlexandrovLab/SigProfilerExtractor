@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.19'
+VERSION = '1.1.20'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Update SigProfilerAssignment version requirement'
+Update = 'Upgrade v1.1.20: Resolve naming issue with SV/CNV All_Solutions directory.'
     
     """
     fh = open(filename, 'w')
@@ -33,8 +33,8 @@ requirements=[
           'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.2.12', 
-          'sigProfilerPlotting>=1.3.8', 
-          'SigProfilerAssignment>=0.0.24',
+          'sigProfilerPlotting==1.3.8', 
+          'SigProfilerAssignment>=0.0.25',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
