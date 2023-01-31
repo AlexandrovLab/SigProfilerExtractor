@@ -102,12 +102,7 @@ def importdata(datatype="matrix"):
     elif datatype=="seg:BATTENBERG":
         data = paths+"/data/CNVInput/Battenberg_test.tsv"
     elif datatype=="vcf":
-        directory = os.getcwd()
-        dataold = os.path.join(paths, "data/VCFInput")
-        datanew = os.path.join(directory, "VCFInput")
-        if not os.path.exists(datanew):
-            shutil.copytree(dataold, datanew)
-        data="VCFInput"
+        data = paths+"/data/VCFInput/"
     return data
     
 def record_parameters(sysdata, execution_parameters, start_time):
@@ -515,8 +510,6 @@ def sigProfilerExtractor(input_type,
             mtypes = ["ID"]
 
     elif input_type=="matobj":
-        import pdb
-        breakpoint()
         ################################# For matlab input files #######################################################
         mat_file = project
         title    = "" # set the title for plotting 

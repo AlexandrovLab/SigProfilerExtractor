@@ -28,7 +28,7 @@ def run_matrix_83():
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
 def run_vcf():
-    vcf_data = os.path.join(spe_mod.__path__[0], "data/VCFInput/")
+    vcf_data = sig.importdata("vcf")
     sig.sigProfilerExtractor("vcf", "test_vcf_output", vcf_data,
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
@@ -64,6 +64,6 @@ if __name__ == '__main__':
     run_matrix_83()
     run_matrix_48()
     run_seg_48()
-    # run_vcf()
+    run_vcf()
     # run_matobj()
     # run_csv()
