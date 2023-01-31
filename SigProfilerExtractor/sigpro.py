@@ -95,17 +95,14 @@ def importdata(datatype="matrix"):
         data = paths+"/data/TextInput/Samples_DBS.txt"
     elif datatype=="matrix_ID":
         data = paths+"/data/TextInput/Samples_ID.txt"
+    elif datatype=="matrix_CNV":
+        data = paths+"/data/TextInput/Samples_CNV.txt"
     elif datatype=="csv":
         data = paths+"/data/CSVInput/csv_example.csv"
     elif datatype=="seg:BATTENBERG":
         data = paths+"/data/CNVInput/Battenberg_test.tsv"
     elif datatype=="vcf":
-        directory = os.getcwd()
-        dataold = os.path.join(paths, "data/VCFInput")
-        datanew = os.path.join(directory, "VCFInput")
-        if not os.path.exists(datanew):
-            shutil.copytree(dataold, datanew)
-        data="VCFInput"
+        data = paths+"/data/VCFInput/"
     return data
     
 def record_parameters(sysdata, execution_parameters, start_time):
@@ -513,8 +510,6 @@ def sigProfilerExtractor(input_type,
             mtypes = ["ID"]
 
     elif input_type=="matobj":
-        import pdb
-        breakpoint()
         ################################# For matlab input files #######################################################
         mat_file = project
         title    = "" # set the title for plotting 
@@ -795,7 +790,7 @@ def sigProfilerExtractor(input_type,
             information.append([processAvg, exposureAvg, processStd, exposureStd, clusterSilhouetteCoefficients, signature_total_mutations, signature_stats, all_similarities]) #Will be used during hierarchycal approach
             
             ################################# Export the results ###########################################################    
-            sub.export_information(loopResults, m, layer_directory, index, colnames, wall=wall, sequence=sequence)
+            sub.export_information(loopResults, mutation_type, layer_directory, index, colnames, wall=wall, sequence=sequence)
             all_similirities_list.append(all_similarities)
             current_time_end = datetime.datetime.now()
             sysdata = open(out_put+"/JOB_METADATA.txt", "a")
