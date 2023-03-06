@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.20'
+VERSION = '1.1.21'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.20: Resolve naming issue with SV/CNV All_Solutions directory.'
+Update = 'Upgrade v1.1.21: Resolve plotSBS context issue.'
     
     """
     fh = open(filename, 'w')
