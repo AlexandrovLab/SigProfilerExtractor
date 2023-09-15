@@ -490,7 +490,7 @@ def sigProfilerExtractor(input_type,
             mtypes = ["CNV48"]
         elif mtypes[0]=="32":
             mtypes = ["SV32"]
-        elif mtypes[0]=="96" or "288" or "384" or "1536":
+        elif mtypes[0]=="96" or "288" or "384" or "1536" or "4608":
             mtypes = ["SBS"+mtypes[0]]
         else:
             mtypes = ["CH"+mtypes[0]]
@@ -608,7 +608,7 @@ def sigProfilerExtractor(input_type,
             
             if m.startswith("SBS"):
                 mutation_type = m
-            elif m in ["96","288","384","1536"]:
+            elif m in ["96","288","384","1536", "4608"]:
                 mutation_type="SBS"+m
             elif m.startswith("78"): 
                 mutation_type="DBS78"

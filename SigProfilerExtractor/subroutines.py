@@ -1095,19 +1095,22 @@ def export_information(loopResults, mutation_type, output, index, colnames, sequ
     
     
     if m=="DBS78":        
-        plot.plotDBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "78", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+        plot.plotDBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot/" , "S"+str(i), "78", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="ID83":
-        plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+        plot.plotID(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot/" , "S"+str(i), "83", True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
     elif m=="CNV48":
-         plot.plotCNV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
+         plot.plotCNV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot/"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
     elif m=="SV32":
-         plot.plotSV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
-    elif m=="SBS96" or m=="SBS288" or m=="SBS384" or m=="SBS1536" or m=="4608":
+         plot.plotSV(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot/"  , "S"+str(i), "pdf", percentage=True, aggregate=False)
+    elif m=="SBS96" or m=="SBS288" or m=="SBS384" or m=="SBS1536" or m=="SBS4608":
         # parse 'm' to be accepted by the plotSBS function
         tmp_m = m
         if m.startswith("SBS"):
             tmp_m = m[3:]
-        plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot", "S"+str(i), tmp_m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+        if m=="SBS96" or m=="SBS288" or m=="SBS384" or m=="SBS1536":
+            plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot/", "S"+str(i), tmp_m, True, custom_text_upper=stability_list, custom_text_middle=total_mutation_list)
+        elif m=="SBS4608":
+            plot.plotSBS(signature_subdirectory+"/"+mutation_type+"_S"+str(i)+"_Signatures"+".txt", signature_subdirectory+"/Signature_plot/", "S"+str(i), tmp_m, True)
     else:
         custom_signatures_plot(processes, signature_subdirectory)
 

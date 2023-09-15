@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.21'
+VERSION = '1.1.22'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.21: Resolve plotSBS context issue.'
+Update = 'Upgrade v1.1.22: Resolve issue with 4608 plotting as custom'
     
     """
     fh = open(filename, 'w')
@@ -32,9 +32,9 @@ requirements=[
           'numpy>=1.21.2',
           'pandas>=1.2.4', 
           'nimfa>=1.1.0', 
-          'SigProfilerMatrixGenerator>=1.2.12', 
-          'sigProfilerPlotting>=1.3.10',
-          'SigProfilerAssignment>=0.0.25',
+          'SigProfilerMatrixGenerator>=1.2.17',
+          'sigProfilerPlotting>=1.3.16',
+          'SigProfilerAssignment>=0.0.32',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
