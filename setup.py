@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = '1.1.22'
+VERSION = '1.1.23'
 
 
 with open('README.md') as f:
@@ -20,7 +20,7 @@ def write_version_py(filename='SigProfilerExtractor/version.py'):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.22: Resolve issue with 4608 plotting as custom'
+Update = 'Upgrade v1.1.23: Update to use the latest SigProfilerAssignment with COSMIC v3.4 signatures.'
     
     """
     fh = open(filename, 'w')
@@ -34,7 +34,7 @@ requirements=[
           'nimfa>=1.1.0', 
           'SigProfilerMatrixGenerator>=1.2.17',
           'sigProfilerPlotting>=1.3.16',
-          'SigProfilerAssignment>=0.0.32',
+          'SigProfilerAssignment>=0.1.0',
           'pillow',
           'statsmodels>=0.9.0',
           'scikit-learn>=0.24.2',
