@@ -45,6 +45,12 @@ def run_seg_48():
             minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
             min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
 
+def run_matrix_32():
+    data = sig.importdata("matrix_SV")
+    sig.sigProfilerExtractor("matrix", "test_matrix_32_output", data,
+            minimum_signatures=3, maximum_signatures=3, nmf_replicates=5,
+            min_nmf_iterations=100, max_nmf_iterations=1000, nmf_test_conv=100)
+
 def run_matobj():
     data = sig.importdata("matobj")
     sig.sigProfilerExtractor("matobj", "test_matobj_output", data,
@@ -63,6 +69,7 @@ if __name__ == '__main__':
     run_matrix_78()
     run_matrix_83()
     run_matrix_48()
+    run_matrix_32()
     run_seg_48()
     run_vcf()
     # run_matobj()

@@ -124,7 +124,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. | 
 |  | **allow_stability_drop** | Boolean | Default is False. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered. | 
 | **Decomposition** |  |  |  | 
-|  | **cosmic_version** | Float | Takes a positive float among 1, 2, 3, 3.1, 3.2 and 3.3. Default is 3.3. Defines the version of the COSMIC reference signatures. | 
+|  | **cosmic_version** | Float | Takes a positive float among 1, 2, 3, 3.1, 3.2, 3.3, and 3.4. Default is 3.4. Defines the version of the COSMIC reference signatures. | 
 |  | **make_decomposition_plots** | Boolean | Defualt is True. If True, Denovo to Cosmic sigantures decompostion plots will be created as a part the results. | 
 |  | **collapse_to_SBS96** | Boolean | Defualt is True. If True, SBS288 and SBS1536 Denovo signatures will be mapped to SBS96 reference signatures. If False, those will be mapped to reference signatures of the same context. 
 | **Others** |  |  |  | 

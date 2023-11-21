@@ -101,6 +101,8 @@ def importdata(datatype="matrix"):
         data = paths+"/data/CSVInput/csv_example.csv"
     elif datatype=="seg:BATTENBERG":
         data = paths+"/data/CNVInput/Battenberg_test.tsv"
+    elif datatype=="matrix_SV":
+        data = paths+"/data/TextInput/Samples_SV.txt"
     elif datatype=="vcf":
         data = paths+"/data/VCFInput/"
     return data
@@ -165,7 +167,7 @@ def sigProfilerExtractor(input_type,
                          input_data, 
                          reference_genome="GRCh37", 
                          opportunity_genome = "GRCh37", 
-                         cosmic_version=3.3,
+                         cosmic_version=3.4,
                          context_type = "default", 
                          exome = False, 
                          minimum_signatures=1,
