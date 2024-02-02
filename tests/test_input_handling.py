@@ -7,7 +7,7 @@ from SigProfilerExtractor import sigpro as sig
 
 SPE_PATH = os.path.dirname(os.path.abspath(__file__))
 SPE_PATH_SBS_INPUT = SPE_PATH + "/TextUnorderedInput/Samples_SBS.txt"
-SPE_PATH_SBS_OUTPUT = SPE_PATH + "/TextOutput/SBS_output"
+SPE_PATH_SBS_OUTPUT = SPE_PATH + "/TextOutput/SBS_output/"
 
 def test_output_text():
     # Specify the paths for actual and expected output files
@@ -22,18 +22,6 @@ def test_output_text():
         actual_content = actual_file.read()
         expected_content = expected_file.read()
     
-    
-    # Remove unwanted files in the SBS_output directory
-    shutil.rmtree(SPE_PATH + "/TextOutput/SBS_output/SBS96/All_Solutions")
-    os.remove(SPE_PATH + "/TextOutput/SBS_output/SBS96/All_solutions_stat.csv")
-    os.remove(SPE_PATH + "/TextOutput/SBS_output/SBS96/Samples.txt")
-    os.remove(SPE_PATH + "/TextOutput/SBS_output/SBS96/SBS96_selection_plot.pdf")  
-    shutil.rmtree(SPE_PATH + "/TextOutput/SBS_output/SBS96/Suggested_Solution/COSMIC_SBS96_Decomposed_Solution")
-    shutil.rmtree(SPE_PATH + "/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Activities/")
-    shutil.rmtree(SPE_PATH + "/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Solution_Stats/")
-    os.remove(SPE_PATH + "/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Signatures/SBS_96_plots_SBS96_De-Novo.pdf")
-    os.remove(SPE_PATH + "/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Signatures/SBS96_De-Novo_Signatures_SEM_Error.txt")
-
     assert actual_content == expected_content, "Output does not match expected content."
 
 
