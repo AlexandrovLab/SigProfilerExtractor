@@ -141,13 +141,13 @@ SigProfilerExtractor/data/VCFInput/logs/
 SigProfilerExtractor/data/VCFInput/input/
 SigProfilerExtractor/data/VCFInput/output/
 
-# test_input_handling script output
-/TextOutput/SBS_output/SBS96/All_Solutions
-/TextOutput/SBS_output/SBS96/All_solutions_stat.csv
-/TextOutput/SBS_output/SBS96/Samples.txt
-/TextOutput/SBS_output/SBS96/SBS96_selection_plot.pdf
-/TextOutput/SBS_output/SBS96/Suggested_Solution/COSMIC_SBS96_Decomposed_Solution
-/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Activities/
-/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Solution_Stats/
-/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Signatures/SBS_96_plots_SBS96_De-Novo.pdf
-/TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Signatures/SBS96_De-Novo_Signatures_SEM_Error.txt
+# # test_input_handling script output
+# /TextOutput/SBS_output/SBS96/All_Solutions
+# /TextOutput/SBS_output/SBS96/All_solutions_stat.csv
+# /TextOutput/SBS_output/SBS96/Samples.txt
+# /TextOutput/SBS_output/SBS96/SBS96_selection_plot.pdf
+# /TextOutput/SBS_output/SBS96/Suggested_Solution/COSMIC_SBS96_Decomposed_Solution
+# /TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Activities/
+# /TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Solution_Stats/
+# /TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Signatures/SBS_96_plots_SBS96_De-Novo.pdf
+# /TextOutput/SBS_output/SBS96/Suggested_Solution/SBS96_De-Novo_Solution/Signatures/SBS96_De-Novo_Signatures_SEM_Error.txt
