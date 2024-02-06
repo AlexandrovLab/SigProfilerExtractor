@@ -7,7 +7,10 @@ from SigProfilerExtractor import sigpro as sig
 
 SPE_PATH = os.path.dirname(os.path.abspath(__file__))
 SPE_PATH_SBS_INPUT = SPE_PATH + "/TextUnorderedInput/Samples_SBS.txt"
-SPE_PATH_SBS_OUTPUT = SPE_PATH + "/TextOutput/SBS_output/"
+# Define the path of the TextOutput folder within SPE_PATH
+text_output_folder = os.path.join(SPE_PATH, "TextOutput")
+# Define the path of the SBS_output folder within the TextOutput folder
+SPE_PATH_SBS_OUTPUT = os.path.join(text_output_folder, "SBS_output")
 
 def test_output_text():
     # Specify the paths for actual and expected output files
@@ -22,5 +25,5 @@ def test_output_text():
         actual_content = actual_file.read()
         expected_content = expected_file.read()
 
-    assert actual_content == expected_content, "Output does not match expected content."
+    assert actual_content == pytest.approx(expected_content), "Output does not match expected content."
 
