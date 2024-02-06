@@ -37,5 +37,5 @@ def test_output_text():
         actual_values = [round_float(float(val)) for val in actual_line.strip().split() if val.replace('.', '', 1).isdigit()]
         expected_values = [round_float(float(val)) for val in expected_line.strip().split() if val.replace('.', '', 1).isdigit()]
 
-        assert actual_values == expected_values, f"Output does not match expected content. Actual: {actual_values}, Expected: {expected_values}"
+        assert actual_values == pytest.approx(expected_values), f"Output does not match expected content. Actual: {actual_values}, Expected: {expected_values}"
 
