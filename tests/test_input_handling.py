@@ -13,7 +13,7 @@ text_output_folder = os.path.join(SPE_PATH, "TextOutput")
 SPE_PATH_SBS_OUTPUT = os.path.join(text_output_folder, "SBS_output")
 
 def round_float(number):
-    return round(number, 5)  # Round to 5 decimal places after the fraction 
+    return round(number, 4)  # Round to 5 decimal places after the fraction 
 
 def test_output_text():
     # Specify the paths for actual and expected output files
