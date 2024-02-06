@@ -34,8 +34,8 @@ def test_output_text():
         if actual_line.startswith("MutationType") or expected_line.startswith("MutationType"):
             continue
         
-        actual_values = [round_float(float(val)) for val in actual_line.strip().split() if val.replace('.', '', 1).isdigit()]
-        expected_values = [round_float(float(val)) for val in expected_line.strip().split() if val.replace('.', '', 1).isdigit()]
+        actual_values = ["{:.4f}".format(float(val)) for val in actual_line.strip().split() if val.replace('.', '', 1).isdigit()]
+        expected_values = ["{:.4f}".format(float(val)) for val in expected_line.strip().split() if val.replace('.', '', 1).isdigit()]
 
         assert actual_values == pytest.approx(expected_values), f"Output does not match expected content. Actual: {actual_values}, Expected: {expected_values}"
 
