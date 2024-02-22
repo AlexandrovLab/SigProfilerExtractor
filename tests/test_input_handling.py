@@ -53,6 +53,8 @@ def test_output_text():
         for actual_row, expected_row in zip(actual_csv_reader, expected_csv_reader):
             # Check if the first column values are the same
             assert actual_row[0] == expected_row[0], "First column values are not the same."
+            # Check if the 2nd column values are the same
+            assert actual_row[1] == expected_row[1], "2nd column values are not the same."
     
     print("Test passed: Output matches expected content.")
 
