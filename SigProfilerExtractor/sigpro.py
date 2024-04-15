@@ -53,6 +53,7 @@ import SigProfilerAssignment as spa
 from SigProfilerAssignment import single_sample as spasub
 from SigProfilerAssignment import decomposition as decomp
 from numpy.random import SeedSequence
+from sigProfilerPlotting import sigProfilerPlotting as sigPlot
 
 MUTTYPE = "MutationType"
 
@@ -557,35 +558,40 @@ def sigProfilerExtractor(
         else:
             data = pd.read_csv(text_file, sep="\t").iloc[:, :]
 
-        if data.shape[0] == 48:
-            paths = cosmic.__path__[0]
-            feature_map = pd.read_csv(
-                paths + "/data/ReferenceFiles/" + "CN_classes_dictionary.txt",
-                sep="\t",
-                header=None,
-            )
-            feature_order = pd.read_csv(
-                paths + "/data/ReferenceFiles/" + "CNV_features.tsv",
-                sep="\t",
-                header=None,
-            )
-            if list(data.iloc[:, 0]) == list(feature_order[0]):
-                pass
-            else:
-                orderlist1 = list(feature_map[0])
-                orderlist2 = list(feature_order[0])
-                # sort the MutationType first step
-                data["MutationType"] = pd.Categorical(data["MutationType"], orderlist1)
-                data = data.sort_values("MutationType")
-                data = data.reset_index()
-                data = data.drop(columns="index")
-                # sort the MutationType second step
-                data["MutationType"] = feature_map[1]
-                data["MutationType"] = pd.Categorical(data["MutationType"], orderlist2)
-                data = data.sort_values("MutationType")
+        # if data.shape[0] == 48:
+        #     paths = cosmic.__path__[0]
+        #     feature_map = pd.read_csv(
+        #         paths + "/data/ReferenceFiles/" + "CN_classes_dictionary.txt",
+        #         sep="\t",
+        #         header=None,
+        #     )
+        #     feature_order = pd.read_csv(
+        #         paths + "/data/ReferenceFiles/" + "CNV_features.tsv",
+        #         sep="\t",
+        #         header=None,
+        #     )
+        #     if list(data.iloc[:, 0]) == list(feature_order[0]):
+        #         pass
+        #     else:
+        #         orderlist1 = list(feature_map[0])
+        #         orderlist2 = list(feature_order[0])
+        #         # sort the MutationType first step
+        #         data["MutationType"] = pd.Categorical(data["MutationType"], orderlist1)
+        #         data = data.sort_values("MutationType")
+        #         data = data.reset_index()
+        #         data = data.drop(columns="index")
+        #         # sort the MutationType second step
+        #         data["MutationType"] = feature_map[1]
+        #         data["MutationType"] = pd.Categorical(data["MutationType"], orderlist2)
+        #         data = data.sort_values("MutationType")
 
         data = data.dropna(axis=1, inplace=False)
         data = data.loc[:, (data != 0).any(axis=0)]
+        # printing the number of mutations
+        mutation_number = str(data.shape[0])
+        # Re-indexing the input matrix file by using process_input function from SigProfilePlotting
+        data = sigPlot.process_input(data, mutation_number)
+        data.reset_index(inplace=True)
         genomes = data.iloc[:, 1:]
         genomes = np.array(genomes)
         allgenomes = genomes.copy()  # save the allgenomes for the final results
