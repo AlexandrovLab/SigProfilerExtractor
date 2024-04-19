@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.1.23"
+VERSION = "1.1.24"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.23: Update to use the latest SigProfilerAssignment with COSMIC v3.4 signatures.'
+Update = 'Upgrade v1.1.24: Add input processing to SigProfilerExtractor"
     
     """
     fh = open(filename, "w")
@@ -40,9 +40,9 @@ requirements = [
     "numpy>=1.21.2",
     "pandas>=1.2.4",
     "nimfa>=1.1.0",
-    "SigProfilerMatrixGenerator>=1.2.17",
-    "sigProfilerPlotting>=1.3.16",
-    "SigProfilerAssignment>=0.1.0",
+    "SigProfilerMatrixGenerator>=1.2.25",
+    "sigProfilerPlotting>=1.3.22",
+    "SigProfilerAssignment>=0.1.4",
     "pillow",
     "statsmodels>=0.9.0",
     "scikit-learn>=0.24.2",
