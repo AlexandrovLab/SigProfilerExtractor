@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.24: Add input processing to SigProfilerExtractor"
+Update = 'Upgrade v1.1.24: Add input processing to SigProfilerExtractor'
     
     """
     fh = open(filename, "w")
