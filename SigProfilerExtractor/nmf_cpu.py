@@ -19,9 +19,19 @@ from torch import nn
 
 
 class NMF:
-    def __init__(self, V, rank, max_iterations=200000, tolerance=1e-8, test_conv=1000, gpu_id=0, generator=None,
-                 init_method='nndsvd', floating_point_precision='single', min_iterations=2000):
-
+    def __init__(
+        self,
+        V,
+        rank,
+        max_iterations=200000,
+        tolerance=1e-8,
+        test_conv=1000,
+        gpu_id=0,
+        generator=None,
+        init_method="nndsvd",
+        floating_point_precision="single",
+        min_iterations=2000,
+    ):
         """
         Run non-negative matrix factorisation using GPU. Uses beta-divergence.
 
@@ -43,16 +53,16 @@ class NMF:
           min_iterations: the minimum number of iterations to execute before termination. Useful when using
               fp32 tensors as convergence can happen too early.
         """
-        #torch.cuda.set_device(gpu_id)
+        # torch.cuda.set_device(gpu_id)
 
-        if floating_point_precision == 'single':
+        if floating_point_precision == "single":
             self._tensor_type = torch.FloatTensor
             self._np_dtype = np.float32
-        elif floating_point_precision == 'double':
+        elif floating_point_precision == "double":
             self._tensor_type = torch.DoubleTensor
             self._np_dtype = np.float64
         else:
-            raise ValueError("Precision needs to be either 'single' or 'double'." )
+            raise ValueError("Precision needs to be either 'single' or 'double'.")
 
         self.max_iterations = max_iterations
         self.min_iterations = min_iterations
@@ -62,12 +72,12 @@ class NMF:
             V = V[None, :, :]
 
         self._V = V.type(self._tensor_type)
-        self._fix_neg = nn.Threshold(0., 1e-8)
+        self._fix_neg = nn.Threshold(0.0, 1e-8)
         self._tolerance = tolerance
         self._prev_loss = None
         self._iter = 0
         self._test_conv = test_conv
-        #self._gpu_id = gpu_id
+        # self._gpu_id = gpu_id
         self._rank = rank
         self._generator = generator
         self._W, self._H = self._initialise_wh(init_method)
@@ -76,52 +86,72 @@ class NMF:
         """
         Initialise basis and coefficient matrices according to `init_method`
         """
-        if init_method == 'random':
-            W = torch.unsqueeze(torch.from_numpy(self._generator.random((self._V.shape[1],self._rank), dtype=np.float64)),0)
-            H = torch.unsqueeze(torch.from_numpy(self._generator.random((self._rank, self._V.shape[2]), dtype=np.float64)),0)
+        if init_method == "random":
+            W = torch.unsqueeze(
+                torch.from_numpy(
+                    self._generator.random(
+                        (self._V.shape[1], self._rank), dtype=np.float64
+                    )
+                ),
+                0,
+            )
+            H = torch.unsqueeze(
+                torch.from_numpy(
+                    self._generator.random(
+                        (self._rank, self._V.shape[2]), dtype=np.float64
+                    )
+                ),
+                0,
+            )
             if self._np_dtype is np.float32:
                 W = W.float()
                 H = H.float()
             return W, H
 
-        elif init_method == 'nndsvd':
+        elif init_method == "nndsvd":
             W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
             H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
                 vin = np.mat(self._V.cpu().numpy()[i])
-                W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 0})
-                
-        elif init_method == 'nndsvda':
-            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
-            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
-            nv = nndsvd.Nndsvd()
-            for i in range(self._V.shape[0]):
-                vin = np.mat(self._V.cpu().numpy()[i])
-                W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 1})
+                W[i, :, :], H[i, :, :] = nv.initialize(
+                    vin, self._rank, options={"flag": 0}
+                )
 
-        elif init_method == 'nndsvdar':
+        elif init_method == "nndsvda":
             W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
             H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
                 vin = np.mat(self._V.cpu().numpy()[i])
-                W[i,:,:], H[i,:,:] = nv.initialize(vin, self._rank, options={'flag': 2})
-        elif init_method =='nndsvd_min':
-           W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
-           H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
-           nv = nndsvd.Nndsvd()
-           for i in range(self._V.shape[0]):
-               vin = np.mat(self._V.cpu().numpy()[i])
-               w, h = nv.initialize(vin, self._rank, options={'flag': 2})
-               min_X = np.min(vin[vin>0])
-               h[h <= min_X] = min_X
-               w[w <= min_X] = min_X
-               #W= np.expand_dims(W, axis=0)
-               #H = np.expand_dims(H, axis=0)
-               W[i,:,:]=w
-               H[i,:,:]=h
-        #W,H=initialize_nm(vin, nfactors, init=init, eps=1e-6,random_state=None)   
+                W[i, :, :], H[i, :, :] = nv.initialize(
+                    vin, self._rank, options={"flag": 1}
+                )
+
+        elif init_method == "nndsvdar":
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
+            nv = nndsvd.Nndsvd()
+            for i in range(self._V.shape[0]):
+                vin = np.mat(self._V.cpu().numpy()[i])
+                W[i, :, :], H[i, :, :] = nv.initialize(
+                    vin, self._rank, options={"flag": 2}
+                )
+        elif init_method == "nndsvd_min":
+            W = np.zeros([self._V.shape[0], self._V.shape[1], self._rank])
+            H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
+            nv = nndsvd.Nndsvd()
+            for i in range(self._V.shape[0]):
+                vin = np.mat(self._V.cpu().numpy()[i])
+                w, h = nv.initialize(vin, self._rank, options={"flag": 2})
+                min_X = np.min(vin[vin > 0])
+                h[h <= min_X] = min_X
+                w[w <= min_X] = min_X
+                # W= np.expand_dims(W, axis=0)
+                # H = np.expand_dims(H, axis=0)
+                W[i, :, :] = w
+                H[i, :, :] = h
+        # W,H=initialize_nm(vin, nfactors, init=init, eps=1e-6,random_state=None)
         W = torch.from_numpy(W).type(self._tensor_type)
         H = torch.from_numpy(H).type(self._tensor_type)
         return W, H
@@ -142,13 +172,17 @@ class NMF:
     def conv(self):
         try:
             return self._conv
-        except: 
+        except:
             return 0
 
     @property
     def _kl_loss(self):
         # calculate kl_loss in double precision for better convergence criteria
-        return (self._V * (self._V / self.reconstruction).log()).sum(dtype=torch.float64) - self._V.sum(dtype=torch.float64) + self.reconstruction.sum(dtype=torch.float64)
+        return (
+            (self._V * (self._V / self.reconstruction).log()).sum(dtype=torch.float64)
+            - self._V.sum(dtype=torch.float64)
+            + self.reconstruction.sum(dtype=torch.float64)
+        )
 
     @property
     def generator(self):
@@ -177,22 +211,33 @@ class NMF:
             beta == 0 => Itakura-Saito updates
         """
         with torch.no_grad():
+
             def stop_iterations():
-                stop = (self._V.shape[0] == 1) and \
-                       (self._iter % self._test_conv == 0) and \
-                       self._loss_converged and \
-                       (self._iter > self.min_iterations)
+                stop = (
+                    (self._V.shape[0] == 1)
+                    and (self._iter % self._test_conv == 0)
+                    and self._loss_converged
+                    and (self._iter > self.min_iterations)
+                )
                 if stop:
                     pass
-                    #print("loss converged with {} iterations".format(self._iter))
-                return  [stop, self._iter]
+                    # print("loss converged with {} iterations".format(self._iter))
+                return [stop, self._iter]
 
             if beta == 2:
                 for self._iter in range(self.max_iterations):
-                    self._H = self.H * (self.W.transpose(1, 2) @ self._V) / (self.W.transpose(1, 2) @ (self.W @ self.H))
-                    self._W = self.W * (self._V @ self.H.transpose(1, 2)) / (self.W @ (self.H @ self.H.transpose(1, 2)))
+                    self._H = (
+                        self.H
+                        * (self.W.transpose(1, 2) @ self._V)
+                        / (self.W.transpose(1, 2) @ (self.W @ self.H))
+                    )
+                    self._W = (
+                        self.W
+                        * (self._V @ self.H.transpose(1, 2))
+                        / (self.W @ (self.H @ self.H.transpose(1, 2)))
+                    )
                     if stop_iterations()[0]:
-                        self._conv=stop_iterations()[1]
+                        self._conv = stop_iterations()[1]
                         break
 
             # Optimisations for the (common) beta=1 (KL) case.
@@ -210,16 +255,25 @@ class NMF:
                     denomenator = wt @ ones
                     self._H *= numerator / denomenator
                     if stop_iterations()[0]:
-                        self._conv=stop_iterations()[1]
+                        self._conv = stop_iterations()[1]
                         break
 
             else:
                 for self._iter in range(self.max_iterations):
-                    self._H = self.H * ((self.W.transpose(1, 2) @ (((self.W @ self.H) ** (beta - 2)) * self._V)) /
-                                       (self.W.transpose(1, 2) @ ((self.W @ self.H)**(beta-1))))
-                    self._W = self.W * ((((self.W@self.H)**(beta-2) * self._V) @ self.H.transpose(1, 2)) /
-                                       (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(1, 2)))
+                    self._H = self.H * (
+                        (
+                            self.W.transpose(1, 2)
+                            @ (((self.W @ self.H) ** (beta - 2)) * self._V)
+                        )
+                        / (self.W.transpose(1, 2) @ ((self.W @ self.H) ** (beta - 1)))
+                    )
+                    self._W = self.W * (
+                        (
+                            ((self.W @ self.H) ** (beta - 2) * self._V)
+                            @ self.H.transpose(1, 2)
+                        )
+                        / (((self.W @ self.H) ** (beta - 1)) @ self.H.transpose(1, 2))
+                    )
                     if stop_iterations()[0]:
-                        self._conv=stop_iterations()[1]
+                        self._conv = stop_iterations()[1]
                         break
-
