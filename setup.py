@@ -43,12 +43,9 @@ requirements = [
     "SigProfilerMatrixGenerator>=1.2.25",
     "sigProfilerPlotting>=1.3.22",
     "SigProfilerAssignment>=0.1.4",
-    "pillow",
     "statsmodels>=0.9.0",
     "scikit-learn>=0.24.2",
     "psutil>=5.6.1",
-    "reportlab>=3.5.42",
-    "PyPDF2>=1.26.0",
 ]
 
 operating_system = sys.platform

@@ -22,7 +22,6 @@ import sigProfilerPlotting as plot
 from sigProfilerPlotting import plotActivity as plot_ac
 from sigProfilerPlotting import tmbplot as tmb
 import string
-import PyPDF2
 import os, sys
 import scipy
 
@@ -40,8 +39,6 @@ from scipy.spatial.distance import correlation as cor
 from scipy.optimize import linear_sum_assignment
 from scipy.optimize import nnls
 
-# import shutil
-# from PyPDF2 import PdfFileMerger
 import warnings as _warnings
 
 _warnings.filterwarnings("ignore")

@@ -5,9 +5,8 @@ python:
   - '3.8'
 
 before_install:
-  if ! [ -f ./src/GRCh37.tar.gz ]; then
-    wget ftp://alexandrovlab-ftp.ucsd.edu/pub/tools/SigProfilerMatrixGenerator/GRCh37.tar.gz -P ./src/;
-  fi
+  - pip install --upgrade setuptools packaging
+  - if ! [ -f ./src/GRCh37.tar.gz ]; then wget ftp://alexandrovlab-ftp.ucsd.edu/pub/tools/SigProfilerMatrixGenerator/GRCh37.tar.gz -P ./src/; fi
 
 install:
   - pip install .

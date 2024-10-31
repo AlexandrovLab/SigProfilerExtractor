@@ -18,32 +18,47 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
     parser = argparse.ArgumentParser(description=description)
 
     # Core required arguments
+    input_type_help = (
+        "The input file type: 'vcf', 'matrix', 'bedpe', or 'seg:TYPE'. "
+        "Accepted callers for TYPE: {'ASCAT', 'ASCAT_NGS', 'SEQUENZA', "
+        "'ABSOLUTE', 'BATTENBERG', 'FACETS', 'PURPLE', 'TCGA'}."
+    )
+
     parser.add_argument(
         "input_type",
-        help="The input file type: 'vcf', 'matrix', 'bedpe', or 'seg:TYPE'. The accepted callers for TYPE are the following {'ASCAT', 'ASCAT_NGS', 'SEQUENZA', 'ABSOLUTE', 'BATTENBERG', 'FACETS', 'PURPLE', 'TCGA'}",
+        help=input_type_help,
     )
-    parser.add_argument("output", help="Path to the output folder.")
+
+    parser.add_argument(
+        "output",
+        help="Path to the output folder.",
+    )
+
+    input_data_help = (
+        "Path to input data. For 'vcf' or 'bedpe', provide an input folder. "
+        "For 'matrix' or 'seg:TYPE', provide an input file."
+    )
+
     parser.add_argument(
         "input_data",
-        help="Path to input data. For 'input_type' 'vcf' or 'bedpe', provide a path to the input folder. "
-        "For 'input_type' 'matrix' or 'seg:TYPE', provide a path to the input file.",
+        help=input_data_help,
     )
 
     # Optional arguments with defaults
     parser.add_argument(
         "--reference_genome",
         default="GRCh37",
-        help="Reference genome (default: GRCh37).",
+        help="Reference genome (default: 'GRCh37'). This parameter is applicable only if the input_type is 'vcf'.",
     )
     parser.add_argument(
         "--opportunity_genome",
         default="GRCh37",
-        help="Opportunity genome (default: GRCh37).",
+        help="The build or version of the reference genome for the reference signatures (default: 'GRCh37'). When the input type is 'vcf' the value for 'opportunity_genome' will be used instead.",
     )
     parser.add_argument(
         "--context_type",
         default="default",
-        help="Mutational context (default: '96,DINUC,ID').",
+        help="Mutational context types (default: '96,DINUC,ID').",
     )
     parser.add_argument(
         "--exome",
@@ -57,16 +72,19 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         "--minimum_signatures",
         type=int,
         default=1,
-        help="Minimum number of signatures (default: 1).",
+        help="Minimum number of signatures to be extracted (default: 1).",
     )
     parser.add_argument(
         "--maximum_signatures",
         type=int,
         default=10,
-        help="Maximum number of signatures (default: 10).",
+        help="Maximum number of signatures to be extracted (default: 10).",
     )
     parser.add_argument(
-        "--nmf_replicates", type=int, default=100, help="NMF replicates (default: 100)."
+        "--nmf_replicates",
+        type=int,
+        default=100,
+        help="Number of NMF replicates to be performed at each rank using W and H (default: 100).",
     )
     parser.add_argument(
         "--resample",
@@ -74,7 +92,7 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         nargs="?",
         const=True,
         default=True,
-        help="Enable resampling (default: True).",
+        help="Add poisson noise to samples by resampling (default: True).",
     )
     parser.add_argument(
         "--seeds",
@@ -82,7 +100,10 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         help="Seeds for reproducible resamples, file path or 'random' (default: 'random').",
     )
     parser.add_argument(
-        "--batch_size", type=int, default=1, help="Batch size for GPU (default: 1)."
+        "--batch_size",
+        type=int,
+        default=1,
+        help="Batch size is for GPU only and defines the number of NMF replicates to be performed by each CPU during parallel processing (default: 1).",
     )
     parser.add_argument(
         "--cpu",
@@ -96,22 +117,22 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         nargs="?",
         const=True,
         default=False,
-        help="Use GPU if available (default: False).",
+        help="Use GPU if available (default: False). note: All available CPU processors are used by default, which may cause a memory error. This error can be resolved by reducing the number of CPU processes through the 'cpu' parameter.",
     )
     parser.add_argument(
         "--nmf_init",
         default="random",
-        help="Initialization algorithm for NMF (default: 'random').",
+        help="The initialization algorithm for W and H matrix of NMF (default: 'random'). Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'.",
     )
     parser.add_argument(
         "--precision",
         default="single",
-        help="Precision for calculations (default: 'single').",
+        help="Precision for calculations (default: 'single'). Options are 'single' and 'double'.",
     )
     parser.add_argument(
         "--matrix_normalization",
         default="gmm",
-        help="Normalization method (default: 'gmm').",
+        help="Method of normalizing the genome matrix before it is analyzed by NMF (default: 'gmm'). Options are 'custom', 'gmm', 'log2', or 'none'.",
     )
     parser.add_argument(
         "--min_nmf_iterations",
@@ -183,7 +204,7 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         "--cosmic_version",
         type=float,
         default=3.4,
-        help="COSMIC version for reference signatures (default: 3.4).",
+        help="COSMIC version for reference signatures. Valid values are 1, 2, 3, 3.1, 3.2, 3.3, and 3.4 (default: 3.4).",
     )
     parser.add_argument(
         "--make_decomposition_plots",
@@ -199,7 +220,7 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         nargs="?",
         const=True,
         default=True,
-        help="Collapse to SBS96 (default: True).",
+        help="Collapse to SBS288 and SBS1536 matrices to SBS96. If False, will map reference signatures to the same context as input (default: True).",
     )
 
     return parser.parse_args(args)
