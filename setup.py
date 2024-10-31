@@ -107,5 +107,10 @@ setup(
     packages=["SigProfilerExtractor"],
     install_requires=requirements,
     include_package_data=True,
+    entry_points={
+        "console_scripts": [
+            "SigProfilerExtractor=SigProfilerExtractor.sigprofilerextractor_cli:main_function",
+        ],
+    },
     zip_safe=False,
 )
