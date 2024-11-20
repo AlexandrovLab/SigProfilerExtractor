@@ -130,6 +130,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 | **Others** |  |  |  | 
 |  | **get_all_signature_matrices** | Boolean | If True, the Ws and Hs from all the NMF iterations are generated in the output. | 
 |  | **export_probabilities** | Boolean | Defualt is True. If False, then doesn't create the probability matrix. | 
+|  | **volume**       | String | Default is `None`. Specifies the volume for writing and loading reference genomes, plotting templates, and COSMIC signature plots. Environmental variables take precedence over this value, and they are as follows:<br><ul><li>`SIGPROFILERMATRIXGENERATOR_VOLUME`</li><li>`SIGPROFILERPLOTTING_VOLUME`</li><li>`SIGPROFILERASSIGNMENT_VOLUME`</li></ul> |
     
 #### sigProfilerExtractor Example
 VCF Files as Input

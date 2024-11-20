@@ -1309,7 +1309,14 @@ def read_csv(filename, folder=False):
 
 ###################################################################################### Export Results ###########################################
 def export_information(
-    loopResults, mutation_type, output, index, colnames, sequence="genome", wall=False
+    loopResults,
+    mutation_type,
+    output,
+    index,
+    colnames,
+    sequence="genome",
+    wall=False,
+    volume=None,
 ):
     # get the number of processes
     i = loopResults[-1]
@@ -1578,6 +1585,7 @@ def export_information(
             True,
             custom_text_upper=stability_list,
             custom_text_middle=total_mutation_list,
+            volume=volume,
         )
     elif m == "ID83":
         plot.plotID(
@@ -1594,6 +1602,7 @@ def export_information(
             True,
             custom_text_upper=stability_list,
             custom_text_middle=total_mutation_list,
+            volume=volume,
         )
     elif m == "CNV48":
         plot.plotCNV(
@@ -1649,6 +1658,7 @@ def export_information(
                 True,
                 custom_text_upper=stability_list,
                 custom_text_middle=total_mutation_list,
+                volume=volume,
             )
         elif m == "SBS4608":
             plot.plotSBS(
