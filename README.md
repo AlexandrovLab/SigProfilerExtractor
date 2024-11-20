@@ -93,44 +93,44 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 | Category | Parameter | Variable Type | Parameter Description |
 | --------- | --------------------- | -------- |-------- |
 | **Input Data** |  |  | |
-|  | **input_type** | String | The type of input:<br><ul><li>"vcf": used for vcf format inputs.</li><li>"matrix": used for table format inputs using a tab separated file.</li><li>"bedpe": used for bedpe files with each SV annotated with its type, size bin, and clustered/non-clustered status. Please check the required format at https://github.com/AlexandrovLab/SigProfilerMatrixGenerator#structural-variant-matrix-generation.</li><li>"seg:TYPE": used for a multi-sample segmentation file for copy number analysis. Please check the required format at https://github.com/AlexandrovLab/SigProfilerMatrixGenerator#copy-number-matrix-generation. The accepted callers for TYPE are the following {"ASCAT", "ASCAT_NGS", "SEQUENZA", "ABSOLUTE", "BATTENBERG", "FACETS", "PURPLE", "TCGA"}. For example, when using segmentation file from BATTENBERG then set input_type to "seg:BATTENBERG".</li></ul> |
+|  | **input_type** | String | The type of input:<br><ul><li>`"vcf"`: used for vcf format inputs.</li><li>`"matrix"`: used for table format inputs using a tab separated file.</li><li>`"bedpe"`: used for bedpe files with each SV annotated with its type, size bin, and clustered/non-clustered status. Please check the required format at https://github.com/AlexandrovLab/SigProfilerMatrixGenerator#structural-variant-matrix-generation.</li><li>`"seg:TYPE"`: used for a multi-sample segmentation file for copy number analysis. Please check the required format at https://github.com/AlexandrovLab/SigProfilerMatrixGenerator#copy-number-matrix-generation. The accepted callers for TYPE are the following {"ASCAT", "ASCAT_NGS", "SEQUENZA", "ABSOLUTE", "BATTENBERG", "FACETS", "PURPLE", "TCGA"}. For example, when using segmentation file from BATTENBERG then set input_type to "seg:BATTENBERG".</li></ul> |
 |  | **output** | String | The name of the output folder. The output folder will be generated in the current working directory.  |
-|  | **input_data** | String | <br>Path to input folder for input_type:<ul><li>vcf</li><li>bedpe</li></ul>Path to file for input_type:<ul><li>matrix</li><li>seg:TYPE</li></ul> |
-|  | **reference_genome** | String | The name of the reference genome. The default reference genome is "GRCh37". This parameter is applicable only if the input_type is "vcf". | 
-|  | **opportunity_genome** | String | The build or version of the reference genome for the reference signatures. The default opportunity genome is GRCh37. If the input_type is "vcf", the opportunity_genome automatically matches the input reference genome value. Only the genomes available in COSMIC are supported (GRCh37, GRCh38, mm9, mm10 and rn6). If a different opportunity genome is selected, the default genome GRCh37 will be used. | 
-|  | **context_type** | String | A string of mutaion context name/names separated by comma (","). The items in the list defines the mutational contexts to be considered to extract the signatures. The default value is "96,DINUC,ID", where "96" is the SBS96 context, "DINUC" is the DINUCLEOTIDE context and ID is INDEL context. | 
-|  | **exome** | Boolean | Defines if the exomes will be extracted. The default value is "False".  | 
+|  | **input_data** | String | <br>Path to input folder for input_type:<ul><li>`vcf`</li><li>`bedpe`</li></ul>Path to file for input_type:<ul><li>`matrix`</li><li>`seg:TYPE`</li></ul> |
+|  | **reference_genome** | String | The name of the reference genome (default: `"GRCh37"`). This parameter is applicable only if the `input_type` is `"vcf"`. |
+|  | **opportunity_genome** | String | The build or version of the reference genome for the reference signatures (default: `"GRCh37"`). When the input_type is `"vcf"`, the opportunity_genome automatically matches the input reference genome value. Only the genomes available in COSMIC are supported (`GRCh37`, `GRCh38`, `mm9`, `mm10`, and `rn6`). If a different opportunity genome is selected, the default genome `GRCh37` will be used. |
+|  | **context_type** | String | Mutation context name(s), separated by commas (`,`), that define the mutational contexts for signature extraction (default: `"96,DINUC,ID"`). In the default value, `96` represents the SBS96 context, `DINUC` represents the dinucleotide context, and `ID` represents the indel context. |
+|  | **exome** | Boolean | Defines if the exomes will be extracted (default: `False`). |
 | **NMF Replicates** |  |  |  | 
-|  | **minimum_signatures** | Positive Integer | The minimum number of signatures to be extracted. The default value is 1. | 
-|  | **maximum_signatures** | Positive Integer | The maximum number of signatures to be extracted. The default value is 25. | 
-|  | **nmf_replicates** | Positive Integer | The number of iteration to be performed to extract each number signature. The default value is 100. | 
-|  | **resample** | Boolean | Default is True. If True, add poisson noise to samples by resampling. | 
-|  | **seeds** | String | It can be used to get reproducible resamples for the NMF replicates. A path of a tab separated .txt file containing the replicated id and preset seeds in a two columns dataframe can be passed through this parameter. The Seeds.txt file in the results folder from a previous analysis can be used for the seeds parameter in a new analysis. The Default value for this parameter is "random". When "random", the seeds for resampling will be random for different analysis. | 
+|  | **minimum_signatures** | Positive Integer | The minimum number of signatures to be extracted (default: `1`). |
+|  | **maximum_signatures** | Positive Integer | The maximum number of signatures to be extracted (default: `25`). |
+|  | **nmf_replicates** | Positive Integer | The number of iteration to be performed to extract each number signature (default: `100`). |
+|  | **resample** | Boolean | If `True`, add poisson noise to samples by resampling (default: `True`). |
+|  | **seeds** | String | Ensures reproducible NMF replicate resamples. Provide the path to the `Seeds.txt` file (found in the results folder from a previous analysis) to reproduce results (default: `"random"`). |
 | **NMF Engines** |  |  |  | 
-|  | **matrix_normalization** | String | Method of normalizing the genome matrix before it is analyzed by NMF. Default is value is "gmm". Other options are, "log2", "custom" or "none". | 
-|  | **nmf_init** | String | The initialization algorithm for W and H matrix of NMF. Options are 'random', 'nndsvd', 'nndsvda', 'nndsvdar' and 'nndsvd_min'. Default is 'random'. | 
-|  | **precision** | String | Values should be single or double. Default is single. | 
-|  | **min_nmf_iterations** | Integer | Value defines the minimum number of iterations to be completed before NMF converges. Default is 10000. | 
-|  | **max_nmf_iterations** | Integer | Value defines the maximum number of iterations to be completed before NMF converges. Default is 1000000. | 
-|  | **nmf_test_conv** | Integer | Value defines the number number of iterations to done between checking next convergence. Default is 10000. | 
-|  | **nmf_tolerance** | Float | Value defines the tolerance to achieve to converge. Default is 1e-15. | 
+|  | **matrix_normalization** | String | Method of normalizing the genome matrix before it is analyzed by NMF (default: `"gmm"`). Options are, `"log2"`, `"custom"` or `"none"`. |
+|  | **nmf_init** | String | The initialization algorithm for W and H matrix of NMF (default: `"random"`). Options are `"random"`, `"nndsvd"`, `"nndsvda"`, `"nndsvdar"` and `"nndsvd_min"`. |
+|  | **precision** | String | Values should be single or double (default: `"single"`). |
+|  | **min_nmf_iterations** | Integer | Value defines the minimum number of iterations to be completed before NMF converges (default: `10000`). |
+|  | **max_nmf_iterations** | Integer | Value defines the maximum number of iterations to be completed before NMF converges (default: `1000000`). |
+|  | **nmf_test_conv** | Integer | Value defines the number number of iterations to done between checking next convergence (default: `10000`). |
+|  | **nmf_tolerance** | Float | Value defines the tolerance to achieve to converge (default: `1e-15`).|
 | **Execution** |  |  |  | 
-|  | **cpu** | Integer | The number of processors to be used to extract the signatures. The default value is -1 which will use all available processors. | 
-|  | **gpu** | Boolean | Defines if the GPU resource will used if available. Default is False. If True, the GPU resources will be used in the computation. *Note: All available CPU processors are used by default, which may cause a memory error. This error can be resolved by reducing the number of CPU processes through the **cpu** parameter.*|
-|  | **batch_size** | Integer | Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing. Default is 1. | 
+|  | **cpu** | Integer | The number of processors to be used to extract the signatures (default: all processors). |
+|  | **gpu** | Boolean | Defines if the GPU resource will used if available (default: `False`). If `True`, the GPU resources will be used in the computation. *Note: All available CPU processors are used by default, which may cause a memory error. This error can be resolved by reducing the number of CPU processes through the `cpu` parameter.*|
+|  | **batch_size** | Integer | Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing (default: `1`). *Note: For `batch_size` values greater than 1, each NMF replicate will update until `max_nmf_iterations` is reached.*|
 | **Solution Estimation Thresholds** |  |  |  | 
-|  | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. | 
-|  | **min_stability** | Float | Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered.  | 
-|  | **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. | 
-|  | **allow_stability_drop** | Boolean | Default is False. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered. | 
+|  | **stability** | Float | The cutoff thresh-hold of the average stability (default: `0.8`). Solutions with average stabilities below this thresh-hold will not be considered. |
+|  | **min_stability** | Float | The cutoff thresh-hold of the minimum stability (default: `0.2`). Solutions with minimum stabilities below this thresh-hold will not be considered.  |
+|  | **combined_stability** | Float | The cutoff thresh-hold of the combined stability (sum of average and minimum stability) (default: `1.0`). Solutions with combined stabilities below this thresh-hold will not be considered. |
+|  | **allow_stability_drop** | Boolean | Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered (default: `False`). |
 | **Decomposition** |  |  |  | 
-|  | **cosmic_version** | Float | Takes a positive float among 1, 2, 3, 3.1, 3.2, 3.3, and 3.4. Default is 3.4. Defines the version of the COSMIC reference signatures. | 
-|  | **make_decomposition_plots** | Boolean | Defualt is True. If True, Denovo to Cosmic sigantures decompostion plots will be created as a part the results. | 
-|  | **collapse_to_SBS96** | Boolean | Defualt is True. If True, SBS288 and SBS1536 Denovo signatures will be mapped to SBS96 reference signatures. If False, those will be mapped to reference signatures of the same context. 
+|  | **cosmic_version** | Float | Defines the version of the COSMIC reference signatures (default: `3.4`). Takes a positive float among `1`, `2`, `3`, `3.1`, `3.2`, `3.3`, and `3.4`.|
+|  | **make_decomposition_plots** | Boolean | Generate de novo to COSMIC signature decomposition plots as part of the results (default: `True`). Set to `False` to skip generating these plots. |
+|  | **collapse_to_SBS96** | Boolean | If `True`, SBS288 and SBS1536 de novo signatures will be mapped to SBS96 reference signatures (default: `True`). If `False`, those will be mapped to reference signatures of the same context.
 | **Others** |  |  |  | 
-|  | **get_all_signature_matrices** | Boolean | If True, the Ws and Hs from all the NMF iterations are generated in the output. | 
-|  | **export_probabilities** | Boolean | Defualt is True. If False, then doesn't create the probability matrix. | 
-|  | **volume**       | String | Default is `None`. Specifies the volume for writing and loading reference genomes, plotting templates, and COSMIC signature plots. Environmental variables take precedence over this value, and they are as follows:<br><ul><li>`SIGPROFILERMATRIXGENERATOR_VOLUME`</li><li>`SIGPROFILERPLOTTING_VOLUME`</li><li>`SIGPROFILERASSIGNMENT_VOLUME`</li></ul> |
+|  | **get_all_signature_matrices** | Boolean | Write to output Ws and Hs from all the NMF iterations (default: `False`) |
+|  | **export_probabilities** | Boolean | Create the probability matrix (default: `True`). |
+|  | **volume** | String | Path to the volume for writing and loading reference genomes, plotting templates, and COSMIC signature plots (default: `None`). Environmental variables take precedence: `SIGPROFILERMATRIXGENERATOR_VOLUME`, `SIGPROFILERPLOTTING_VOLUME`, and `SIGPROFILERASSIGNMENT_VOLUME`. |
     
 #### sigProfilerExtractor Example
 VCF Files as Input
@@ -181,16 +181,16 @@ estimate_solution(base_csvfile="All_solutions_stat.csv",
     
 | Parameter | Variable Type | Parameter Description |
 | --------------------- | -------- |-------- |
-| **base_csvfile** | String | Default is "All_solutions_stat.csv". Path to a  csv file that contains the statistics of all solutions. |
-| **All_solution** | String | Default is "All_Solutions". Path to a folder that contains the results of all solutions. |
-| **genomes** | String | Default is Samples.txt. Path to a tab delimilted file that contains the mutation counts for all genomes given to different mutation types. |
-| **output** | String | Default is "results". Path to the output folder. |
-| **title** | String | Default is "Selection_Plot". This sets the title of the selection_plot.pdf |
+| **base_csvfile** | String | Default is `"All_solutions_stat.csv"`. Path to a CSV file that contains the statistics of all solutions. |
+| **All_solution** | String | Default is `"All_Solutions"`. Path to a folder that contains the results of all solutions. |
+| **genomes** | String | Default is `"Samples.txt"`. Path to a tab delimilted file that contains the mutation counts for all genomes given to different mutation types. |
+| **output** | String | Default is `"results"`. Path to the output folder. |
+| **title** | String | Default is `"Selection_Plot"`. This sets the title of the selection_plot.pdf |
 | **stability** | Float | Default is 0.8. The cutoff thresh-hold of the average stability. Solutions with average stabilities below this thresh-hold will not be considered. |
-| **min_stability** | Float | Default is 0.2. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. |
-| **combined_stability** | Float | Default is 1.0. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. |
-| **allow_stability_drop** | Boolean | Default is False. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered. | 
-| **exome** | Boolean | Default is "False". Defines if exomes samples are used. | 
+| **min_stability** | Float | Default is `0.2`. The cutoff thresh-hold of the minimum stability. Solutions with minimum stabilities below this thresh-hold will not be considered. |
+| **combined_stability** | Float | Default is `1.0`. The cutoff thresh-hold of the combined stability (sum of average and minimum stability). Solutions with combined stabilities below this thresh-hold will not be considered. |
+| **allow_stability_drop** | Boolean | Default is `False`. Defines if solutions with a drop in stability with respect to the highest stable number of signatures will be considered. |
+| **exome** | Boolean | Default is `False`. Defines if exomes samples are used. |
 
         
 #### Estimation of the Optimum Solution Example
@@ -217,7 +217,7 @@ The files below will be generated in the output folder:
 
 ### <a name="decompose"></a> Decompose
 
-For decomposition of denovo signatures please use [SigProfilerAssignment](https://github.com/AlexandrovLab/SigProfilerAssignment)
+For decomposition of de novo signatures please use [SigProfilerAssignment](https://github.com/AlexandrovLab/SigProfilerAssignment)
         
 ### <a name="plotActivity"></a> Activity Stacked Bar Plot
 Generates a stacked bar plot showing activities in individuals
