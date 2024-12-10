@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.1.24"
+VERSION = "1.1.25"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.24: Add input processing to SigProfilerExtractor'
+Update = 'Upgrade v1.1.25: Add CLI support, README formatting udpate, and CI/CD badge fix.'
     
     """
     fh = open(filename, "w")
@@ -43,12 +43,9 @@ requirements = [
     "SigProfilerMatrixGenerator>=1.2.25",
     "sigProfilerPlotting>=1.3.22",
     "SigProfilerAssignment>=0.1.4",
-    "pillow",
     "statsmodels>=0.9.0",
     "scikit-learn>=0.24.2",
     "psutil>=5.6.1",
-    "reportlab>=3.5.42",
-    "PyPDF2>=1.26.0",
 ]
 
 operating_system = sys.platform
@@ -107,5 +104,10 @@ setup(
     packages=["SigProfilerExtractor"],
     install_requires=requirements,
     include_package_data=True,
+    entry_points={
+        "console_scripts": [
+            "SigProfilerExtractor=SigProfilerExtractor.sigprofilerextractor_cli:main_function",
+        ],
+    },
     zip_safe=False,
 )

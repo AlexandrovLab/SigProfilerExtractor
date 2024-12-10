@@ -22,7 +22,6 @@ import sigProfilerPlotting as plot
 from sigProfilerPlotting import plotActivity as plot_ac
 from sigProfilerPlotting import tmbplot as tmb
 import string
-import PyPDF2
 import os, sys
 import scipy
 
@@ -40,8 +39,6 @@ from scipy.spatial.distance import correlation as cor
 from scipy.optimize import linear_sum_assignment
 from scipy.optimize import nnls
 
-# import shutil
-# from PyPDF2 import PdfFileMerger
 import warnings as _warnings
 
 _warnings.filterwarnings("ignore")
@@ -1312,7 +1309,14 @@ def read_csv(filename, folder=False):
 
 ###################################################################################### Export Results ###########################################
 def export_information(
-    loopResults, mutation_type, output, index, colnames, sequence="genome", wall=False
+    loopResults,
+    mutation_type,
+    output,
+    index,
+    colnames,
+    sequence="genome",
+    wall=False,
+    volume=None,
 ):
     # get the number of processes
     i = loopResults[-1]
@@ -1581,6 +1585,7 @@ def export_information(
             True,
             custom_text_upper=stability_list,
             custom_text_middle=total_mutation_list,
+            volume=volume,
         )
     elif m == "ID83":
         plot.plotID(
@@ -1597,6 +1602,7 @@ def export_information(
             True,
             custom_text_upper=stability_list,
             custom_text_middle=total_mutation_list,
+            volume=volume,
         )
     elif m == "CNV48":
         plot.plotCNV(
@@ -1652,6 +1658,7 @@ def export_information(
                 True,
                 custom_text_upper=stability_list,
                 custom_text_middle=total_mutation_list,
+                volume=volume,
             )
         elif m == "SBS4608":
             plot.plotSBS(

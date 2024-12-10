@@ -269,6 +269,7 @@ def sigProfilerExtractor(
     combined_stability=1.0,
     allow_stability_drop=False,
     get_all_signature_matrices=False,
+    volume=None,
 ):
     """
     Extracts mutational signatures from an array of samples.
@@ -642,6 +643,7 @@ def sigProfilerExtractor(
             chrom_based=False,
             plot=False,
             gs=False,
+            volume=volume,
         )
         # Selecting the MutationType
         if mtype == ["default"]:
@@ -999,6 +1001,7 @@ def sigProfilerExtractor(
                 colnames,
                 wall=wall,
                 sequence=sequence,
+                volume=volume,
             )
             all_similirities_list.append(all_similarities)
             current_time_end = datetime.datetime.now()
@@ -1127,6 +1130,7 @@ def sigProfilerExtractor(
             export_probabilities=export_probabilities,
             devopts=devopts,
             make_metadata=False,
+            volume=volume,
         )
 
     sysdata = open(out_put + "/JOB_METADATA.txt", "a")
