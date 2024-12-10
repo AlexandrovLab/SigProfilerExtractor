@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.1.24"
+VERSION = "1.1.25"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.24: Add input processing to SigProfilerExtractor'
+Update = 'Upgrade v1.1.25: Add CLI support, README formatting udpate, and CI/CD badge fix.'
     
     """
     fh = open(filename, "w")
