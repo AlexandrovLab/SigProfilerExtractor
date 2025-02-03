@@ -41,12 +41,12 @@ import copy
 import sigProfilerPlotting
 import multiprocessing
 from SigProfilerExtractor import subroutines as sub
-import SigProfilerMatrixGenerator
-from SigProfilerMatrixGenerator.scripts import (
-    SigProfilerMatrixGeneratorFunc as datadump,
-)
-from SigProfilerMatrixGenerator.scripts import SVMatrixGenerator as sv
-from SigProfilerMatrixGenerator.scripts import CNVMatrixGenerator as scna
+# import SigProfilerMatrixGenerator
+# from SigProfilerMatrixGenerator.scripts import (
+#     SigProfilerMatrixGeneratorFunc as datadump,
+# )
+# from SigProfilerMatrixGenerator.scripts import SVMatrixGenerator as sv
+# from SigProfilerMatrixGenerator.scripts import CNVMatrixGenerator as scna
 import multiprocessing as mp
 import SigProfilerExtractor as cosmic
 import SigProfilerAssignment as spa
@@ -448,11 +448,11 @@ def sigProfilerExtractor(
     sysdata.write(
         "SigProfilerPlotting Version: " + sigProfilerPlotting.__version__ + "\n"
     )
-    sysdata.write(
-        "SigProfilerMatrixGenerator Version: "
-        + SigProfilerMatrixGenerator.__version__
-        + "\n"
-    )
+    # sysdata.write(
+    #     "SigProfilerMatrixGenerator Version: "
+    #     + SigProfilerMatrixGenerator.__version__
+    #     + "\n"
+    # )
     sysdata.write("SigProfilerAssignment Version: " + spa.__version__ + "\n")
     sysdata.write("Pandas version: " + pd.__version__ + "\n")
     sysdata.write("Numpy version: " + np.__version__ + "\n")

@@ -203,8 +203,8 @@ def normalize_samples(
         bootstrapGenomes = np.array(bootstrapGenomes)
         indices = np.where(totalMutations > normalization_cutoff)[0]
         norm_genome = (
-            bootstrapGenomes[:, list(indices)]
-            / totalMutations[list(indices)][:, np.newaxis].T
+            np.array(bootstrapGenomes)[:, list(indices)]
+            / np.array(totalMutations)[list(indices)][:, np.newaxis].T
             * normalization_cutoff
         )
         bootstrapGenomes[:, list(indices)] = norm_genome
@@ -214,8 +214,8 @@ def normalize_samples(
         rows = bootstrapGenomes.shape[0]
         indices = np.where(totalMutations > (rows * 100))[0]
         norm_genome = (
-            bootstrapGenomes[:, list(indices)]
-            / totalMutations[list(indices)][:, np.newaxis].T
+            np.array(bootstrapGenomes)[:, list(indices)]
+            / np.array(totalMutations)[list(indices)][:, np.newaxis].T
             * (rows * 100)
         )
         bootstrapGenomes[:, list(indices)] = norm_genome
@@ -231,8 +231,8 @@ def normalize_samples(
             rows = bootstrapGenomes.shape[0]
             indices = np.where(totalMutations > int(norm))[0]
             norm_genome = (
-                bootstrapGenomes[:, list(indices)]
-                / totalMutations[list(indices)][:, np.newaxis].T
+                np.array(bootstrapGenomes)[:, list(indices)]
+                / np.array(totalMutations)[list(indices)][:, np.newaxis].T
                 * (int(norm))
             )
             bootstrapGenomes[:, list(indices)] = norm_genome
@@ -465,7 +465,7 @@ def pnmf(
         for i in range(len(W)):
             _W = np.array(W[i])
             _H = np.array(H[i])
-            total = _W.sum(axis=0)[np.newaxis]
+            total = _W.sum(axis=0, keepdims=True)#[np.newaxis]
             _W = _W / total
             _H = _H * total.T
             _H = denormalize_samples(_H, totalMutations)
@@ -508,7 +508,7 @@ def pnmf(
 
         W = np.array(W)
         H = np.array(H)
-        total = W.sum(axis=0)[np.newaxis]
+        total = W.sum(axis=0, keepdims=True) #[np.newaxis]
         W = W / total
         H = H * total.T
 
@@ -913,14 +913,17 @@ def reclustering(
 
     count = 0
     labels = []
-    clusters = pd.DataFrame()
+    clusters_list = []  # Use a list to collect DataFrames
+
     for cluster_id in range(processes3D.shape[0]):
         cluster_vectors = pd.DataFrame(processes3D[cluster_id, :, :])
-        clusters = clusters.append(cluster_vectors.T)
+        clusters_list.append(cluster_vectors.T)  # Collect DataFrames into a list
         for k in range(cluster_vectors.shape[1]):
             labels.append(count)
         count = count + 1
 
+    # Concatenate all DataFrames at once
+    clusters = pd.concat(clusters_list, ignore_index=True)
     try:
         if dist == "cosine":
             SilhouetteCoefficients = metrics.silhouette_samples(
@@ -1109,7 +1112,7 @@ def probabilities(W, H, index, allsigids, allcolnames):
 
     result = 0
     for i in range(H.shape[1]):  # here H.shape is the number of sample
-        M = genomes[:, i][np.newaxis]
+        M = np.array(genomes)[:, i][np.newaxis]
         probs = W * H[:, i] / M.T
         probs = pd.DataFrame(probs)
         probs.columns = sigs

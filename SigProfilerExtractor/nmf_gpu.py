@@ -100,7 +100,7 @@ class NMF:
             H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
-                vin = np.mat(self._V.cpu().numpy()[i])
+                vin = np.asmatrix(self._V.cpu().numpy()[i])
                 W[i, :, :], H[i, :, :] = nv.initialize(
                     vin, self._rank, options={"flag": 0}
                 )
@@ -110,7 +110,7 @@ class NMF:
             H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
-                vin = np.mat(self._V.cpu().numpy()[i])
+                vin = np.asmatrix(self._V.cpu().numpy()[i])
                 W[i, :, :], H[i, :, :] = nv.initialize(
                     vin, self._rank, options={"flag": 1}
                 )
@@ -120,7 +120,7 @@ class NMF:
             H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
-                vin = np.mat(self._V.cpu().numpy()[i])
+                vin = np.asmatrix(self._V.cpu().numpy()[i])
                 W[i, :, :], H[i, :, :] = nv.initialize(
                     vin, self._rank, options={"flag": 2}
                 )
@@ -129,7 +129,7 @@ class NMF:
             H = np.zeros([self._V.shape[0], self._rank, self._V.shape[2]])
             nv = nndsvd.Nndsvd()
             for i in range(self._V.shape[0]):
-                vin = np.mat(self._V.cpu().numpy()[i])
+                vin = np.asmatrix(self._V.cpu().numpy()[i])
                 w, h = nv.initialize(vin, self._rank, options={"flag": 2})
                 min_X = np.min(vin[vin > 0])
                 h[h <= min_X] = min_X
