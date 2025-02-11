@@ -154,6 +154,6 @@ if __name__ == "__main__":
     run_matrix_48()
     run_matrix_32()
     run_seg_48()
-    # run_vcf()
+    run_vcf()
     # run_matobj()
     # run_csv()
