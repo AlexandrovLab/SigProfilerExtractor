@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.1.25"
+VERSION = "1.2.0"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'Upgrade v1.1.25: Add CLI support, README formatting udpate, and CI/CD badge fix.'
+Update = 'Upgrade v1.2.0: Require Pandas and Numpy >= 2.0.0 and Python >= 3.9'
     
     """
     fh = open(filename, "w")
@@ -37,12 +37,12 @@ Update = 'Upgrade v1.1.25: Add CLI support, README formatting udpate, and CI/CD 
 requirements = [
     "scipy>=1.6.3",
     "torch>=1.8.1",
-    "numpy>=1.21.2",
-    "pandas>=1.2.4",
+    "numpy>=2.0.0",
+    "pandas>=2.0.0",
     "nimfa>=1.1.0",
-    "SigProfilerMatrixGenerator>=1.2.25",
-    "sigProfilerPlotting>=1.3.22",
-    "SigProfilerAssignment>=0.1.4",
+    "sigProfilerPlotting>=1.4.0",
+    "SigProfilerMatrixGenerator>=1.3.0",
+    "SigProfilerAssignment>=0.2.0",
     "statsmodels>=0.9.0",
     "scikit-learn>=0.24.2",
     "psutil>=5.6.1",
@@ -104,6 +104,7 @@ setup(
     packages=["SigProfilerExtractor"],
     install_requires=requirements,
     include_package_data=True,
+    python_requires=">=3.9",
     entry_points={
         "console_scripts": [
             "SigProfilerExtractor=SigProfilerExtractor.sigprofilerextractor_cli:main_function",
