@@ -1049,89 +1049,89 @@ def sigProfilerExtractor(
         )
         # similarity_dataframe.to_csv(data_stat_folder+"/Similatiry_Data_All_Sigs"+str(H_iteration)+".text", sep = "\t")
         del layer_genome
-        ################################### Decompose the new signatures into global signatures   #########################
-        processAvg = information[solution - startProcess][0]
-        exposureAvg = information[solution - startProcess][1]
-        processSTE = information[solution - startProcess][2]
-        signature_stabilities = information[solution - startProcess][4]
-        signature_total_mutations = information[solution - startProcess][5]
-        signature_stats = information[solution - startProcess][6]
-        all_similarities = information[solution - startProcess][7]
+        # ################################### Decompose the new signatures into global signatures   #########################
+        # processAvg = information[solution - startProcess][0]
+        # exposureAvg = information[solution - startProcess][1]
+        # processSTE = information[solution - startProcess][2]
+        # signature_stabilities = information[solution - startProcess][4]
+        # signature_total_mutations = information[solution - startProcess][5]
+        # signature_stats = information[solution - startProcess][6]
+        # all_similarities = information[solution - startProcess][7]
 
-        signature_stabilities = sub.signature_plotting_text(
-            signature_stabilities, "Stability", "float"
-        )
-        signature_total_mutations = sub.signature_plotting_text(
-            signature_total_mutations, "Total Mutations", "integer"
-        )
-        listOfSignatures = sub.make_letter_ids(
-            idlenth=processAvg.shape[1], mtype=mutation_type
-        )
+        # signature_stabilities = sub.signature_plotting_text(
+        #     signature_stabilities, "Stability", "float"
+        # )
+        # signature_total_mutations = sub.signature_plotting_text(
+        #     signature_total_mutations, "Total Mutations", "integer"
+        # )
+        # listOfSignatures = sub.make_letter_ids(
+        #     idlenth=processAvg.shape[1], mtype=mutation_type
+        # )
 
-        layer_directory1 = (
-            output + "/Suggested_Solution/" + mutation_type + "_De-Novo_Solution"
-        )
-        layer_directory2 = (
-            output
-            + "/Suggested_Solution/COSMIC_"
-            + mutation_type
-            + "_Decomposed_Solution"
-        )
-        devopts = {}
-        devopts["denovo_outpath"] = layer_directory1
-        devopts["decompose_outpath"] = layer_directory2
-        devopts["Assignment_outpath"] = layer_directory2
-        devopts["signature_stabilities"] = signature_stabilities
-        devopts["signature_total_mutations"] = signature_total_mutations
-        devopts["listOfSignatures"] = listOfSignatures
-        devopts["index"] = index
-        devopts["colnames"] = allcolnames
-        devopts["signature_stats"] = signature_stats
-        devopts["sequence"] = sequence
-        devopts["processSTE"] = processSTE
-        devopts["sequence"] = sequence
-        devopts["make_decomposition_plots"] = make_decomposition_plots
+        # layer_directory1 = (
+        #     output + "/Suggested_Solution/" + mutation_type + "_De-Novo_Solution"
+        # )
+        # layer_directory2 = (
+        #     output
+        #     + "/Suggested_Solution/COSMIC_"
+        #     + mutation_type
+        #     + "_Decomposed_Solution"
+        # )
+        # devopts = {}
+        # devopts["denovo_outpath"] = layer_directory1
+        # devopts["decompose_outpath"] = layer_directory2
+        # devopts["Assignment_outpath"] = layer_directory2
+        # devopts["signature_stabilities"] = signature_stabilities
+        # devopts["signature_total_mutations"] = signature_total_mutations
+        # devopts["listOfSignatures"] = listOfSignatures
+        # devopts["index"] = index
+        # devopts["colnames"] = allcolnames
+        # devopts["signature_stats"] = signature_stats
+        # devopts["sequence"] = sequence
+        # devopts["processSTE"] = processSTE
+        # devopts["sequence"] = sequence
+        # devopts["make_decomposition_plots"] = make_decomposition_plots
 
-        # Check if genome_build is available in COSMIC, if not reset to GRCh37
-        if (
-            genome_build == "GRCh37"
-            or genome_build == "GRCh38"
-            or genome_build == "mm9"
-            or genome_build == "mm10"
-            or genome_build == "rn6"
-        ):
-            genome_build = genome_build
-        else:
-            sysdata = open(out_put + "/JOB_METADATA.txt", "a")
-            sysdata.write(
-                "\n[{}] The selected opportunity genome is {}. COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37.\n".format(
-                    str(datetime.datetime.now()).split(".")[0], str(genome_build)
-                )
-            )
-            print(
-                "The selected opportunity genome is "
-                + str(genome_build)
-                + ". COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37."
-            )
-            sysdata.close()
-            genome_build = "GRCh37"
+        # # Check if genome_build is available in COSMIC, if not reset to GRCh37
+        # if (
+        #     genome_build == "GRCh37"
+        #     or genome_build == "GRCh38"
+        #     or genome_build == "mm9"
+        #     or genome_build == "mm10"
+        #     or genome_build == "rn6"
+        # ):
+        #     genome_build = genome_build
+        # else:
+        #     sysdata = open(out_put + "/JOB_METADATA.txt", "a")
+        #     sysdata.write(
+        #         "\n[{}] The selected opportunity genome is {}. COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37.\n".format(
+        #             str(datetime.datetime.now()).split(".")[0], str(genome_build)
+        #         )
+        #     )
+        #     print(
+        #         "The selected opportunity genome is "
+        #         + str(genome_build)
+        #         + ". COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37."
+        #     )
+        #     sysdata.close()
+        #     genome_build = "GRCh37"
 
-        decomp.spa_analyze(
-            allgenomes,
-            output,
-            signatures=processAvg,
-            genome_build=genome_build,
-            cosmic_version=cosmic_version,
-            exome=exome,
-            verbose=False,
-            decompose_fit_option=True,
-            denovo_refit_option=True,
-            cosmic_fit_option=False,
-            export_probabilities=export_probabilities,
-            devopts=devopts,
-            make_metadata=False,
-            volume=volume,
-        )
+        # decomp.spa_analyze(
+        #     allgenomes,
+        #     output,
+        #     signatures=processAvg,
+        #     genome_build=genome_build,
+        #     cosmic_version=cosmic_version,
+        #     exome=exome,
+        #     verbose=False,
+        #     decompose_fit_option=True,
+        #     denovo_refit_option=True,
+        #     cosmic_fit_option=False,
+        #     export_probabilities=export_probabilities,
+        #     devopts=devopts,
+        #     make_metadata=False,
+        #     volume=volume,
+        # )
 
     sysdata = open(out_put + "/JOB_METADATA.txt", "a")
     end_time = datetime.datetime.now()
