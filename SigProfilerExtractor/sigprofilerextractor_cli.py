@@ -11,7 +11,7 @@ def main_function():
 
     if len(sys.argv) < 2 or sys.argv[1].lower() not in commands:
         print_usage(commands)
-        sys.exit(1)
+        return
 
     command = sys.argv[1].lower()
     args = sys.argv[2:]
