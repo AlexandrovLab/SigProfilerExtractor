@@ -233,6 +233,15 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
     )
 
     parser.add_argument(
+        "--stop_after_extraction",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Stop after de novo extraction (default: False).",
+    )
+
+    parser.add_argument(
         "--volume",
         default=None,
         help="User specified directory for saving/loading template files.",
@@ -279,5 +288,6 @@ class CliController:
             make_decomposition_plots=parsed_args.make_decomposition_plots,
             collapse_to_SBS96=parsed_args.collapse_to_SBS96,
             stop_after_decomposition=parsed_args.stop_after_decomposition,
+            stop_after_extraction=parsed_args.stop_after_extraction,
             volume=parsed_args.volume,
         )
