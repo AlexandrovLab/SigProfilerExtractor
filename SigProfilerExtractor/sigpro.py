@@ -269,7 +269,6 @@ def sigProfilerExtractor(
     combined_stability=1.0,
     allow_stability_drop=False,
     get_all_signature_matrices=False,
-    stop_after_decomposition=False,
     stop_after_extraction=False,
     volume=None,
 ):
@@ -1133,7 +1132,6 @@ def sigProfilerExtractor(
                 devopts=devopts,
                 make_metadata=False,
                 volume=volume,
-                stop_after_decomposition=stop_after_decomposition,
             )
 
     sysdata = open(out_put + "/JOB_METADATA.txt", "a")
