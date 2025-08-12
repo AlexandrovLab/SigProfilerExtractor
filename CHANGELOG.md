@@ -7,10 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.2] - 2025-08-11
+
+### Added
+- Added mutation count and stability to 4608 plots in All_Solutions
+- Add a stop parameter to the CLI to stop after de novo extraction.
+
 ## [1.2.1] - 2025-05-14
 
 ### Fixed
- - Fixed an issue where the CLI was returning a non-zero exit code when the `--help` flag was passed.
+- Fixed an issue where the CLI was returning a non-zero exit code when the `--help` flag was passed.
 
  ### Added
 - Added `pyproject.toml` for modern Python packaging support.
