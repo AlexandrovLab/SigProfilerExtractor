@@ -269,6 +269,7 @@ def sigProfilerExtractor(
     combined_stability=1.0,
     allow_stability_drop=False,
     get_all_signature_matrices=False,
+    stop_after_extraction=False,
     volume=None,
 ):
     """
@@ -1115,23 +1116,23 @@ def sigProfilerExtractor(
             )
             sysdata.close()
             genome_build = "GRCh37"
-
-        decomp.spa_analyze(
-            allgenomes,
-            output,
-            signatures=processAvg,
-            genome_build=genome_build,
-            cosmic_version=cosmic_version,
-            exome=exome,
-            verbose=False,
-            decompose_fit_option=True,
-            denovo_refit_option=True,
-            cosmic_fit_option=False,
-            export_probabilities=export_probabilities,
-            devopts=devopts,
-            make_metadata=False,
-            volume=volume,
-        )
+        if not stop_after_extraction:
+            decomp.spa_analyze(
+                allgenomes,
+                output,
+                signatures=processAvg,
+                genome_build=genome_build,
+                cosmic_version=cosmic_version,
+                exome=exome,
+                verbose=False,
+                decompose_fit_option=True,
+                denovo_refit_option=True,
+                cosmic_fit_option=False,
+                export_probabilities=export_probabilities,
+                devopts=devopts,
+                make_metadata=False,
+                volume=volume,
+            )
 
     sysdata = open(out_put + "/JOB_METADATA.txt", "a")
     end_time = datetime.datetime.now()
