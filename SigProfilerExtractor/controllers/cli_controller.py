@@ -223,6 +223,21 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         help="Collapse to SBS288 and SBS1536 matrices to SBS96. If False, will map reference signatures to the same context as input (default: True).",
     )
 
+    parser.add_argument(
+        "--stop_after_extraction",
+        type=str2bool,
+        nargs="?",
+        const=True,
+        default=False,
+        help="Stop after de novo extraction (default: False).",
+    )
+
+    parser.add_argument(
+        "--volume",
+        default=None,
+        help="User specified directory for saving/loading template files.",
+    )
+
     return parser.parse_args(args)
 
 
@@ -263,4 +278,6 @@ class CliController:
             cosmic_version=parsed_args.cosmic_version,
             make_decomposition_plots=parsed_args.make_decomposition_plots,
             collapse_to_SBS96=parsed_args.collapse_to_SBS96,
+            stop_after_extraction=parsed_args.stop_after_extraction,
+            volume=parsed_args.volume,
         )

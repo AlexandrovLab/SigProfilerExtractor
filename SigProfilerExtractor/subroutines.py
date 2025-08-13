@@ -1676,6 +1676,8 @@ def export_information(
                 "S" + str(i),
                 tmp_m,
                 True,
+                custom_text_upper=stability_list,
+                custom_text_middle=total_mutation_list,
             )
     else:
         custom_signatures_plot(processes, signature_subdirectory)

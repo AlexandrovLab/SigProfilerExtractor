@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'v1.2.1: Fix CLI non-zero exit code issue'
+Update = 'v1.2.2: Add mutation count and stability to 4608 plots in All_Solutions and a stop parameter'
     
     """
     fh = open(filename, "w")
@@ -40,9 +40,9 @@ requirements = [
     "numpy>=2.0.0",
     "pandas>=2.0.0",
     "nimfa>=1.1.0",
-    "sigProfilerPlotting>=1.4.0",
-    "SigProfilerMatrixGenerator>=1.3.0",
-    "SigProfilerAssignment>=0.2.0",
+    "sigProfilerPlotting>=1.4.1",
+    "SigProfilerMatrixGenerator>=1.3.5",
+    "SigProfilerAssignment>=0.2.4",
     "statsmodels>=0.9.0",
     "scikit-learn>=0.24.2",
     "psutil>=5.6.1",
