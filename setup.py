@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.2.2"
+VERSION = "1.2.3"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'v1.2.2: Add mutation count and stability to 4608 plots in All_Solutions and a stop parameter'
+Update = 'v1.2.3: Add support for rn7 and mm39 genomes'
     
     """
     fh = open(filename, "w")
