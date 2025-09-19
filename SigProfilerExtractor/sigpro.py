@@ -1094,25 +1094,19 @@ def sigProfilerExtractor(
         devopts["make_decomposition_plots"] = make_decomposition_plots
 
         # Check if genome_build is available in COSMIC, if not reset to GRCh37
-        if (
-            genome_build == "GRCh37"
-            or genome_build == "GRCh38"
-            or genome_build == "mm9"
-            or genome_build == "mm10"
-            or genome_build == "rn6"
-        ):
+        if genome_build in ["GRCh37", "GRCh38", "mm9", "mm10", "mm39", "rn6", "rn7"]:
             genome_build = genome_build
         else:
             sysdata = open(out_put + "/JOB_METADATA.txt", "a")
             sysdata.write(
-                "\n[{}] The selected opportunity genome is {}. COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37.\n".format(
+                "\n[{}] The selected opportunity genome is {}. COSMIC signatures are available only for GRCh37/38, mm9/10/39 and rn6/7 genomes. So, the opportunity genome is reset to GRCh37.\n".format(
                     str(datetime.datetime.now()).split(".")[0], str(genome_build)
                 )
             )
             print(
                 "The selected opportunity genome is "
                 + str(genome_build)
-                + ". COSMIC signatures are available only for GRCh37/38, mm9/10 and rn6 genomes. So, the opportunity genome is reset to GRCh37."
+                + ". COSMIC signatures are available only for GRCh37/38, mm9/10/39 and rn6/7 genomes. So, the opportunity genome is reset to GRCh37."
             )
             sysdata.close()
             genome_build = "GRCh37"
