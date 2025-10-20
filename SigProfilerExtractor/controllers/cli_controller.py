@@ -112,6 +112,12 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
         help="Number of processors to use (default: all available).",
     )
     parser.add_argument(
+        "--assignment_cpu",
+        type=int,
+        default=-1,
+        help="Number of processors to be used by SigProfilerAssignment for the final signature assignment step (default: all available). This is independent of the 'cpu' parameter.",
+    )
+    parser.add_argument(
         "--gpu",
         type=str2bool,
         nargs="?",
@@ -261,6 +267,7 @@ class CliController:
             seeds=parsed_args.seeds,
             batch_size=parsed_args.batch_size,
             cpu=parsed_args.cpu,
+            assignment_cpu=parsed_args.assignment_cpu,
             gpu=parsed_args.gpu,
             nmf_init=parsed_args.nmf_init,
             precision=parsed_args.precision,

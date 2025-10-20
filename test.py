@@ -6,9 +6,6 @@ Created on Wed Jul 10 11:45:38 2019
 @author: mishugeb
 """
 from SigProfilerExtractor import sigpro as sig
-import SigProfilerExtractor as spe_mod
-import os
-
 
 def run_matrix_96():
     data = sig.importdata("matrix")
