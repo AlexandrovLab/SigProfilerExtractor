@@ -187,6 +187,7 @@ def record_parameters(sysdata, execution_parameters, start_time):
             )
         )
 
+    sysdata.write("\tassignment_cpu: {}\n".format(execution_parameters["assignment_cpu"]))
     sysdata.write("\tgpu: {}\n".format(execution_parameters["gpu"]))
     sysdata.write("Solution Estimation\n")
     sysdata.write("\tstability: {}\n".format(execution_parameters["stability"]))
@@ -248,6 +249,7 @@ def sigProfilerExtractor(
     resample=True,
     batch_size=1,
     cpu=-1,
+    assignment_cpu=-1,
     gpu=False,
     nmf_init="random",
     precision="single",
@@ -485,6 +487,7 @@ def sigProfilerExtractor(
         "maximum_signatures": maximum_signatures,
         "NMF_replicates": nmf_replicates,
         "cpu": cpu,
+        "assignment_cpu": assignment_cpu,
         "gpu": gpu,
         "batch_size": batch_size,
         "NMF_init": nmf_init,
@@ -1126,6 +1129,7 @@ def sigProfilerExtractor(
                 devopts=devopts,
                 make_metadata=False,
                 volume=volume,
+                cpu=assignment_cpu,
             )
 
     sysdata = open(out_put + "/JOB_METADATA.txt", "a")
