@@ -116,7 +116,7 @@ sigProfilerExtractor(input_type, out_put, input_data, reference_genome="GRCh37",
 |  | **nmf_tolerance** | Float | Value defines the tolerance to achieve to converge (default: `1e-15`).|
 | **Execution** |  |  |  | 
 |  | **cpu** | Integer | The number of processors to be used to extract the signatures (default: all processors). |
-|  | **assignment_cpu** | Integer | The number of processors to be used for the final signature assignment step (default: all processors). This is independent of the `cpu` parameter. |
+|  | **assignment_cpu** | Integer | Number of processors to be used by SigProfilerAssignment for the final signature assignment step (default: all available). This is independent of the `cpu` parameter. |
 |  | **gpu** | Boolean | Defines if the GPU resource will used if available (default: `False`). If `True`, the GPU resources will be used in the computation. *Note: All available CPU processors are used by default, which may cause a memory error. This error can be resolved by reducing the number of CPU processes through the `cpu` parameter.*|
 |  | **batch_size** | Integer | Will be effective only if the GPU is used. Defines the number of NMF replicates to be performed by each CPU during the parallel processing (default: `1`). *Note: For `batch_size` values greater than 1, each NMF replicate will update until `max_nmf_iterations` is reached.*|
 | **Solution Estimation Thresholds** |  |  |  | 
