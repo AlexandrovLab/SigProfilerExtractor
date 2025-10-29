@@ -48,8 +48,16 @@ after_success:
         -t $IMAGE_NAME:$VERSION_TAG \
         -t $IMAGE_NAME:latest .
 
+      echo "Docker build complete — starting push…"
+
+      # Prevent timeout: keep Travis log active during push
+      bash -c "while true; do echo '[Heartbeat] pushing image…'; sleep 60; done" &
+      KEEPALIVE_PID=$!
+
       docker push $IMAGE_NAME:$VERSION_TAG
       docker push $IMAGE_NAME:latest
+
+      kill $KEEPALIVE_PID
 
       echo "Docker deployment to GHCR successful"
     else
