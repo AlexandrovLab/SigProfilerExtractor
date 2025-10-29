@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.2.4"
+VERSION = "1.2.5"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'v1.2.4: Added assignment_cpu parameter for SigProfilerAssignment v1.0.0 support.'
+Update = 'v1.2.5: Add automated Docker build and publish pipeline'
     
     """
     fh = open(filename, "w")
