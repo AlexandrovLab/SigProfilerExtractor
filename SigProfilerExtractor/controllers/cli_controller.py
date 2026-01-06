@@ -209,8 +209,8 @@ def parse_arguments_extractor(args: List[str], description: str) -> argparse.Nam
     parser.add_argument(
         "--cosmic_version",
         type=float,
-        default=3.4,
-        help="COSMIC version for reference signatures. Valid values are 1, 2, 3, 3.1, 3.2, 3.3, and 3.4 (default: 3.4).",
+        default=3.5,
+        help="COSMIC version for reference signatures. Valid values are 1, 2, 3, 3.1, 3.2, 3.3, 3.4, and 3.5 (default: 3.5).",
     )
     parser.add_argument(
         "--make_decomposition_plots",
