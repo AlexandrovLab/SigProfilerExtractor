@@ -6,7 +6,7 @@ branches:
     - master
 
 python:
-  - '3.9'
+  - '3.10'
   - '3.12'
 
 services:

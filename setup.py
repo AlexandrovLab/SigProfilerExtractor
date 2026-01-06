@@ -8,7 +8,7 @@ import subprocess
 if os.path.exists("dist"):
     shutil.rmtree("dist")
 
-VERSION = "1.2.5"
+VERSION = "1.2.6"
 
 
 with open("README.md") as f:
@@ -21,7 +21,7 @@ def write_version_py(filename="SigProfilerExtractor/version.py"):
 # THIS FILE IS GENERATED FROM SIGPROFILEREXTRACTOR SETUP.PY
 short_version = '%(version)s'
 version = '%(version)s'
-Update = 'v1.2.5: Add automated Docker build and publish pipeline'
+Update = 'v1.2.6: Update default COSMIC version to 3.5'
     
     """
     fh = open(filename, "w")
@@ -42,7 +42,7 @@ requirements = [
     "nimfa>=1.1.0",
     "sigProfilerPlotting>=1.4.1",
     "SigProfilerMatrixGenerator>=1.3.5",
-    "SigProfilerAssignment>=1.0.1",
+    "SigProfilerAssignment>=1.1.0",
     "statsmodels>=0.9.0",
     "scikit-learn>=0.24.2",
     "psutil>=5.6.1",

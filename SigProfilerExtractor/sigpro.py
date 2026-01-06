@@ -240,7 +240,7 @@ def sigProfilerExtractor(
     input_data,
     reference_genome="GRCh37",
     opportunity_genome="GRCh37",
-    cosmic_version=3.4,
+    cosmic_version=3.5,
     context_type="default",
     exome=False,
     minimum_signatures=1,

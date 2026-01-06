@@ -7,6 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+## [1.2.6] - 2026-01-06
+
+### Changed
+- Updated default COSMIC version from 3.4 to 3.5. Added support for COSMIC v3.5 signatures in the `cosmic_version` parameter.
+- Updated SigProfilerAssignment dependency requirement from >=1.0.1 to >=1.1.0 to support COSMIC v3.5 signatures.
+
 ## [1.2.5] - 2025-10-28
 
 ### Added
